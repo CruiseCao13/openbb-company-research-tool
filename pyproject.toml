@@ -1,0 +1,15 @@
+[project]
+name = "openbb-company-research-tool"
+version = "1.3.0"
+description = "A command-line tool for generating standardized company research data packs using OpenBB and yfinance."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Cruise Cao" }]
+dependencies = [
+    "openbb",
+    "openbb-yfinance",
+    "yfinance",
+    "pandas",
+    "matplotlib",
+]

@@ -1,0 +1,1809 @@
+#!/usr/bin/env python3
+"""
+OpenBB Company Research Tool
+
+A command-line tool for generating standardized company research data packs.
+
+Core goals:
+- Pull price and financial data
+- Compare a ticker with a chosen benchmark
+- Calculate risk, return, growth, profitability, and cash-flow metrics
+- Generate charts, CSV files, and a Markdown research report
+- Keep the output useful for human investment research, not automated trading
+
+Important:
+This tool is NOT a buy/sell recommendation engine.
+"""
+
+from __future__ import annotations
+
+__version__ = "1.3.0"
+
+import argparse
+from datetime import datetime
+import math
+import os
+import shutil
+import tempfile
+import textwrap
+from pathlib import Path
+from typing import Any
+
+os.environ.setdefault("MPLCONFIGDIR", str(Path(tempfile.gettempdir()) / "openbb_company_research_tool_mpl"))
+
+import pandas as pd
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+
+try:
+    from openbb import obb
+except Exception:
+    obb = None
+
+try:
+    import yfinance as yf
+except Exception as exc:
+    raise SystemExit(
+        "yfinance import failed. Install dependencies first:\n"
+        "  pip install -r requirements.txt\n\n"
+        f"Original error: {exc}"
+    )
+
+
+# =============================================================================
+# Utility
+# =============================================================================
+
+def ensure_dir(path: Path) -> None:
+    path.mkdir(parents=True, exist_ok=True)
+
+
+def reset_dir(path: Path) -> None:
+    if not path.exists():
+        ensure_dir(path)
+        return
+
+    for child in path.iterdir():
+        if child.is_dir():
+            shutil.rmtree(child)
+        else:
+            child.unlink()
+
+
+def safe_symbol(symbol: str) -> str:
+    return symbol.upper().replace("/", "_").replace(".", "_")
+
+
+def clean_columns(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = [str(c[0]) for c in df.columns]
+    df.columns = [str(c).strip().lower().replace(" ", "_") for c in df.columns]
+    return df
+
+
+def drop_empty_rows(df: pd.DataFrame) -> pd.DataFrame:
+    if df is None or df.empty:
+        return pd.DataFrame()
+    return df.dropna(how="all")
+
+
+def fmt_number(value: Any) -> str:
+    if value is None:
+        return "N/A"
+    try:
+        if pd.isna(value):
+            return "N/A"
+        value = float(value)
+    except Exception:
+        return str(value)
+
+    abs_value = abs(value)
+    if abs_value >= 1_000_000_000_000:
+        return f"{value / 1_000_000_000_000:.2f}T"
+    if abs_value >= 1_000_000_000:
+        return f"{value / 1_000_000_000:.2f}B"
+    if abs_value >= 1_000_000:
+        return f"{value / 1_000_000:.2f}M"
+    if abs_value >= 1_000:
+        return f"{value:,.2f}"
+    return f"{value:.4f}"
+
+
+def fmt_percent(value: Any) -> str:
+    if value is None:
+        return "N/A"
+    try:
+        if pd.isna(value):
+            return "N/A"
+        return f"{float(value):.2%}"
+    except Exception:
+        return "N/A"
+
+
+def fmt_score(value: Any) -> str:
+    if value is None:
+        return "N/A"
+    try:
+        if pd.isna(value):
+            return "N/A"
+        return f"{float(value):.2f} / 100"
+    except Exception:
+        return "N/A"
+
+
+PERCENT_METRICS = {
+    "Total Return",
+    "CAGR",
+    "1Y Return",
+    "6M Return",
+    "3M Return",
+    "Max Drawdown",
+    "Annualized Volatility",
+    "Alpha vs Benchmark",
+    "Tracking Error",
+    "Upside Capture",
+    "Downside Capture",
+    "Revenue CAGR",
+    "Revenue Growth Latest",
+    "Gross Margin Latest",
+    "Gross Margin Change",
+    "Operating Margin Latest",
+    "Operating Margin Change",
+    "Net Margin",
+    "FCF Margin Latest",
+    "FCF Margin Change",
+    "Revenue Growth YoY",
+    "Gross Margin",
+    "Operating Margin",
+    "FCF Margin",
+    "grossMargins",
+    "operatingMargins",
+    "profitMargins",
+    "returnOnEquity",
+    "returnOnAssets",
+    "revenueGrowth",
+    "earningsGrowth",
+    "heldPercentInsiders",
+    "heldPercentInstitutions",
+    "Weight",
+}
+
+RATIO_METRICS = {
+    "Sharpe Ratio",
+    "Sortino Ratio",
+    "Calmar Ratio",
+    "Beta vs Benchmark",
+    "Correlation vs Benchmark",
+    "Information Ratio",
+    "beta",
+    "trailingPE",
+    "forwardPE",
+    "priceToSalesTrailing12Months",
+    "priceToBook",
+    "enterpriseToRevenue",
+    "enterpriseToEbitda",
+}
+
+COUNT_METRICS = {
+    "Positive Net Income Years",
+    "Positive FCF Years",
+}
+
+SHARE_COUNT_METRICS = {
+    "sharesOutstanding",
+    "floatShares",
+}
+
+SCORE_METRICS = {
+    "Growth Score",
+    "Profitability Score",
+    "Quality Trend Score",
+    "Risk Control Score",
+    "Benchmark Score",
+    "Valuation Sanity Score",
+    "Research Potential Score",
+}
+
+CURRENCY_METRICS = {
+    "marketCap",
+    "enterpriseValue",
+    "operatingCashflow",
+    "freeCashflow",
+    "totalCash",
+    "totalDebt",
+    "fiftyTwoWeekLow",
+    "fiftyTwoWeekHigh",
+    "Revenue",
+    "Gross Profit",
+    "Operating Income",
+    "Net Income",
+    "Operating Cash Flow",
+    "Capital Expenditure",
+    "Free Cash Flow",
+}
+
+FUND_QUOTE_TYPES = {"ETF", "FUND", "MUTUALFUND", "INDEX"}
+
+
+def metric_value_kind(metric: str) -> str:
+    """Return display type based on an explicit metric-name registry."""
+    metric = str(metric)
+
+    if metric in PERCENT_METRICS:
+        return "percent"
+    if metric in RATIO_METRICS:
+        return "ratio"
+    if metric in COUNT_METRICS:
+        return "integer"
+    if metric in SHARE_COUNT_METRICS:
+        return "share_count"
+    if metric in SCORE_METRICS:
+        return "score"
+    if metric in CURRENCY_METRICS:
+        return "currency"
+
+    return "number"
+
+
+def format_value_by_metric(metric: str, value: Any) -> str:
+    """Format table values according to the metric row."""
+    kind = metric_value_kind(metric)
+
+    if value is None:
+        return "N/A"
+
+    try:
+        if pd.isna(value):
+            return "N/A"
+    except Exception:
+        pass
+
+    if kind == "percent":
+        return fmt_percent(value)
+
+    if kind == "score":
+        return fmt_score(value)
+
+    if kind == "ratio":
+        try:
+            return f"{float(value):.4f}"
+        except Exception:
+            return str(value)
+
+    if kind == "integer":
+        try:
+            return str(int(round(float(value))))
+        except Exception:
+            return str(value)
+
+    if kind == "share_count":
+        try:
+            return f"{int(round(float(value))):,}"
+        except Exception:
+            return str(value)
+
+    return fmt_number(value)
+
+
+def is_fund_like(info: dict[str, Any]) -> bool:
+    return str(info.get("quoteType", "")).upper() in FUND_QUOTE_TYPES
+
+
+def default_run_id(symbol: str, benchmark: str, start_date: str, end_date: str | None) -> str:
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+    parts = [timestamp, f"{safe_symbol(symbol)}_vs_{safe_symbol(benchmark)}", f"start_{start_date}"]
+    if end_date:
+        parts.append(f"end_{end_date}")
+    return "_".join(parts)
+
+
+def output_dir_for_run(
+    output: Path,
+    symbol: str,
+    benchmark: str,
+    start_date: str,
+    end_date: str | None,
+    archive: bool,
+    run_id: str | None,
+) -> Path:
+    symbol_dir = output / safe_symbol(symbol)
+    if archive or run_id:
+        return symbol_dir / "runs" / (run_id or default_run_id(symbol, benchmark, start_date, end_date))
+    return symbol_dir / "latest"
+
+
+def markdown_table(
+    df: pd.DataFrame,
+    max_rows: int = 30,
+    percent_columns: set[str] | None = None,
+    score_columns: set[str] | None = None,
+) -> str:
+    if df is None or df.empty:
+        return "_No data available._"
+
+    percent_columns = percent_columns or set()
+    score_columns = score_columns or set()
+
+    view = df.copy().head(max_rows)
+
+    if not isinstance(view.index, pd.RangeIndex):
+        view = view.reset_index()
+
+    headers = [str(c) for c in view.columns]
+    lines = [
+        "| " + " | ".join(headers) + " |",
+        "| " + " | ".join(["---"] * len(headers)) + " |",
+    ]
+
+    has_metric_column = "Metric" in view.columns
+
+    for _, row in view.iterrows():
+        values = []
+        row_metric = str(row["Metric"]) if has_metric_column else None
+
+        for col in view.columns:
+            col_name = str(col)
+            value = row[col]
+
+            if isinstance(value, pd.Timestamp):
+                values.append(str(value.date()))
+                continue
+
+            if col_name in score_columns:
+                values.append(fmt_score(value))
+                continue
+
+            if has_metric_column and col_name != "Metric":
+                values.append(format_value_by_metric(row_metric, value))
+                continue
+
+            if col_name in percent_columns:
+                values.append(fmt_percent(value))
+                continue
+
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                values.append(fmt_number(value))
+                continue
+
+            values.append(str(value))
+
+        lines.append("| " + " | ".join(values) + " |")
+
+    return "\n".join(lines)
+
+def save_text(path: Path, content: str) -> None:
+    path.write_text(content, encoding="utf-8")
+
+
+# =============================================================================
+# Price analysis
+# =============================================================================
+
+def fetch_price_history(symbol: str, start_date: str, end_date: str | None = None) -> pd.DataFrame:
+    symbol = symbol.upper()
+
+    if obb is not None:
+        try:
+            kwargs = {
+                "symbol": symbol,
+                "start_date": start_date,
+                "provider": "yfinance",
+            }
+            if end_date:
+                kwargs["end_date"] = end_date
+
+            result = obb.equity.price.historical(**kwargs)
+            df = result.to_df().copy()
+
+            if "date" in df.columns:
+                df = df.set_index("date")
+
+            df.index = pd.to_datetime(df.index)
+            df = df.sort_index()
+            df = clean_columns(df)
+
+            if "close" not in df.columns:
+                raise ValueError("OpenBB returned price data without a close column.")
+
+            return df
+
+        except Exception as exc:
+            print(f"[WARN] OpenBB price failed for {symbol}: {exc}")
+            print(f"[WARN] Falling back to yfinance for {symbol}.")
+
+    df = yf.download(
+        symbol,
+        start=start_date,
+        end=end_date,
+        auto_adjust=False,
+        progress=False,
+    )
+
+    if df.empty:
+        raise ValueError(f"{symbol}: no price data returned.")
+
+    df.index = pd.to_datetime(df.index)
+    df = df.sort_index()
+    df = clean_columns(df)
+
+    if "close" not in df.columns:
+        raise ValueError(f"{symbol}: missing close column.")
+
+    return df
+
+
+def daily_returns(close: pd.Series) -> pd.Series:
+    return close.dropna().pct_change().dropna()
+
+
+def total_return(close: pd.Series) -> float:
+    close = close.dropna()
+    if len(close) < 2:
+        return float("nan")
+    return float(close.iloc[-1] / close.iloc[0] - 1)
+
+
+def cagr(close: pd.Series) -> float:
+    close = close.dropna()
+    if len(close) < 2:
+        return float("nan")
+
+    days = (close.index[-1] - close.index[0]).days
+    if days <= 0:
+        return float("nan")
+
+    return float((close.iloc[-1] / close.iloc[0]) ** (365 / days) - 1)
+
+
+def annualized_volatility(close: pd.Series) -> float:
+    r = daily_returns(close)
+    if r.empty:
+        return float("nan")
+    return float(r.std() * math.sqrt(252))
+
+
+def max_drawdown(close: pd.Series) -> float:
+    close = close.dropna()
+    if close.empty:
+        return float("nan")
+    running_max = close.cummax()
+    dd = close / running_max - 1
+    return float(dd.min())
+
+
+def rolling_return(close: pd.Series, trading_days: int) -> float:
+    close = close.dropna()
+    if len(close) <= trading_days:
+        return float("nan")
+    return float(close.iloc[-1] / close.iloc[-trading_days] - 1)
+
+
+def sharpe_ratio(close: pd.Series, risk_free_rate: float = 0.0) -> float:
+    vol = annualized_volatility(close)
+    if vol == 0 or pd.isna(vol):
+        return float("nan")
+    return float((cagr(close) - risk_free_rate) / vol)
+
+
+def sortino_ratio(close: pd.Series, risk_free_rate: float = 0.0) -> float:
+    r = daily_returns(close)
+    if r.empty:
+        return float("nan")
+    downside = r[r < 0].std() * math.sqrt(252)
+    if downside == 0 or pd.isna(downside):
+        return float("nan")
+    return float((cagr(close) - risk_free_rate) / downside)
+
+
+def calmar_ratio(close: pd.Series) -> float:
+    dd = abs(max_drawdown(close))
+    if dd == 0 or pd.isna(dd):
+        return float("nan")
+    return float(cagr(close) / dd)
+
+
+def beta_alpha(target: pd.Series, benchmark: pd.Series, risk_free_rate: float = 0.0) -> tuple[float, float]:
+    df = pd.DataFrame({"target": target, "benchmark": benchmark}).dropna()
+    r = df.pct_change().dropna()
+    if r.empty:
+        return float("nan"), float("nan")
+
+    var_b = r["benchmark"].var()
+    if var_b == 0 or pd.isna(var_b):
+        return float("nan"), float("nan")
+
+    beta = float(r["target"].cov(r["benchmark"]) / var_b)
+    target_ann = r["target"].mean() * 252
+    bench_ann = r["benchmark"].mean() * 252
+    alpha = float(target_ann - (risk_free_rate + beta * (bench_ann - risk_free_rate)))
+    return beta, alpha
+
+
+def correlation(target: pd.Series, benchmark: pd.Series) -> float:
+    df = pd.DataFrame({"target": target, "benchmark": benchmark}).dropna()
+    r = df.pct_change().dropna()
+    if r.empty:
+        return float("nan")
+    return float(r["target"].corr(r["benchmark"]))
+
+
+def tracking_error(target: pd.Series, benchmark: pd.Series) -> float:
+    df = pd.DataFrame({"target": target, "benchmark": benchmark}).dropna()
+    r = df.pct_change().dropna()
+    if r.empty:
+        return float("nan")
+    diff = r["target"] - r["benchmark"]
+    return float(diff.std() * math.sqrt(252))
+
+
+def information_ratio(target: pd.Series, benchmark: pd.Series) -> float:
+    excess = cagr(target) - cagr(benchmark)
+    te = tracking_error(target, benchmark)
+    if te == 0 or pd.isna(te):
+        return float("nan")
+    return float(excess / te)
+
+
+def capture_ratios(target: pd.Series, benchmark: pd.Series) -> tuple[float, float]:
+    df = pd.DataFrame({"target": target, "benchmark": benchmark}).dropna()
+    r = df.pct_change().dropna()
+    if r.empty:
+        return float("nan"), float("nan")
+
+    up = r[r["benchmark"] > 0]
+    down = r[r["benchmark"] < 0]
+
+    upside = (
+        float(up["target"].mean() / up["benchmark"].mean())
+        if not up.empty and up["benchmark"].mean() != 0
+        else float("nan")
+    )
+    downside = (
+        float(down["target"].mean() / down["benchmark"].mean())
+        if not down.empty and down["benchmark"].mean() != 0
+        else float("nan")
+    )
+
+    return upside, downside
+
+
+def build_price_summary(target_close: pd.Series, benchmark_close: pd.Series, risk_free_rate: float) -> pd.DataFrame:
+    beta, alpha = beta_alpha(target_close, benchmark_close, risk_free_rate)
+    upside, downside = capture_ratios(target_close, benchmark_close)
+
+    rows = [
+        ("Total Return", total_return(target_close), total_return(benchmark_close)),
+        ("CAGR", cagr(target_close), cagr(benchmark_close)),
+        ("1Y Return", rolling_return(target_close, 252), rolling_return(benchmark_close, 252)),
+        ("6M Return", rolling_return(target_close, 126), rolling_return(benchmark_close, 126)),
+        ("3M Return", rolling_return(target_close, 63), rolling_return(benchmark_close, 63)),
+        ("Max Drawdown", max_drawdown(target_close), max_drawdown(benchmark_close)),
+        ("Annualized Volatility", annualized_volatility(target_close), annualized_volatility(benchmark_close)),
+        ("Sharpe Ratio", sharpe_ratio(target_close, risk_free_rate), sharpe_ratio(benchmark_close, risk_free_rate)),
+        ("Sortino Ratio", sortino_ratio(target_close, risk_free_rate), sortino_ratio(benchmark_close, risk_free_rate)),
+        ("Calmar Ratio", calmar_ratio(target_close), calmar_ratio(benchmark_close)),
+        ("Beta vs Benchmark", beta, None),
+        ("Alpha vs Benchmark", alpha, None),
+        ("Correlation vs Benchmark", correlation(target_close, benchmark_close), None),
+        ("Tracking Error", tracking_error(target_close, benchmark_close), None),
+        ("Information Ratio", information_ratio(target_close, benchmark_close), None),
+        ("Upside Capture", upside, None),
+        ("Downside Capture", downside, None),
+    ]
+
+    data = []
+    for metric, target, bench in rows:
+        diff = target - bench if bench is not None and not pd.isna(target) and not pd.isna(bench) else None
+        data.append({"Metric": metric, "Target": target, "Benchmark": bench, "Difference": diff})
+
+    return pd.DataFrame(data)
+
+
+def plot_normalized_performance(normalized: pd.DataFrame, target: str, benchmark: str, path: Path) -> None:
+    ax = normalized.plot(
+        title=f"{target} vs {benchmark} Normalized Performance",
+        figsize=(12, 6),
+    )
+    ax.set_xlabel("Date")
+    ax.set_ylabel("Normalized Price: Start = 100")
+    ax.grid(True, alpha=0.25)
+    plt.tight_layout()
+    plt.savefig(path, dpi=160)
+    plt.close()
+
+
+def plot_actual_close_price(close: pd.DataFrame, target: str, benchmark: str, path: Path) -> None:
+    ax = close.plot(
+        title=f"{target} vs {benchmark} Actual Close Price",
+        figsize=(12, 6),
+    )
+    ax.set_xlabel("Date")
+    ax.set_ylabel("Close Price")
+    ax.grid(True, alpha=0.25)
+    plt.tight_layout()
+    plt.savefig(path, dpi=160)
+    plt.close()
+
+
+def plot_drawdown(close: pd.DataFrame, target: str, benchmark: str, path: Path) -> None:
+    dd = pd.DataFrame()
+    for col in [target, benchmark]:
+        running_max = close[col].cummax()
+        dd[col] = close[col] / running_max - 1
+
+    ax = dd.plot(title=f"{target} vs {benchmark} Drawdown", figsize=(12, 5))
+    ax.set_xlabel("Date")
+    ax.set_ylabel("Drawdown")
+    ax.grid(True, alpha=0.25)
+    plt.tight_layout()
+    plt.savefig(path, dpi=160)
+    plt.close()
+
+
+# =============================================================================
+# Financial analysis
+# =============================================================================
+
+def statement_to_time_series(statement: pd.DataFrame) -> pd.DataFrame:
+    if statement is None or statement.empty:
+        return pd.DataFrame()
+
+    df = statement.copy()
+    df.columns = pd.to_datetime(df.columns, errors="coerce")
+    df = df.loc[:, df.columns.notna()]
+    df = df.T.sort_index()
+    df.columns = [str(c).strip() for c in df.columns]
+    return df
+
+
+def pick_series(df: pd.DataFrame, names: list[str]) -> pd.Series:
+    if df is None or df.empty:
+        return pd.Series(dtype="float64")
+
+    name_map = {
+        c.lower().replace(" ", "").replace("_", ""): c
+        for c in df.columns
+    }
+
+    for name in names:
+        key = name.lower().replace(" ", "").replace("_", "")
+        if key in name_map:
+            return pd.to_numeric(df[name_map[key]], errors="coerce")
+
+    return pd.Series(index=df.index, dtype="float64")
+
+
+def safe_ratio(numerator: pd.Series, denominator: pd.Series) -> pd.Series:
+    denominator = denominator.replace({0: pd.NA})
+    return numerator / denominator
+
+
+def metric_cagr(series: pd.Series) -> float:
+    s = series.dropna()
+    if len(s) < 2:
+        return float("nan")
+
+    years = max((s.index[-1] - s.index[0]).days / 365, 1e-9)
+    if s.iloc[0] <= 0 or s.iloc[-1] <= 0:
+        return float("nan")
+
+    return float((s.iloc[-1] / s.iloc[0]) ** (1 / years) - 1)
+
+
+def metric_change(series: pd.Series) -> float:
+    s = series.dropna()
+    if len(s) < 2:
+        return float("nan")
+    return float(s.iloc[-1] - s.iloc[0])
+
+
+def fetch_company_info(symbol: str) -> dict[str, Any]:
+    try:
+        return yf.Ticker(symbol).get_info()
+    except Exception as exc:
+        print(f"[WARN] yfinance company info failed for {symbol}: {exc}")
+        return {}
+
+
+def build_company_profile(info: dict[str, Any]) -> pd.DataFrame:
+    fields = [
+        "shortName", "longName", "symbol", "quoteType", "sector", "industry",
+        "country", "exchange", "currency", "marketCap", "enterpriseValue",
+        "beta", "website",
+    ]
+    return pd.DataFrame(
+        [{"Field": field, "Value": info.get(field)} for field in fields if info.get(field) is not None]
+    )
+
+
+def build_valuation_snapshot(info: dict[str, Any]) -> pd.DataFrame:
+    groups = {
+        "Market Size": ["marketCap", "enterpriseValue"],
+        "Valuation Multiples": [
+            "trailingPE", "forwardPE", "priceToSalesTrailing12Months",
+            "priceToBook", "enterpriseToRevenue", "enterpriseToEbitda",
+        ],
+        "Profitability and Growth": [
+            "grossMargins", "operatingMargins", "profitMargins",
+            "returnOnEquity", "returnOnAssets", "revenueGrowth", "earningsGrowth",
+        ],
+        "Cash Flow and Debt": ["operatingCashflow", "freeCashflow", "totalCash", "totalDebt"],
+        "Ownership": ["sharesOutstanding", "floatShares", "heldPercentInsiders", "heldPercentInstitutions"],
+        "Price Range": ["fiftyTwoWeekLow", "fiftyTwoWeekHigh"],
+    }
+    rows = []
+    for group, fields in groups.items():
+        rows.extend(
+            {"Group": group, "Metric": field, "Value": info.get(field)}
+            for field in fields
+            if info.get(field) is not None
+        )
+    return pd.DataFrame(
+        rows,
+        columns=["Group", "Metric", "Value"],
+    )
+
+
+def valuation_group_sections(valuation: pd.DataFrame) -> str:
+    if valuation is None or valuation.empty or "Group" not in valuation.columns:
+        return markdown_table(valuation, max_rows=50)
+
+    sections = []
+    for group, group_df in valuation.groupby("Group", sort=False):
+        sections.append(f"### {group}")
+        sections.append(markdown_table(group_df[["Metric", "Value"]], max_rows=50))
+    return "\n\n".join(sections)
+
+
+def fetch_money_source_and_flow(symbol: str, out_dir: Path, years: int) -> pd.DataFrame:
+    ticker = yf.Ticker(symbol)
+
+    income = statement_to_time_series(ticker.financials)
+    cashflow = statement_to_time_series(ticker.cashflow)
+    balance = statement_to_time_series(ticker.balance_sheet)
+
+    if not income.empty:
+        income.to_csv(out_dir / f"{safe_symbol(symbol)}_income_statement_yfinance.csv")
+    if not cashflow.empty:
+        cashflow.to_csv(out_dir / f"{safe_symbol(symbol)}_cash_flow_yfinance.csv")
+    if not balance.empty:
+        balance.to_csv(out_dir / f"{safe_symbol(symbol)}_balance_sheet_yfinance.csv")
+
+    idx = income.index.union(cashflow.index).union(balance.index).sort_values()
+    trends = pd.DataFrame(index=idx)
+
+    revenue = pick_series(income, ["Total Revenue", "Operating Revenue"])
+    gross_profit = pick_series(income, ["Gross Profit"])
+    operating_income = pick_series(income, ["Operating Income", "Operating Income Loss"])
+    net_income = pick_series(income, ["Net Income", "Net Income Common Stockholders"])
+    operating_cash_flow = pick_series(cashflow, ["Operating Cash Flow", "Total Cash From Operating Activities"])
+    capex = pick_series(cashflow, ["Capital Expenditure", "Capital Expenditures", "Capital Expenditure Reported"])
+    free_cash_flow = pick_series(cashflow, ["Free Cash Flow"])
+
+    if free_cash_flow.dropna().empty and not operating_cash_flow.dropna().empty:
+        free_cash_flow = operating_cash_flow.add(capex, fill_value=0)
+
+    trends["Revenue"] = revenue.reindex(idx)
+    trends["Gross Profit"] = gross_profit.reindex(idx)
+    trends["Operating Income"] = operating_income.reindex(idx)
+    trends["Net Income"] = net_income.reindex(idx)
+    trends["Operating Cash Flow"] = operating_cash_flow.reindex(idx)
+    trends["Capital Expenditure"] = capex.reindex(idx)
+    trends["Free Cash Flow"] = free_cash_flow.reindex(idx)
+
+    trends["Revenue Growth YoY"] = trends["Revenue"].pct_change()
+    trends["Gross Margin"] = safe_ratio(trends["Gross Profit"], trends["Revenue"])
+    trends["Operating Margin"] = safe_ratio(trends["Operating Income"], trends["Revenue"])
+    trends["Net Margin"] = safe_ratio(trends["Net Income"], trends["Revenue"])
+    trends["FCF Margin"] = safe_ratio(trends["Free Cash Flow"], trends["Revenue"])
+
+    trends = drop_empty_rows(trends)
+
+    if years > 0:
+        trends = trends.tail(years)
+
+    trends.to_csv(out_dir / f"{safe_symbol(symbol)}_money_source_and_flow.csv")
+    return trends
+
+
+def build_fundamental_summary(trends: pd.DataFrame) -> pd.DataFrame:
+    if trends is None or trends.empty:
+        return pd.DataFrame(columns=["Metric", "Value"])
+
+    def latest(col: str) -> float:
+        if col not in trends or trends[col].dropna().empty:
+            return float("nan")
+        return float(trends[col].dropna().iloc[-1])
+
+    rows = [
+        ("Revenue CAGR", metric_cagr(trends["Revenue"]) if "Revenue" in trends else float("nan")),
+        ("Revenue Growth Latest", latest("Revenue Growth YoY")),
+        ("Gross Margin Latest", latest("Gross Margin")),
+        ("Gross Margin Change", metric_change(trends["Gross Margin"]) if "Gross Margin" in trends else float("nan")),
+        ("Operating Margin Latest", latest("Operating Margin")),
+        ("Operating Margin Change", metric_change(trends["Operating Margin"]) if "Operating Margin" in trends else float("nan")),
+        ("FCF Margin Latest", latest("FCF Margin")),
+        ("FCF Margin Change", metric_change(trends["FCF Margin"]) if "FCF Margin" in trends else float("nan")),
+        ("Positive Net Income Years", int((trends["Net Income"].dropna() > 0).sum()) if "Net Income" in trends else 0),
+        ("Positive FCF Years", int((trends["Free Cash Flow"].dropna() > 0).sum()) if "Free Cash Flow" in trends else 0),
+    ]
+    return pd.DataFrame(rows, columns=["Metric", "Value"])
+
+
+# =============================================================================
+# Score
+# =============================================================================
+
+def clamp(value: float, lo: float = 0.0, hi: float = 100.0) -> float:
+    if pd.isna(value):
+        return 0.0
+    return max(lo, min(hi, value))
+
+
+def get_metric(df: pd.DataFrame, metric: str, column: str = "Value") -> float:
+    try:
+        row = df[df["Metric"] == metric]
+        if row.empty:
+            return float("nan")
+        value = row.iloc[0][column]
+        if value is None:
+            return float("nan")
+        return float(value)
+    except Exception:
+        return float("nan")
+
+
+def get_component_score(score_table: pd.DataFrame, component: str) -> float:
+    try:
+        row = score_table[score_table["Component"] == component]
+        if row.empty:
+            return float("nan")
+        return float(row.iloc[0]["Score"])
+    except Exception:
+        return float("nan")
+
+
+def growth_score(revenue_cagr: float, latest_growth: float) -> float:
+    scores = []
+    if not pd.isna(revenue_cagr):
+        scores.append(clamp(30 + revenue_cagr * 300))
+    if not pd.isna(latest_growth):
+        scores.append(clamp(30 + latest_growth * 250))
+    return sum(scores) / len(scores) if scores else 0.0
+
+
+def profitability_score(gross_margin: float, operating_margin: float, fcf_margin: float) -> float:
+    scores = []
+    if not pd.isna(gross_margin):
+        scores.append(clamp(gross_margin * 150))
+    if not pd.isna(operating_margin):
+        scores.append(clamp(40 + operating_margin * 200))
+    if not pd.isna(fcf_margin):
+        scores.append(clamp(40 + fcf_margin * 200))
+    return sum(scores) / len(scores) if scores else 0.0
+
+
+def quality_trend_score(gross_margin_change: float, operating_margin_change: float, fcf_margin_change: float) -> float:
+    scores = []
+    for value in [gross_margin_change, operating_margin_change, fcf_margin_change]:
+        if not pd.isna(value):
+            scores.append(clamp(50 + value * 300))
+    return sum(scores) / len(scores) if scores else 0.0
+
+
+def risk_control_score(max_dd: float, volatility: float, beta: float) -> float:
+    scores = []
+    if not pd.isna(max_dd):
+        scores.append(clamp(100 + max_dd * 160))  # drawdown is negative
+    if not pd.isna(volatility):
+        scores.append(clamp(100 - volatility * 180))
+    if not pd.isna(beta):
+        scores.append(clamp(100 - max(0.0, beta - 1.0) * 35))
+    return sum(scores) / len(scores) if scores else 0.0
+
+
+def benchmark_score(excess_cagr: float, information_ratio_value: float, sharpe_diff: float) -> float:
+    scores = []
+    if not pd.isna(excess_cagr):
+        scores.append(clamp(50 + excess_cagr * 250))
+    if not pd.isna(information_ratio_value):
+        scores.append(clamp(50 + information_ratio_value * 25))
+    if not pd.isna(sharpe_diff):
+        scores.append(clamp(50 + sharpe_diff * 35))
+    return sum(scores) / len(scores) if scores else 0.0
+
+
+def valuation_sanity_score(info: dict[str, Any]) -> float:
+    # Simple penalty system. This is NOT intrinsic valuation.
+    score = 70.0
+
+    checks = [
+        ("priceToSalesTrailing12Months", 5.0, 3.0),
+        ("enterpriseToRevenue", 6.0, 3.0),
+        ("trailingPE", 30.0, 0.6),
+        ("forwardPE", 30.0, 0.4),
+        ("enterpriseToEbitda", 20.0, 0.7),
+    ]
+
+    for key, threshold, penalty in checks:
+        try:
+            value = info.get(key)
+            if value is not None and not pd.isna(value) and float(value) > threshold:
+                score -= (float(value) - threshold) * penalty
+        except Exception:
+            continue
+
+    return clamp(score)
+
+
+def build_research_score(price_summary: pd.DataFrame, fundamental_summary: pd.DataFrame, info: dict[str, Any]) -> pd.DataFrame:
+    if is_fund_like(info) or fundamental_summary is None or fundamental_summary.empty:
+        return pd.DataFrame(
+            [
+                {"Component": "Research Potential Score", "Score": float("nan"), "Weight": 1.0},
+            ]
+        )
+
+    revenue_cagr = get_metric(fundamental_summary, "Revenue CAGR")
+    latest_growth = get_metric(fundamental_summary, "Revenue Growth Latest")
+    gross_margin = get_metric(fundamental_summary, "Gross Margin Latest")
+    operating_margin = get_metric(fundamental_summary, "Operating Margin Latest")
+    fcf_margin = get_metric(fundamental_summary, "FCF Margin Latest")
+    gross_margin_change = get_metric(fundamental_summary, "Gross Margin Change")
+    operating_margin_change = get_metric(fundamental_summary, "Operating Margin Change")
+    fcf_margin_change = get_metric(fundamental_summary, "FCF Margin Change")
+
+    max_dd = get_metric(price_summary, "Max Drawdown", "Target")
+    volatility = get_metric(price_summary, "Annualized Volatility", "Target")
+    beta = get_metric(price_summary, "Beta vs Benchmark", "Target")
+    excess_cagr = get_metric(price_summary, "CAGR", "Difference")
+    information_ratio_value = get_metric(price_summary, "Information Ratio", "Target")
+    sharpe_diff = get_metric(price_summary, "Sharpe Ratio", "Difference")
+
+    components = {
+        "Growth Score": growth_score(revenue_cagr, latest_growth),
+        "Profitability Score": profitability_score(gross_margin, operating_margin, fcf_margin),
+        "Quality Trend Score": quality_trend_score(gross_margin_change, operating_margin_change, fcf_margin_change),
+        "Risk Control Score": risk_control_score(max_dd, volatility, beta),
+        "Benchmark Score": benchmark_score(excess_cagr, information_ratio_value, sharpe_diff),
+        "Valuation Sanity Score": valuation_sanity_score(info),
+    }
+
+    weights = {
+        "Growth Score": 0.22,
+        "Profitability Score": 0.22,
+        "Quality Trend Score": 0.16,
+        "Risk Control Score": 0.16,
+        "Benchmark Score": 0.16,
+        "Valuation Sanity Score": 0.08,
+    }
+
+    total = sum(components[k] * weights[k] for k in components)
+    rows = [{"Component": k, "Score": components[k], "Weight": weights[k]} for k in components]
+    rows.append({"Component": "Research Potential Score", "Score": total, "Weight": 1.0})
+    return pd.DataFrame(rows)
+
+
+def rating_from_score(score: float) -> str:
+    if pd.isna(score):
+        return "Data Insufficient"
+    if score >= 75:
+        return "High Priority Research"
+    if score >= 60:
+        return "Watchlist"
+    if score >= 45:
+        return "Research More"
+    if score >= 30:
+        return "FOMO Risk / Weak Evidence"
+    return "Avoid for Now / Data Weak"
+
+
+# =============================================================================
+# Interpretation
+# =============================================================================
+
+def business_summary(info: dict[str, Any], max_chars: int = 1500) -> str:
+    summary = info.get("longBusinessSummary")
+    if not summary:
+        return "_No automatic business summary available. Add manual narrative from 10-K / company IR._"
+    summary = " ".join(str(summary).split())
+    if len(summary) > max_chars:
+        return summary[:max_chars].rstrip() + "..."
+    return summary
+
+
+def benchmark_explanation(benchmark: str) -> str:
+    benchmark = benchmark.upper()
+    if benchmark == "SPY":
+        return "SPY is a broad S&P 500 benchmark. It tests whether the stock deserves capital compared with a simple broad-market ETF."
+    if benchmark == "VOO":
+        return "VOO is a low-cost S&P 500 ETF and a practical long-term alternative for many investors."
+    if benchmark == "QQQ":
+        return "QQQ is a technology/growth-heavy benchmark, useful for large technology and growth stocks."
+    return f"{benchmark} is the chosen benchmark. The comparison measures opportunity cost versus holding {benchmark}."
+
+
+def generate_key_takeaways(
+    symbol: str,
+    benchmark: str,
+    price_summary: pd.DataFrame,
+    fundamental_summary: pd.DataFrame,
+    score_table: pd.DataFrame,
+    info: dict[str, Any],
+) -> list[str]:
+    takeaways = []
+
+    if is_fund_like(info):
+        takeaways.append(
+            f"{symbol} appears to be a fund-like instrument, so company financial statement analysis was skipped."
+        )
+
+    total_diff = get_metric(price_summary, "Total Return", "Difference")
+    cagr_diff = get_metric(price_summary, "CAGR", "Difference")
+    sharpe_diff = get_metric(price_summary, "Sharpe Ratio", "Difference")
+    mdd_diff = get_metric(price_summary, "Max Drawdown", "Difference")
+    revenue_cagr = get_metric(fundamental_summary, "Revenue CAGR")
+    gross_margin = get_metric(fundamental_summary, "Gross Margin Latest")
+    fcf_margin = get_metric(fundamental_summary, "FCF Margin Latest")
+    valuation_score = get_component_score(score_table, "Valuation Sanity Score")
+    total_score = get_component_score(score_table, "Research Potential Score")
+
+    if not pd.isna(total_diff) and not pd.isna(cagr_diff):
+        if total_diff > 0 and cagr_diff > 0:
+            takeaways.append(f"{symbol} beat {benchmark} on both total return and annualized compounding over the selected period.")
+        elif total_diff < 0 and cagr_diff < 0:
+            takeaways.append(f"{symbol} lagged {benchmark} on both total return and annualized compounding over the selected period.")
+        else:
+            takeaways.append(f"{symbol}'s relative performance versus {benchmark} was mixed across total return and CAGR.")
+    elif not pd.isna(total_diff):
+        takeaways.append(
+            f"{symbol} {'outperformed' if total_diff > 0 else 'underperformed'} {benchmark} in total return over the selected period."
+        )
+    elif not pd.isna(cagr_diff):
+        takeaways.append(
+            f"{symbol}'s CAGR was {'higher' if cagr_diff > 0 else 'lower'} than {benchmark} over the selected period."
+        )
+
+    raw_return_up_risk_efficiency_down = (
+        not pd.isna(cagr_diff) and not pd.isna(sharpe_diff) and cagr_diff > 0 and sharpe_diff < 0
+    )
+    raw_return_up_deeper_drawdown = (
+        not pd.isna(cagr_diff) and not pd.isna(mdd_diff) and cagr_diff > 0 and mdd_diff < 0
+    )
+
+    if raw_return_up_risk_efficiency_down:
+        takeaways.append("Return leadership came with weaker risk-adjusted efficiency based on Sharpe ratio.")
+    elif not pd.isna(sharpe_diff):
+        if sharpe_diff > 0:
+            takeaways.append("Risk-adjusted performance was stronger than the benchmark based on Sharpe ratio.")
+        else:
+            takeaways.append("Risk-adjusted performance was weaker than the benchmark based on Sharpe ratio.")
+
+    if raw_return_up_deeper_drawdown:
+        takeaways.append("The stock outperformed, but did so with a deeper drawdown than the benchmark.")
+    elif not pd.isna(mdd_diff):
+        if mdd_diff < 0:
+            takeaways.append("The stock had a deeper max drawdown than the benchmark, meaning higher downside risk.")
+        else:
+            takeaways.append("The stock had a shallower max drawdown than the benchmark.")
+
+    if not pd.isna(revenue_cagr):
+        takeaways.append(f"Revenue CAGR was {fmt_percent(revenue_cagr)}, which should be checked against the company growth narrative.")
+
+    if not pd.isna(gross_margin):
+        takeaways.append(f"Latest gross margin was {fmt_percent(gross_margin)}, useful for judging product/service economics.")
+
+    if not pd.isna(fcf_margin):
+        takeaways.append(f"Latest FCF margin was {fmt_percent(fcf_margin)}, showing how much revenue converts into free cash flow.")
+
+    if not pd.isna(revenue_cagr) and not pd.isna(gross_margin) and not pd.isna(fcf_margin):
+        if revenue_cagr > 0.20 and gross_margin > 0.50 and fcf_margin > 0:
+            takeaways.append("Growth quality looks stronger because revenue growth, gross margin, and free cash flow margin are all positive signals.")
+        elif revenue_cagr > 0.20 and fcf_margin <= 0:
+            takeaways.append("High growth has not yet translated into positive free cash flow margin, so growth quality needs manual verification.")
+
+    if not pd.isna(valuation_score):
+        if valuation_score < 45:
+            takeaways.append("Valuation sanity score is weak, so the thesis requires stronger growth and cash-flow evidence.")
+        elif valuation_score >= 65:
+            takeaways.append("Valuation sanity score is acceptable, but still requires manual comparison with peers and history.")
+
+    if not pd.isna(total_score):
+        takeaways.append(f"Research Potential Score is {fmt_score(total_score)}, classified as {rating_from_score(total_score)}.")
+
+    return takeaways[:8]
+
+
+def explain_score(score_table: pd.DataFrame) -> str:
+    if score_table is None or score_table.empty:
+        return "_No score explanation available._"
+
+    components = score_table[score_table["Component"] != "Research Potential Score"].copy()
+    if components.empty:
+        return "_No score components available._"
+
+    best = components.sort_values("Score", ascending=False).head(2)
+    worst = components.sort_values("Score", ascending=True).head(2)
+
+    lines = []
+    lines.append("Main score support:")
+    for _, row in best.iterrows():
+        lines.append(f"- {row['Component']}: {fmt_score(row['Score'])}")
+
+    lines.append("")
+    lines.append("Main score drag:")
+    for _, row in worst.iterrows():
+        lines.append(f"- {row['Component']}: {fmt_score(row['Score'])}")
+
+    return "\n".join(lines)
+
+
+def score_methodology_section(info: dict[str, Any]) -> str:
+    if is_fund_like(info):
+        return (
+            "Research Potential Score is not calculated for ETF / fund / index-like instruments in this version. "
+            "Fund analysis should focus on expense ratio, holdings, benchmark methodology, exposure, liquidity, and tracking error."
+        )
+
+    return """This score is a heuristic research-priority score.
+It is not a valuation model, not a prediction model, and not a buy/sell signal.
+
+- Growth Score: based on revenue CAGR and latest revenue growth.
+- Profitability Score: based on gross margin, operating margin, and FCF margin.
+- Quality Trend Score: based on changes in gross margin, operating margin, and FCF margin.
+- Risk Control Score: based on max drawdown, volatility, and beta.
+- Benchmark Score: based on excess CAGR, information ratio, and Sharpe difference.
+- Valuation Sanity Score: penalty-based score using PE, PS, EV/Revenue, and EV/EBITDA."""
+
+
+def one_line_verdict(
+    symbol: str,
+    benchmark: str,
+    price_summary: pd.DataFrame,
+    fundamental_summary: pd.DataFrame,
+    score_table: pd.DataFrame,
+    info: dict[str, Any],
+) -> str:
+    total_score = get_component_score(score_table, "Research Potential Score")
+    rating = rating_from_score(total_score)
+
+    if is_fund_like(info):
+        return (
+            f"{symbol} looks fund-like, so treat this as a price and benchmark-risk review rather than a company fundamentals report."
+        )
+
+    cagr_diff = get_metric(price_summary, "CAGR", "Difference")
+    sharpe_diff = get_metric(price_summary, "Sharpe Ratio", "Difference")
+    max_dd = get_metric(price_summary, "Max Drawdown", "Target")
+    revenue_cagr = get_metric(fundamental_summary, "Revenue CAGR")
+    gross_margin = get_metric(fundamental_summary, "Gross Margin Latest")
+    fcf_margin = get_metric(fundamental_summary, "FCF Margin Latest")
+
+    traits = []
+    if not pd.isna(revenue_cagr):
+        traits.append("fast-growing" if revenue_cagr >= 0.20 else "steadily growing" if revenue_cagr > 0 else "slow-growing")
+    if not pd.isna(gross_margin) and gross_margin >= 0.50:
+        traits.append("high-margin")
+    if not pd.isna(fcf_margin):
+        traits.append("cash-generative" if fcf_margin > 0 else "not yet converting growth into free cash flow")
+
+    company_phrase = ", ".join(traits) if traits else "data-limited"
+
+    if pd.isna(cagr_diff):
+        benchmark_phrase = f"needs more evidence before its opportunity cost versus {benchmark} can be judged"
+    elif cagr_diff > 0 and (pd.isna(sharpe_diff) or sharpe_diff >= 0):
+        benchmark_phrase = f"has backed up its story with stronger performance than {benchmark} in this period"
+    elif cagr_diff > 0:
+        benchmark_phrase = f"beat {benchmark} on return, but the risk-adjusted picture is less clean"
+    else:
+        benchmark_phrase = f"has not yet justified the extra work versus simply holding {benchmark} in this period"
+
+    risk_phrase = ""
+    if not pd.isna(max_dd) and max_dd <= -0.40:
+        risk_phrase = " The deep drawdown history means downside risk needs special attention."
+
+    return f"{symbol} is a {company_phrase} name that {benchmark_phrase}, so the current research status is {rating}.{risk_phrase}"
+
+
+def build_data_warnings(
+    symbol: str,
+    benchmark: str,
+    info: dict[str, Any],
+    benchmark_info: dict[str, Any],
+    target_price: pd.DataFrame,
+    trends: pd.DataFrame,
+) -> list[str]:
+    warnings = []
+
+    target_currency = info.get("currency")
+    benchmark_currency = benchmark_info.get("currency")
+    if target_currency and benchmark_currency and target_currency != benchmark_currency:
+        warnings.append(
+            f"Currency mismatch detected. Target currency: {target_currency}. Benchmark currency: {benchmark_currency}. Relative performance may be misleading."
+        )
+
+    price_days = len(target_price.dropna()) if target_price is not None else 0
+    if price_days < 252:
+        warnings.append(
+            f"Price history has fewer than roughly 1 trading year of observations ({price_days} rows). Benchmark comparison confidence is lower."
+        )
+
+    if is_fund_like(info):
+        warnings.append(
+            f"{symbol} appears to be ETF / fund / index-like based on quoteType={info.get('quoteType')}. Company financial statement analysis was skipped."
+        )
+
+    for key in ["heldPercentInsiders", "heldPercentInstitutions"]:
+        value = info.get(key)
+        try:
+            if value is not None and not pd.isna(value) and float(value) > 1:
+                warnings.append(
+                    f"{key} is above 100%. This may reflect data provider timing or methodology differences. Manual verification required."
+                )
+        except Exception:
+            pass
+
+    for key in ["trailingPE", "forwardPE", "enterpriseToEbitda"]:
+        value = info.get(key)
+        try:
+            if value is not None and not pd.isna(value) and float(value) < 0:
+                warnings.append(
+                    f"{key} is negative. This often indicates losses, unusual accounting, or data-provider methodology differences."
+                )
+        except Exception:
+            pass
+
+    if not is_fund_like(info):
+        financial_years = len(trends.dropna(how="all")) if trends is not None else 0
+        if financial_years < 3:
+            warnings.append(
+                f"Financial statement history has fewer than 3 usable years ({financial_years}). Score reliability is lower."
+            )
+        if trends is None or trends.empty or "Revenue" not in trends or trends["Revenue"].dropna().empty:
+            warnings.append("Revenue data is missing. Growth analysis and score reliability are limited.")
+        if trends is None or trends.empty or "Free Cash Flow" not in trends or trends["Free Cash Flow"].dropna().empty:
+            warnings.append("Free cash flow data is missing. Cash conversion analysis requires manual verification.")
+
+    return warnings
+
+
+def warnings_section(warnings: list[str]) -> str:
+    if not warnings:
+        return "No obvious data-quality warnings were detected automatically. Still verify important numbers with primary sources before using this report."
+    return "\n".join(f"- Warning: {warning}" for warning in warnings)
+
+
+def data_confidence_section(
+    trends: pd.DataFrame,
+    valuation: pd.DataFrame,
+    profile: pd.DataFrame,
+    target_price: pd.DataFrame,
+    info: dict[str, Any],
+) -> str:
+    price_days = len(target_price.dropna()) if target_price is not None else 0
+    price_conf = "Medium-High" if price_days >= 252 else "Low / Short History"
+    financial_conf = "Not Applicable for Fund" if is_fund_like(info) else "Medium" if trends is not None and not trends.empty else "Low / Missing"
+    valuation_conf = "Medium" if valuation is not None and not valuation.empty else "Low / Missing"
+    profile_conf = "Medium" if profile is not None and not profile.empty else "Low / Missing"
+
+    return f"""| Data Area | Confidence | Notes |
+|---|---|---|
+| Price Data | {price_conf} | {price_days} rows available. Usually usable for historical comparison, but may be delayed or adjusted by provider. |
+| Company Profile | {profile_conf} | Good for quick context, but business description should be verified with company filings. |
+| Financial Statements | {financial_conf} | Useful for screening; verify important numbers with 10-K / 10-Q. |
+| Valuation Snapshot | {valuation_conf} | Useful for first-pass valuation risk, not enough for final judgment. |
+| Segment Revenue | Manual Required | Usually requires SEC filings or company IR. |
+"""
+
+
+# =============================================================================
+# Report
+# =============================================================================
+
+PRICE_PERCENT_COLS = {"Target", "Benchmark", "Difference"}
+FUND_PERCENT_COLS = {"Value"}
+SCORE_COLS = {"Score"}
+
+
+def write_report(
+    symbol: str,
+    benchmark: str,
+    start_date: str,
+    end_date: str | None,
+    out_dir: Path,
+    profile: pd.DataFrame,
+    valuation: pd.DataFrame,
+    trends: pd.DataFrame,
+    fundamental_summary: pd.DataFrame,
+    price_summary: pd.DataFrame,
+    score_table: pd.DataFrame,
+    info: dict[str, Any],
+    target_price: pd.DataFrame,
+    warnings: list[str],
+    actual_chart_name: str,
+    chart_name: str,
+    drawdown_chart_name: str,
+) -> Path:
+    total_score = get_component_score(score_table, "Research Potential Score")
+    rating = rating_from_score(total_score)
+
+    verdict = one_line_verdict(symbol, benchmark, price_summary, fundamental_summary, score_table, info)
+    takeaways = generate_key_takeaways(symbol, benchmark, price_summary, fundamental_summary, score_table, info)
+    takeaways_md = "\n".join([f"- {item}" for item in takeaways]) if takeaways else "_No automatic takeaways available._"
+
+    report = f"""# {symbol} Research Report｜Company Research Data Pack
+
+> Target: `{symbol}`  
+> Benchmark: `{benchmark}`  
+> Period: `{start_date}` to `{end_date or "latest available"}`  
+> Research Status: **{rating}**  
+> Version: `{__version__}`
+
+---
+
+## 0. Boundary｜边界
+
+This report is a standardized research data pack.
+
+It does **not** provide:
+
+- Buy / sell recommendation
+- Target price
+- Guaranteed return
+- Automatic investment decision
+
+The score is a **research prioritization score**, not a prediction.
+
+---
+
+## 1. One-line Verdict｜一句话判断
+
+{verdict}
+
+---
+
+## 2. Key Takeaways｜核心结论摘要
+
+{takeaways_md}
+
+---
+
+## 3. Data Confidence｜数据可信度
+
+{data_confidence_section(trends, valuation, profile, target_price, info)}
+
+### Automatic Data Warnings
+
+{warnings_section(warnings)}
+
+---
+
+## 4. Company Profile｜公司资料
+
+{markdown_table(profile, max_rows=30)}
+
+### Automatic Business Summary
+
+{business_summary(info)}
+
+### Manual Narrative Needed
+
+You still need to manually answer:
+
+- What does the company actually sell?
+- Who pays the company?
+- What is the main revenue source?
+- What is the growth story?
+- Is the story supported by financial data?
+- What can break the thesis?
+
+---
+
+## 5. Price vs Benchmark｜价格与基准比较
+
+Benchmark explanation:
+
+> {benchmark_explanation(benchmark)}
+
+![{symbol} vs {benchmark} Actual Close Price]({actual_chart_name})
+
+Actual close price chart shows the raw closing prices from the data provider.
+Use this to inspect absolute price levels, gaps, and broad trend shape before comparing relative returns.
+
+真实收盘价图显示数据源返回的原始收盘价，用于查看绝对价格水平、价格缺口和整体走势。
+
+![{symbol} vs {benchmark}]({chart_name})
+
+Performance chart uses normalized price.
+The first available price in the selected period is set to 100.
+This allows comparison of relative performance, not absolute stock price.
+
+该图使用归一化价格。起始日价格被设为 100，用于比较相对收益，而不是显示真实股价。
+
+![{symbol} vs {benchmark} Drawdown]({drawdown_chart_name})
+
+Drawdown shows the decline from the previous peak.
+0% means no drawdown.
+-20% means the asset fell 20% from its previous high.
+
+回撤图表示资产从此前高点下跌的幅度。0% 表示没有回撤，-20% 表示从高点下跌 20%。
+
+{markdown_table(price_summary, max_rows=50, percent_columns=PRICE_PERCENT_COLS)}
+
+### How to Read This
+
+- **Total Return / CAGR**: raw performance.
+- **Excess Return**: whether the stock outperformed the benchmark.
+- **Max Drawdown**: deepest historical decline in this period.
+- **Sharpe / Sortino / Calmar**: risk-adjusted performance.
+- **Beta**: sensitivity to benchmark movement.
+- **Information Ratio**: excess return per unit of tracking risk.
+- **Upside / Downside Capture**: whether the stock captures more upside or downside than benchmark.
+
+---
+
+## 6. Growth and Quality Summary｜增长与质量比较
+
+{markdown_table(fundamental_summary, max_rows=30, percent_columns=FUND_PERCENT_COLS)}
+
+### Core Questions
+
+- Is revenue growing?
+- Is growth accelerating or slowing?
+- Is gross margin stable or improving?
+- Is operating margin improving?
+- Is free cash flow improving?
+
+---
+
+## 7. Money Source and Money Flow｜钱从哪里来，流到哪里去
+
+{markdown_table(
+    trends,
+    max_rows=20,
+    percent_columns={"Revenue Growth YoY", "Gross Margin", "Operating Margin", "Net Margin", "FCF Margin"},
+)}
+
+### Interpretation
+
+- Revenue shows money coming in.
+- Gross profit shows whether product/service economics work.
+- Operating income shows whether the operating model works.
+- Net income shows accounting profit.
+- Operating cash flow shows whether business operations generate cash.
+- Free cash flow shows whether cash remains after capital expenditure.
+
+---
+
+## 8. Valuation Snapshot｜估值快照
+
+{valuation_group_sections(valuation)}
+
+High valuation requires stronger growth, margin expansion, and cash flow evidence.
+
+---
+
+## 9. Research Potential Score｜研究潜力评分
+
+{markdown_table(score_table, max_rows=20, percent_columns={"Weight"}, score_columns=SCORE_COLS)}
+
+### Why This Score?
+
+{score_methodology_section(info)}
+
+{explain_score(score_table)}
+
+### Score Meaning
+
+- 75–100: High Priority Research
+- 60–75: Watchlist
+- 45–60: Research More
+- 30–45: FOMO Risk / Weak Evidence
+- 0–30: Avoid for Now / Data Weak
+
+This score is transparent but imperfect. It is used to prioritize research, not to make investment decisions.
+
+---
+
+## 10. Required Manual Verification｜必须人工核对
+
+Before making any serious judgment, verify:
+
+- Revenue source and segment breakdown
+- Gross margin trend
+- Operating income quality
+- Free cash flow calculation
+- Debt and dilution
+- Stock-based compensation
+- One-time gains/losses
+- Management guidance
+- SEC 10-K / 10-Q
+- Company IR materials
+
+---
+
+## 11. Final Research Questions｜最后必须回答
+
+- Why not simply buy `{benchmark}`?
+- Has `{symbol}` earned its extra risk?
+- Is growth real or narrative-driven?
+- Is profit quality improving?
+- Is free cash flow healthy?
+- Is valuation already pricing in too much future success?
+- If the stock falls 30%-50%, does the thesis still hold?
+
+---
+
+## 12. Generated Files
+
+This folder contains CSV, chart, and Markdown outputs generated by the tool.
+"""
+
+    path = out_dir / f"{safe_symbol(symbol)}_research_report.md"
+    save_text(path, report)
+    return path
+
+
+# =============================================================================
+# Main workflow
+# =============================================================================
+
+def run_one(
+    symbol: str,
+    benchmark: str,
+    start_date: str,
+    end_date: str | None,
+    years: int,
+    output: Path,
+    risk_free_rate: float,
+    archive: bool = False,
+    run_id: str | None = None,
+) -> dict[str, Any]:
+    symbol = symbol.upper()
+    benchmark = benchmark.upper()
+
+    out_dir = output_dir_for_run(output, symbol, benchmark, start_date, end_date, archive, run_id)
+    if archive or run_id:
+        ensure_dir(out_dir)
+    else:
+        reset_dir(out_dir)
+
+    print(f"\n=== Building research pack: {symbol} vs {benchmark} ===")
+
+    target_price = fetch_price_history(symbol, start_date, end_date)
+    benchmark_price = fetch_price_history(benchmark, start_date, end_date)
+
+    target_price.to_csv(out_dir / f"{safe_symbol(symbol)}_price_history.csv")
+    benchmark_price.to_csv(out_dir / f"{safe_symbol(benchmark)}_price_history.csv")
+
+    close = pd.DataFrame({
+        symbol: target_price["close"],
+        benchmark: benchmark_price["close"],
+    }).dropna()
+
+    if close.empty:
+        raise ValueError(f"No overlapping price data for {symbol} and {benchmark}.")
+
+    normalized = close / close.iloc[0] * 100
+    normalized.to_csv(out_dir / f"{safe_symbol(symbol)}_vs_{safe_symbol(benchmark)}_normalized.csv")
+
+    actual_chart_path = out_dir / f"{safe_symbol(symbol)}_vs_{safe_symbol(benchmark)}_actual_close_price_chart.png"
+    chart_path = out_dir / f"{safe_symbol(symbol)}_vs_{safe_symbol(benchmark)}_performance_chart.png"
+    drawdown_chart_path = out_dir / f"{safe_symbol(symbol)}_vs_{safe_symbol(benchmark)}_drawdown_chart.png"
+
+    plot_actual_close_price(close, symbol, benchmark, actual_chart_path)
+    plot_normalized_performance(normalized, symbol, benchmark, chart_path)
+    plot_drawdown(close, symbol, benchmark, drawdown_chart_path)
+
+    price_summary = build_price_summary(close[symbol], close[benchmark], risk_free_rate)
+    price_summary.to_csv(
+        out_dir / f"{safe_symbol(symbol)}_vs_{safe_symbol(benchmark)}_price_summary.csv",
+        index=False,
+    )
+
+    info = fetch_company_info(symbol)
+    benchmark_info = fetch_company_info(benchmark)
+    profile = build_company_profile(info)
+    valuation = build_valuation_snapshot(info)
+
+    profile.to_csv(out_dir / f"{safe_symbol(symbol)}_company_profile.csv", index=False)
+    valuation.to_csv(out_dir / f"{safe_symbol(symbol)}_valuation_snapshot.csv", index=False)
+
+    if is_fund_like(info):
+        trends = pd.DataFrame()
+        print(f"[WARN] {symbol} appears to be a fund-like instrument. Skipping company financial statements.")
+    else:
+        trends = fetch_money_source_and_flow(symbol, out_dir, years)
+
+    fundamental_summary = build_fundamental_summary(trends)
+    fundamental_summary.to_csv(out_dir / f"{safe_symbol(symbol)}_fundamental_summary.csv", index=False)
+
+    score_table = build_research_score(price_summary, fundamental_summary, info)
+    score_table.to_csv(out_dir / f"{safe_symbol(symbol)}_research_potential_score.csv", index=False)
+
+    data_warnings = build_data_warnings(
+        symbol=symbol,
+        benchmark=benchmark,
+        info=info,
+        benchmark_info=benchmark_info,
+        target_price=target_price,
+        trends=trends,
+    )
+
+    report_path = write_report(
+        symbol=symbol,
+        benchmark=benchmark,
+        start_date=start_date,
+        end_date=end_date,
+        out_dir=out_dir,
+        profile=profile,
+        valuation=valuation,
+        trends=trends,
+        fundamental_summary=fundamental_summary,
+        price_summary=price_summary,
+        score_table=score_table,
+        info=info,
+        target_price=target_price,
+        warnings=data_warnings,
+        actual_chart_name=actual_chart_path.name,
+        chart_name=chart_path.name,
+        drawdown_chart_name=drawdown_chart_path.name,
+    )
+
+    score = get_component_score(score_table, "Research Potential Score")
+    rating = rating_from_score(score)
+
+    print(f"Done: {symbol}")
+    print(f"Report: {report_path}")
+    print(f"Score: {fmt_score(score)} ({rating})")
+
+    return {
+        "symbol": symbol,
+        "benchmark": benchmark,
+        "score": score,
+        "rating": rating,
+        "report": str(report_path),
+        "folder": str(out_dir),
+        "total_return": get_metric(price_summary, "Total Return", "Target"),
+        "benchmark_return": get_metric(price_summary, "Total Return", "Benchmark"),
+        "excess_return": get_metric(price_summary, "Total Return", "Difference"),
+        "cagr": get_metric(price_summary, "CAGR", "Target"),
+        "max_drawdown": get_metric(price_summary, "Max Drawdown", "Target"),
+        "volatility": get_metric(price_summary, "Annualized Volatility", "Target"),
+        "revenue_cagr": get_metric(fundamental_summary, "Revenue CAGR"),
+        "gross_margin_latest": get_metric(fundamental_summary, "Gross Margin Latest"),
+        "fcf_margin_latest": get_metric(fundamental_summary, "FCF Margin Latest"),
+    }
+
+
+def write_cross_ticker_comparison(
+    rows: list[dict[str, Any]],
+    output: Path,
+    archive: bool = False,
+    run_id: str | None = None,
+) -> None:
+    if not rows:
+        return
+
+    if archive or run_id:
+        comparison_run_id = run_id or datetime.now().strftime("%Y%m%d_%H%M")
+        out_dir = output / "_comparison" / "runs" / comparison_run_id
+        ensure_dir(out_dir)
+    else:
+        out_dir = output / "_comparison" / "latest"
+        reset_dir(out_dir)
+
+    df = pd.DataFrame(rows).sort_values("score", ascending=False, na_position="last")
+    df.to_csv(out_dir / "cross_ticker_comparison.csv", index=False)
+
+    report = f"""# Cross Ticker Comparison
+
+This table compares all tickers generated in the same run.
+
+The score is a research-priority score, not a buy/sell signal.
+
+{markdown_table(
+    df,
+    max_rows=100,
+    percent_columns={
+        "total_return",
+        "benchmark_return",
+        "excess_return",
+        "cagr",
+        "max_drawdown",
+        "volatility",
+        "revenue_cagr",
+        "gross_margin_latest",
+        "fcf_margin_latest",
+    },
+    score_columns={"score"},
+)}
+
+## How to Use
+
+- High score means the ticker may deserve deeper research.
+- Low score means weak evidence, high risk, poor data, or poor fundamentals.
+- Always verify with primary sources before making any decision.
+"""
+    save_text(out_dir / "cross_ticker_comparison.md", report)
+
+
+def parse_args() -> argparse.Namespace:
+    examples = """
+Examples:
+
+  # Basic: AAPL vs SPY
+  cresearch AAPL
+
+  # Multiple tickers ranked together
+  cresearch AAPL TSLA RKLB
+
+  # Use VOO as benchmark
+  cresearch TSLA --benchmark VOO
+
+  # Use QQQ for technology/growth comparison
+  cresearch NVDA MSFT --benchmark QQQ
+
+  # Compare one stock against another stock
+  cresearch TSLA --benchmark AAPL --start 2020-01-01
+
+  # Custom risk-free rate
+  cresearch AAPL --risk-free-rate 0.04
+
+  # Preserve a historical run
+  cresearch AAPL --archive
+
+  # Preserve a historical run with your own run id
+  cresearch AAPL --run-id test_2023_start
+"""
+    parser = argparse.ArgumentParser(
+        prog="cresearch",
+        description="Generate a company research data pack with benchmark comparison, charts, financial metrics, and Markdown report.",
+        epilog=textwrap.dedent(examples),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument("symbols", nargs="+", help="Target ticker(s), e.g. AAPL TSLA RKLB.")
+    parser.add_argument("--benchmark", default="SPY", help="Benchmark ticker. Default: SPY. Examples: VOO, QQQ, AAPL.")
+    parser.add_argument("--start", default="2023-01-01", help="Start date, YYYY-MM-DD. Default: 2023-01-01.")
+    parser.add_argument("--end", default=None, help="Optional end date, YYYY-MM-DD. Default: latest available.")
+    parser.add_argument("--years", type=int, default=5, help="Financial years to include. Default: 5.")
+    parser.add_argument("--output", default="reports", help="Output folder. Default: reports.")
+    parser.add_argument("--risk-free-rate", type=float, default=0.0, help="Annual risk-free rate for risk-adjusted metrics. Example: 0.04.")
+    parser.add_argument("--archive", action="store_true", help="Write output to reports/TICKER/runs/RUN_ID instead of reports/TICKER/latest.")
+    parser.add_argument("--run-id", default=None, help="Optional archive folder name. Implies --archive.")
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = parse_args()
+    output = Path(args.output)
+    ensure_dir(output)
+
+    rows = []
+    for symbol in args.symbols:
+        try:
+            rows.append(
+                run_one(
+                    symbol=symbol,
+                    benchmark=args.benchmark,
+                    start_date=args.start,
+                    end_date=args.end,
+                    years=args.years,
+                    output=output,
+                    risk_free_rate=args.risk_free_rate,
+                    archive=args.archive,
+                    run_id=args.run_id,
+                )
+            )
+        except Exception as exc:
+            print(f"\n[ERROR] Failed for {symbol}: {exc}")
+
+    write_cross_ticker_comparison(rows, output, archive=args.archive, run_id=args.run_id)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,5 @@
+openbb
+openbb-yfinance
+yfinance
+pandas
+matplotlib
