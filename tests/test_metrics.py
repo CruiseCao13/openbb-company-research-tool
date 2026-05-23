@@ -116,7 +116,7 @@ class MetricsTests(unittest.TestCase):
         )
         target_price = pd.DataFrame({"close": [100.0, 110.0]})
         sanity_checks = pd.DataFrame([{"Severity": "INFO", "Check": "No triggered sanity failure"}])
-        ruin_risk = pd.DataFrame([{"Metric": "Ruin Risk Score", "Value": 45.0}])
+        ruin_risk = pd.DataFrame([{"Metric": "Balance Sheet Resilience Score", "Value": 55.0}])
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             report_data = tool.generate_report_data_dict(

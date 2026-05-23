@@ -1,7 +1,7 @@
 [project]
 name = "openbb-company-research-tool"
-version = "3.0.0"
-description = "A data-first company research workflow with benchmark comparison, interactive charts, sanity checks, optional AI review, and category-aware scoring."
+version = "4.0.0"
+description = "A thesis-driven, audit-ready, bilingual first-pass equity research workflow generator."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -16,4 +16,5 @@ dependencies = [
     "openai",
     "pydantic",
     "rich",
+    "pytest",
 ]

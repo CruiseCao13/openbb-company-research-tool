@@ -1,12 +1,14 @@
-# OpenBB Company Research Tool v3.0
+# openbb-company-research-tool
+
+A thesis-driven first-pass equity research workflow generator.
 
 A Python-based company research workflow for turning public market data into structured, archived, and reviewable research reports.
 
 It is built for first-pass company research, not for buy/sell decisions.
 
-v3.0 adds an optional AI Review layer and a cleaner terminal UI. Professional metrics stay deterministic; AI only reviews the generated evidence.
+v4.0 turns the project into a thesis-driven, audit-ready, bilingual first-pass equity research workflow generator.
 
-> Data calculates. AI reviews. Human decides.
+> Thesis-driven. Audit-ready. No fake certainty. No AI-flavored filler.
 
 This tool helps retail investors answer a few basic but important questions before getting emotional about a stock:
 
@@ -16,6 +18,7 @@ This tool helps retail investors answer a few basic but important questions befo
 - Are there obvious balance-sheet or cash-flow risks?
 - Is the data complete enough to trust?
 - What should be manually verified before making any judgment?
+- What is the long bet, short trigger, market pricing, and kill criteria?
 
 > This is not a stock-picking machine.  
 > It is a research workflow designed to reduce false confidence, messy notes, and emotional decision-making.
@@ -25,7 +28,7 @@ This tool helps retail investors answer a few basic but important questions befo
 ## 30-Second Demo
 
 ```bash
-cresearch AAPL --benchmark SPY --start 2023-01-01
+cresearch AAPL --benchmark SPY --start 2023-01-01 --audit-data --cn
 ```
 
 The tool creates a structured research folder:
@@ -34,6 +37,7 @@ The tool creates a structured research folder:
 reports/AAPL/
 ├── latest/
 │   ├── AAPL_research_report.md
+│   ├── AAPL_research_report_cn.md
 │   ├── AAPL_vs_SPY_interactive_dashboard.html
 │   ├── AAPL_vs_SPY_actual_close_price_chart.png
 │   ├── AAPL_vs_SPY_performance_chart.png
@@ -43,7 +47,13 @@ reports/AAPL/
 │   ├── AAPL_ruin_risk_snapshot.png
 │   ├── AAPL_sanity_checks.csv
 │   ├── AAPL_ruin_risk_snapshot.csv
-│   └── AAPL_personal_margin_stress.csv
+│   ├── AAPL_personal_margin_stress.csv
+│   ├── data_audit.md
+│   ├── data_audit.csv
+│   ├── ai_correction_log.md
+│   ├── ai_correction_log.json
+│   ├── price_label_sanity_check.md
+│   └── language_lint_report.md
 └── runs/
     └── 20260523_..._AAPL_vs_SPY_start_2023-01-01/
 ```
@@ -57,7 +67,7 @@ Every run is automatically archived under `runs/`.
 ## Sample Report
 
 - [AAPL sample research report](examples/sample_reports/AAPL_sample_research_report.md)
-- [AAPL sample report with mocked AI Review](examples/sample_reports/AAPL_sample_research_report_ai.md)
+- [AAPL Chinese sample research report](examples/sample_reports/AAPL_sample_research_report_cn.md)
 - [Interactive HTML dashboard](examples/sample_reports/AAPL_vs_SPY_interactive_dashboard.html)
 
 Example excerpt:
@@ -79,34 +89,22 @@ The generated report starts with a short "How to Read This Report" section, foll
 
 ---
 
-## AI Review
+## v4.0 Workflow Gates
 
-v3.0 adds an optional AI Review layer.
+v4.0 adds three explicit gates:
 
-The AI Review reads structured report data and checks:
+- Data Audit Gate
+- Risk Method Gate
+- Language Lint Gate
 
-- whether the conclusion is supported by the evidence
-- what risks or weak assumptions may be missing
-- what a beginner might misunderstand
-- what should be manually verified next
+Report metadata exposes:
 
-It does not provide buy/sell recommendations, price targets, or short-term predictions.
+- `DATA_AUDIT_STATUS`
+- `RISK_METHOD_STATUS`
+- `LANGUAGE_LINT_STATUS`
+- `Price Label Check`
 
-The normal report works without AI.
-
-```bash
-export OPENAI_API_KEY="your_openai_api_key_here"
-cresearch AAPL --ai-review
-```
-
-Model override:
-
-```bash
-cresearch AAPL --ai-review --ai-model gpt-4o-mini
-OPENAI_MODEL=gpt-4o-mini cresearch AAPL --ai-review
-```
-
-If no API key is found, the report still runs and the AI Review section is skipped with a clear reason.
+The report does not pretend a weak input passed. If a gate produces a warning or failure, the report exposes it.
 
 ---
 
@@ -154,7 +152,18 @@ Separates normal price volatility from deeper business fragility such as leverag
 
 ---
 
-## What v3.0 Improves
+## What v4.0 Improves
+
+| Problem | v4.0 Response |
+| --- | --- |
+| Reports can look precise without showing source lineage | Adds `data_audit.md` and `data_audit.csv` |
+| AI can become a generic summary writer | Adds bounded `ai_correction_log.md` with answerability checks |
+| Risk metrics can become black boxes | Adds Risk Metric Methodology and method status |
+| Chart labels can mislead if they do not match source data | Adds Price Label Sanity Check |
+| AI-style prose can dilute judgment | Adds Language Lint Gate and Research Battle Card |
+| English-to-Chinese translation creates unnatural reports | Adds independent Chinese report mode via `--cn` / `--chinese` |
+
+## What v3.0 Improved
 
 | Problem | v3.0 Response |
 | --- | --- |

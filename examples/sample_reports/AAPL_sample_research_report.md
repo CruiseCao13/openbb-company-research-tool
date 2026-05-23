@@ -5,7 +5,13 @@
 > Period: `2023-01-01` to `latest available`  
 > Research Status: **Watchlist**  
 > Research Profile: **Mature Compounder**  
-> Version: `3.0.0`
+> Version: `4.0.0`  
+> DATA_AUDIT_STATUS: **WARNING**  
+> RISK_METHOD_STATUS: **PASS**  
+> AI_ANALYST_REVIEW_STATUS: **WARNING**  
+> LANGUAGE_LINT_STATUS: **PASS**  
+> OVERALL_REPORT_STATUS: **WARNING**  
+> Price Label Check: **PASS**
 
 ---
 
@@ -59,6 +65,45 @@ Metric guide: [docs/metric_guide.md](../../docs/metric_guide.md)
 
 ---
 
+## Research Battle Card
+
+### The Long Bet
+
+AAPL is not a pure high-growth bet. The long case rests on margin durability, cash generation, ecosystem strength, and buyback-supported EPS growth. If those pillars hold, the market can keep paying a premium multiple.
+
+### The Short Trigger
+
+The short case starts when growth slows but valuation refuses to reset. If margin quality cracks or cash flow weakens, the premium multiple has little protection.
+
+### Market Pricing
+
+The market is already pricing durable cash flow and resilience. PE is around 37.4327 and price-to-sales is around 10.0472, so the setup needs more than revenue growth of 0.0181.
+
+### What Must Hold
+
+- Gross margin must not break.
+- Free cash flow margin must remain healthy.
+- Core revenue must avoid structural decline.
+- Buybacks must keep supporting EPS.
+- Regulation must not damage high-margin profit pools.
+
+### Kill Criteria
+
+- Services or recurring revenue growth slows materially.
+- Gross margin compresses for two consecutive quarters.
+- Core revenue declines without offset from higher-quality revenue.
+- Buybacks lose EPS impact because valuation stays too high.
+- Regulatory pressure damages platform economics.
+
+### Verification Priority
+
+1. Segment revenue and services growth.
+2. Free cash flow durability versus one-off working-capital effects.
+3. Valuation support from EPS growth, margins, and buybacks.
+
+
+---
+
 ## 4. Beginner Summary
 
 | Area | Status | Plain-English Meaning |
@@ -66,7 +111,7 @@ Metric guide: [docs/metric_guide.md](../../docs/metric_guide.md)
 | Business Quality | Strong | The company appears cash-generative and profitable. |
 | Growth | Moderate | Revenue growth is 1.81% in this data window. |
 | Valuation | Expensive | The stock needs strong future execution to justify the current multiple. |
-| Balance Sheet Risk | Medium | Debt and cash-flow fragility do not appear to be the main first-pass risk. |
+| Balance Sheet Risk | Low | Debt and cash-flow fragility do not appear to be the main first-pass risk. |
 | Stock Risk | Medium | The stock can still have painful drawdowns even when the business is strong. |
 | Data Confidence | Medium | Good enough for screening, but important numbers still need primary-source verification. |
 
@@ -177,13 +222,13 @@ How to read this chart: drawdown shows pain. A -30% drawdown means an investor b
 | Sharpe Ratio | 1.2046 | 1.4458 | -0.2411 |
 | Sortino Ratio | 1.7311 | 1.9726 | -0.2415 |
 | Calmar Ratio | 0.9159 | 1.1562 | -0.2403 |
-| Beta vs Benchmark | 1.1275 | N/A | N/A |
-| Alpha vs Benchmark | 6.26% | N/A | N/A |
-| Correlation vs Benchmark | 0.6739 | N/A | N/A |
-| Tracking Error | 18.88% | N/A | N/A |
-| Information Ratio | 0.4584 | N/A | N/A |
-| Upside Capture | 109.17% | N/A | N/A |
-| Downside Capture | 99.32% | N/A | N/A |
+| Beta vs Benchmark | 1.1275 | [METRIC_MISSING_RAW] | [METRIC_MISSING_RAW] |
+| Alpha vs Benchmark | 6.26% | [METRIC_MISSING_RAW] | [METRIC_MISSING_RAW] |
+| Correlation vs Benchmark | 0.6739 | [METRIC_MISSING_RAW] | [METRIC_MISSING_RAW] |
+| Tracking Error | 18.88% | [METRIC_MISSING_RAW] | [METRIC_MISSING_RAW] |
+| Information Ratio | 0.4584 | [METRIC_MISSING_RAW] | [METRIC_MISSING_RAW] |
+| Upside Capture | 109.17% | [METRIC_MISSING_RAW] | [METRIC_MISSING_RAW] |
+| Downside Capture | 99.32% | [METRIC_MISSING_RAW] | [METRIC_MISSING_RAW] |
 
 ### How to Read This
 
@@ -198,6 +243,24 @@ How to read this chart: drawdown shows pain. A -30% drawdown means an investor b
 ### Plain-English Meaning
 
 AAPL made more money than SPY during this period. Its risk-adjusted return was weaker, which means the extra return was not as efficient as it first appears. It also had a deeper drawdown, so investors had to tolerate more pain along the way. The key question is not just which line went up more, but whether the extra return was worth the extra volatility and drawdown.
+
+---
+
+## Risk Metric Methodology
+
+RISK_METHOD_STATUS: PASS
+
+- Price field: `adj_close`
+- Return frequency: daily
+- Annualization days: 252
+- Risk-free rate: 0.00%
+- Benchmark: SPY
+- Missing data handling: aligned trading days; rows with missing target or benchmark prices are dropped
+- Dividend handling: included only when the selected provider price field includes dividend adjustments
+- Trading-day alignment: target and benchmark are joined on overlapping trading days.
+
+Risk metrics use daily adjusted-close returns, 252 trading days, and a 0.00% risk-free rate. Dividend effects are included only if adjusted close includes them in the provider data.
+
 
 ---
 
@@ -242,10 +305,13 @@ How to read this chart: this is not about day-to-day stock movement. It asks whe
 | EBITDA | 159.98B | Provider EBITDA, when available. |
 | Net Debt / EBITDA | 0.1013 | Debt-load proxy. Higher values deserve manual stress testing. |
 | Debt / FCF | 0.8380 | Debt compared with free cash flow. Not useful when FCF is negative. |
-| Cash Runway Years | N/A | Approximate years of cash runway when FCF is negative. |
-| Ruin Risk Score | 51.22 / 100 | N/A |
+| Cash Runway Years | [METRIC_MISSING_RAW] | Approximate years of cash runway when FCF is negative. |
+| Balance Sheet Resilience Score | 48.78 / 100 | [METRIC_MISSING_RAW] |
 
 This section tries to separate normal price volatility from business fragility. Historical drawdown is not the same as ruin risk.
+
+Balance Sheet Resilience Score direction: higher score = stronger balance sheet resilience.
+This score measures balance-sheet resilience, not stock-price volatility.
 
 ### Plain-English Meaning
 
@@ -261,7 +327,7 @@ How to read this chart: rising revenue is useful, but the important question is 
 
 | index | Revenue | Gross Profit | Operating Income | Net Income | Operating Cash Flow | Capital Expenditure | Free Cash Flow | Revenue Growth YoY | Gross Margin | Operating Margin | Net Margin | FCF Margin |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 2022-09-30 | 394.33B | 170.78B | 119.44B | 99.80B | 122.15B | -10.71B | 111.44B | N/A | 43.31% | 30.29% | 25.31% | 28.26% |
+| 2022-09-30 | 394.33B | 170.78B | 119.44B | 99.80B | 122.15B | -10.71B | 111.44B | [METRIC_MISSING_RAW] | 43.31% | 30.29% | 25.31% | 28.26% |
 | 2023-09-30 | 383.29B | 169.15B | 114.30B | 97.00B | 110.54B | -10.96B | 99.58B | -2.80% | 44.13% | 29.82% | 25.31% | 25.98% |
 | 2024-09-30 | 391.04B | 180.68B | 123.22B | 93.74B | 118.25B | -9.45B | 108.81B | 2.02% | 46.21% | 31.51% | 23.97% | 27.83% |
 | 2025-09-30 | 416.16B | 195.20B | 133.05B | 112.01B | 111.48B | -12.71B | 98.77B | 6.43% | 46.91% | 31.97% | 26.92% | 23.73% |
@@ -281,20 +347,30 @@ The company generated positive free cash flow in the latest available period. Th
 
 ---
 
+## Segment Revenue Analysis
+
+Segment revenue is required for this company. Total revenue alone hides the real business mix.
+
+Manual source required:
+
+- Product or business-line revenue;
+- segment YoY growth;
+- segment revenue mix;
+- whether higher-margin segments are improving profit quality;
+- whether regulation can pressure high-margin segments.
+
+
+---
+
 ## 11. Personal Margin Stress
 
-| Scenario | Portfolio Value | Margin Loan | Equity Cushion | Loan / Value |
-| --- | --- | --- | --- | --- |
-| -20.00% portfolio shock | 80,000.00 | 25,000.00 | 55,000.00 | 31.25% |
-| -30.00% portfolio shock | 70,000.00 | 25,000.00 | 45,000.00 | 35.71% |
-| -50.00% portfolio shock | 50,000.00 | 25,000.00 | 25,000.00 | 50.00% |
-| -70.00% portfolio shock | 30,000.00 | 25,000.00 | 5,000.00 | 83.33% |
+_No account-level margin inputs provided. Add `--account-equity` and `--margin-loan` to generate a personal stress table._
 
 This optional section is not about the company. It tests whether your own balance sheet can survive stress.
 
 ### Plain-English Meaning
 
-Under the largest stress scenario shown here, the equity cushion would be 5,000.00 and loan/value would be 83.33%. This is about your own balance sheet, not the company.
+No personal account inputs were provided. This section stays empty unless you add account equity and margin loan values.
 
 ---
 
@@ -346,7 +422,7 @@ Under the largest stress scenario shown here, the equity cushion would be 5,000.
 | sharesOutstanding | 14,687,356,000 |
 | floatShares | 14,662,387,495 |
 | heldPercentInsiders | 1.63% |
-| heldPercentInstitutions | 65.96% |
+| heldPercentInstitutions | 65.80% |
 
 ### Price Range
 
@@ -360,6 +436,19 @@ High valuation requires stronger growth, margin expansion, and cash flow evidenc
 ### Plain-English Meaning
 
 PE is around 37.4x, and price-to-sales is around 10.0x. The market is already pricing in a lot of future success, so the company needs strong execution to justify the valuation.
+
+---
+
+## Valuation Sensitivity
+
+This is not a price target. It is a valuation stress test.
+
+| Scenario | Comparison | EPS Growth Assumptions |
+|---|---|---|
+| PE compresses to 30x | Compared with current 37.4327x | EPS growth assumptions: 0%, 5%, 10%, 15% |
+| PE compresses to 25x | Compared with current 37.4327x | EPS growth assumptions: 0%, 5%, 10%, 15% |
+| PE compresses to 20x | Compared with current 37.4327x | EPS growth assumptions: 0%, 5%, 10%, 15% |
+
 
 ---
 

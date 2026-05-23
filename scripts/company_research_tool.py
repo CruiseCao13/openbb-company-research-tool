@@ -17,7 +17,7 @@ This tool is NOT a buy/sell recommendation engine.
 
 from __future__ import annotations
 
-__version__ = "3.0.0"
+__version__ = "4.0.0"
 
 import argparse
 from datetime import datetime
@@ -78,6 +78,40 @@ try:
 except Exception:
     terminal_ui = None
 
+try:
+    from v4_workflow import (
+        STATUS_FAIL,
+        STATUS_PASS,
+        STATUS_WARNING,
+        RiskMethod,
+        audit_status,
+        build_ai_correction_log,
+        build_data_audit,
+        build_price_label_sanity_check,
+        lint_language,
+        overall_report_status,
+        report_filename,
+        render_battle_card,
+        render_risk_methodology,
+        render_segment_revenue,
+        render_valuation_sensitivity,
+        risk_method_status,
+        validate_ai_correction_log,
+        write_ai_correction_log,
+        write_data_audit,
+        write_language_lint_report,
+        write_price_label_sanity_check,
+    )
+except Exception:
+    STATUS_PASS = "PASS"
+    STATUS_WARNING = "WARNING"
+    STATUS_FAIL = "FAIL"
+    def overall_report_status(gate_status: dict[str, str]) -> str:
+        return "UNVERIFIED" if STATUS_FAIL in gate_status.values() else STATUS_WARNING if STATUS_WARNING in gate_status.values() else "VERIFIED"
+    def report_filename(symbol: str, suffix: str, overall_status: str) -> str:
+        return f"{'UNVERIFIED_' if overall_status == 'UNVERIFIED' else ''}{symbol.upper()}_{suffix}"
+    RiskMethod = None
+
 
 # =============================================================================
 # Utility
@@ -117,12 +151,15 @@ def drop_empty_rows(df: pd.DataFrame) -> pd.DataFrame:
     return df.dropna(how="all")
 
 
+MISSING_VALUE_PLACEHOLDER = "[METRIC_MISSING_RAW]"
+
+
 def fmt_number(value: Any) -> str:
     if value is None:
-        return "N/A"
+        return MISSING_VALUE_PLACEHOLDER
     try:
         if pd.isna(value):
-            return "N/A"
+            return MISSING_VALUE_PLACEHOLDER
         value = float(value)
     except Exception:
         return str(value)
@@ -141,24 +178,24 @@ def fmt_number(value: Any) -> str:
 
 def fmt_percent(value: Any) -> str:
     if value is None:
-        return "N/A"
+        return MISSING_VALUE_PLACEHOLDER
     try:
         if pd.isna(value):
-            return "N/A"
+            return MISSING_VALUE_PLACEHOLDER
         return f"{float(value):.2%}"
     except Exception:
-        return "N/A"
+        return MISSING_VALUE_PLACEHOLDER
 
 
 def fmt_score(value: Any) -> str:
     if value is None:
-        return "N/A"
+        return MISSING_VALUE_PLACEHOLDER
     try:
         if pd.isna(value):
-            return "N/A"
+            return MISSING_VALUE_PLACEHOLDER
         return f"{float(value):.2f} / 100"
     except Exception:
-        return "N/A"
+        return MISSING_VALUE_PLACEHOLDER
 
 
 PERCENT_METRICS = {
@@ -233,7 +270,7 @@ SCORE_METRICS = {
     "Benchmark Score",
     "Valuation Sanity Score",
     "Research Score",
-    "Ruin Risk Score",
+    "Balance Sheet Resilience Score",
 }
 
 RISK_METRICS = {
@@ -318,11 +355,11 @@ def format_value_by_metric(metric: str, value: Any) -> str:
     kind = metric_value_kind(metric)
 
     if value is None:
-        return "N/A"
+        return MISSING_VALUE_PLACEHOLDER
 
     try:
         if pd.isna(value):
-            return "N/A"
+            return MISSING_VALUE_PLACEHOLDER
     except Exception:
         pass
 
@@ -397,7 +434,7 @@ def markdown_table(
     score_columns: set[str] | None = None,
 ) -> str:
     if df is None or df.empty:
-        return "_No data available._"
+        return f"_{MISSING_VALUE_PLACEHOLDER}_"
 
     percent_columns = percent_columns or set()
     score_columns = score_columns or set()
@@ -510,6 +547,17 @@ def fetch_price_history(symbol: str, start_date: str, end_date: str | None = Non
     return df
 
 
+def select_price_series(price: pd.DataFrame, field: str) -> pd.Series:
+    field = field.lower()
+    if field == "adj_close" and "adj_close" in price.columns:
+        return price["adj_close"]
+    if field == "adj_close" and "adjusted_close" in price.columns:
+        return price["adjusted_close"]
+    if "close" not in price.columns:
+        raise ValueError("Price data is missing close column.")
+    return price["close"]
+
+
 def daily_returns(close: pd.Series) -> pd.Series:
     return close.dropna().pct_change().dropna()
 
@@ -533,11 +581,11 @@ def cagr(close: pd.Series) -> float:
     return float((close.iloc[-1] / close.iloc[0]) ** (365 / days) - 1)
 
 
-def annualized_volatility(close: pd.Series) -> float:
+def annualized_volatility(close: pd.Series, annualization_days: int = 252) -> float:
     r = daily_returns(close)
     if r.empty:
         return float("nan")
-    return float(r.std() * math.sqrt(252))
+    return float(r.std() * math.sqrt(annualization_days))
 
 
 def max_drawdown(close: pd.Series) -> float:
@@ -556,18 +604,18 @@ def rolling_return(close: pd.Series, trading_days: int) -> float:
     return float(close.iloc[-1] / close.iloc[-trading_days] - 1)
 
 
-def sharpe_ratio(close: pd.Series, risk_free_rate: float = 0.0) -> float:
-    vol = annualized_volatility(close)
+def sharpe_ratio(close: pd.Series, risk_free_rate: float = 0.0, annualization_days: int = 252) -> float:
+    vol = annualized_volatility(close, annualization_days)
     if vol == 0 or pd.isna(vol):
         return float("nan")
     return float((cagr(close) - risk_free_rate) / vol)
 
 
-def sortino_ratio(close: pd.Series, risk_free_rate: float = 0.0) -> float:
+def sortino_ratio(close: pd.Series, risk_free_rate: float = 0.0, annualization_days: int = 252) -> float:
     r = daily_returns(close)
     if r.empty:
         return float("nan")
-    downside = r[r < 0].std() * math.sqrt(252)
+    downside = r[r < 0].std() * math.sqrt(annualization_days)
     if downside == 0 or pd.isna(downside):
         return float("nan")
     return float((cagr(close) - risk_free_rate) / downside)
@@ -580,7 +628,7 @@ def calmar_ratio(close: pd.Series) -> float:
     return float(cagr(close) / dd)
 
 
-def beta_alpha(target: pd.Series, benchmark: pd.Series, risk_free_rate: float = 0.0) -> tuple[float, float]:
+def beta_alpha(target: pd.Series, benchmark: pd.Series, risk_free_rate: float = 0.0, annualization_days: int = 252) -> tuple[float, float]:
     df = pd.DataFrame({"target": target, "benchmark": benchmark}).dropna()
     r = df.pct_change().dropna()
     if r.empty:
@@ -591,8 +639,8 @@ def beta_alpha(target: pd.Series, benchmark: pd.Series, risk_free_rate: float = 
         return float("nan"), float("nan")
 
     beta = float(r["target"].cov(r["benchmark"]) / var_b)
-    target_ann = r["target"].mean() * 252
-    bench_ann = r["benchmark"].mean() * 252
+    target_ann = r["target"].mean() * annualization_days
+    bench_ann = r["benchmark"].mean() * annualization_days
     alpha = float(target_ann - (risk_free_rate + beta * (bench_ann - risk_free_rate)))
     return beta, alpha
 
@@ -605,18 +653,18 @@ def correlation(target: pd.Series, benchmark: pd.Series) -> float:
     return float(r["target"].corr(r["benchmark"]))
 
 
-def tracking_error(target: pd.Series, benchmark: pd.Series) -> float:
+def tracking_error(target: pd.Series, benchmark: pd.Series, annualization_days: int = 252) -> float:
     df = pd.DataFrame({"target": target, "benchmark": benchmark}).dropna()
     r = df.pct_change().dropna()
     if r.empty:
         return float("nan")
     diff = r["target"] - r["benchmark"]
-    return float(diff.std() * math.sqrt(252))
+    return float(diff.std() * math.sqrt(annualization_days))
 
 
-def information_ratio(target: pd.Series, benchmark: pd.Series) -> float:
+def information_ratio(target: pd.Series, benchmark: pd.Series, annualization_days: int = 252) -> float:
     excess = cagr(target) - cagr(benchmark)
-    te = tracking_error(target, benchmark)
+    te = tracking_error(target, benchmark, annualization_days)
     if te == 0 or pd.isna(te):
         return float("nan")
     return float(excess / te)
@@ -692,8 +740,8 @@ def annotate_last_value(ax: Any, series: pd.Series, label: str, color: str, perc
     )
 
 
-def build_price_summary(target_close: pd.Series, benchmark_close: pd.Series, risk_free_rate: float) -> pd.DataFrame:
-    beta, alpha = beta_alpha(target_close, benchmark_close, risk_free_rate)
+def build_price_summary(target_close: pd.Series, benchmark_close: pd.Series, risk_free_rate: float, annualization_days: int = 252) -> pd.DataFrame:
+    beta, alpha = beta_alpha(target_close, benchmark_close, risk_free_rate, annualization_days)
     upside, downside = capture_ratios(target_close, benchmark_close)
 
     rows = [
@@ -703,15 +751,15 @@ def build_price_summary(target_close: pd.Series, benchmark_close: pd.Series, ris
         ("6M Return", rolling_return(target_close, 126), rolling_return(benchmark_close, 126)),
         ("3M Return", rolling_return(target_close, 63), rolling_return(benchmark_close, 63)),
         ("Max Drawdown", max_drawdown(target_close), max_drawdown(benchmark_close)),
-        ("Annualized Volatility", annualized_volatility(target_close), annualized_volatility(benchmark_close)),
-        ("Sharpe Ratio", sharpe_ratio(target_close, risk_free_rate), sharpe_ratio(benchmark_close, risk_free_rate)),
-        ("Sortino Ratio", sortino_ratio(target_close, risk_free_rate), sortino_ratio(benchmark_close, risk_free_rate)),
+        ("Annualized Volatility", annualized_volatility(target_close, annualization_days), annualized_volatility(benchmark_close, annualization_days)),
+        ("Sharpe Ratio", sharpe_ratio(target_close, risk_free_rate, annualization_days), sharpe_ratio(benchmark_close, risk_free_rate, annualization_days)),
+        ("Sortino Ratio", sortino_ratio(target_close, risk_free_rate, annualization_days), sortino_ratio(benchmark_close, risk_free_rate, annualization_days)),
         ("Calmar Ratio", calmar_ratio(target_close), calmar_ratio(benchmark_close)),
         ("Beta vs Benchmark", beta, None),
         ("Alpha vs Benchmark", alpha, None),
         ("Correlation vs Benchmark", correlation(target_close, benchmark_close), None),
-        ("Tracking Error", tracking_error(target_close, benchmark_close), None),
-        ("Information Ratio", information_ratio(target_close, benchmark_close), None),
+        ("Tracking Error", tracking_error(target_close, benchmark_close, annualization_days), None),
+        ("Information Ratio", information_ratio(target_close, benchmark_close, annualization_days), None),
         ("Upside Capture", upside, None),
         ("Downside Capture", downside, None),
     ]
@@ -992,15 +1040,15 @@ def plot_growth_quality(trends: pd.DataFrame, path: Path) -> None:
 def plot_ruin_risk_snapshot(ruin_risk: pd.DataFrame, path: Path) -> None:
     if ruin_risk is None or ruin_risk.empty:
         return
-    view = ruin_risk[ruin_risk["Metric"].isin(["Net Debt / EBITDA", "Debt / FCF", "Cash Runway Years", "Ruin Risk Score"])].copy()
+    view = ruin_risk[ruin_risk["Metric"].isin(["Net Debt / EBITDA", "Debt / FCF", "Cash Runway Years", "Balance Sheet Resilience Score"])].copy()
     if view.empty:
         return
     view["Display Value"] = pd.to_numeric(view["Value"], errors="coerce").fillna(0)
-    colors = [CHART_COLORS["negative"] if m == "Ruin Risk Score" else CHART_COLORS["benchmark"] for m in view["Metric"]]
+    colors = [CHART_COLORS["positive"] if m == "Balance Sheet Resilience Score" else CHART_COLORS["benchmark"] for m in view["Metric"]]
     fig, ax = plt.subplots(figsize=(12, 6))
     ax.bar(view["Metric"], view["Display Value"], color=colors)
-    ax.set_title("Ruin risk: balance sheet and cash-flow fragility", loc="left", color=CHART_COLORS["text"], pad=22)
-    add_subtitle(ax, "Higher values deserve manual review; this is not a bankruptcy model")
+    ax.set_title("Balance sheet resilience: debt and cash-flow stress", loc="left", color=CHART_COLORS["text"], pad=22)
+    add_subtitle(ax, "Higher resilience score means stronger balance-sheet resilience; this is not stock-price risk")
     ax.set_ylabel("Value")
     for i, value in enumerate(view["Display Value"]):
         ax.text(i, value, f"{value:.2f}", ha="center", va="bottom", fontsize=9, color="#334155")
@@ -1311,16 +1359,17 @@ def build_ruin_risk_snapshot(info: dict[str, Any], trends: pd.DataFrame) -> pd.D
     debt_to_fcf = total_debt / fcf if not pd.isna(total_debt) and not pd.isna(fcf) and fcf > 0 else float("nan")
     cash_runway = total_cash / abs(fcf) if not pd.isna(total_cash) and not pd.isna(fcf) and fcf < 0 else float("nan")
 
-    risk_score = 50.0
+    stress_score = 50.0
     if not pd.isna(net_debt_to_ebitda):
-        risk_score += clamp(net_debt_to_ebitda * 12, 0, 35)
+        stress_score += clamp(net_debt_to_ebitda * 12, 0, 35)
     if not pd.isna(debt_to_fcf):
-        risk_score += clamp((debt_to_fcf - 3) * 8, 0, 25)
+        stress_score += clamp((debt_to_fcf - 3) * 8, 0, 25)
     if not pd.isna(cash_runway):
-        risk_score += 25 if cash_runway < 2 else 10 if cash_runway < 4 else 0
+        stress_score += 25 if cash_runway < 2 else 10 if cash_runway < 4 else 0
     if not pd.isna(fcf) and fcf < 0 and pd.isna(cash_runway):
-        risk_score += 20
-    risk_score = clamp(risk_score)
+        stress_score += 20
+    stress_score = clamp(stress_score)
+    resilience_score = clamp(100 - stress_score)
 
     rows = [
         ("Net Debt", net_debt, "Total debt minus cash. Negative is net cash."),
@@ -1328,7 +1377,7 @@ def build_ruin_risk_snapshot(info: dict[str, Any], trends: pd.DataFrame) -> pd.D
         ("Net Debt / EBITDA", net_debt_to_ebitda, "Debt-load proxy. Higher values deserve manual stress testing."),
         ("Debt / FCF", debt_to_fcf, "Debt compared with free cash flow. Not useful when FCF is negative."),
         ("Cash Runway Years", cash_runway, "Approximate years of cash runway when FCF is negative."),
-        ("Ruin Risk Score", risk_score, "Heuristic fragility score. Higher means more balance-sheet or cash-burn pressure."),
+        ("Balance Sheet Resilience Score", resilience_score, "Higher score = stronger balance sheet resilience. This score measures balance-sheet resilience, not stock-price volatility."),
     ]
     return pd.DataFrame(rows, columns=["Metric", "Value", "Interpretation"])
 
@@ -1903,12 +1952,12 @@ def build_sanity_checks(
                     "Verify cash-flow statement manually.",
                 )
 
-        ruin_score = get_metric(ruin_risk, "Ruin Risk Score")
-        if not pd.isna(ruin_score) and ruin_score >= 75:
+        ruin_score = get_metric(ruin_risk, "Balance Sheet Resilience Score")
+        if not pd.isna(ruin_score) and ruin_score <= 25:
             add(
                 "HIGH",
                 "Ruin risk",
-                f"Ruin Risk Score is {fmt_number(ruin_score)}.",
+                f"Balance Sheet Resilience Score is {fmt_number(ruin_score)}.",
                 "Stress-test debt, cash burn, and refinancing risk.",
             )
 
@@ -1998,11 +2047,11 @@ def valuation_status(score: float) -> str:
 def risk_level_from_ruin_score(score: float) -> str:
     if pd.isna(score):
         return "Unknown"
-    if score >= 75:
-        return "High"
     if score >= 45:
+        return "Low"
+    if score >= 25:
         return "Medium"
-    return "Low"
+    return "High"
 
 
 def stock_risk_status(risk_score: float) -> str:
@@ -2025,7 +2074,7 @@ def beginner_summary_table(
     profitability_score_value = get_component_score(score_table, "Profitability Score")
     valuation_score_value = get_component_score(score_table, "Valuation Sanity Score")
     risk_score_value = get_component_score(score_table, "Risk Control Score")
-    ruin_score = get_metric(ruin_risk, "Ruin Risk Score")
+    ruin_score = get_metric(ruin_risk, "Balance Sheet Resilience Score")
     revenue_cagr = get_metric(fundamental_summary, "Revenue CAGR")
     fcf_margin = get_metric(fundamental_summary, "FCF Margin Latest")
 
@@ -2052,7 +2101,7 @@ def beginner_summary_table(
         {
             "Area": "Balance Sheet Risk",
             "Status": risk_level_from_ruin_score(ruin_score),
-            "Plain-English Meaning": "Debt or cash-flow fragility deserves manual review." if not pd.isna(ruin_score) and ruin_score >= 75 else "Debt and cash-flow fragility do not appear to be the main first-pass risk.",
+            "Plain-English Meaning": "Debt or cash-flow fragility deserves manual review." if not pd.isna(ruin_score) and ruin_score <= 25 else "Debt and cash-flow fragility do not appear to be the main first-pass risk.",
         },
         {
             "Area": "Stock Risk",
@@ -2123,10 +2172,10 @@ def growth_plain_english(fundamental_summary: pd.DataFrame) -> str:
 
 
 def ruin_plain_english(ruin_risk: pd.DataFrame) -> str:
-    ruin_score = get_metric(ruin_risk, "Ruin Risk Score")
+    ruin_score = get_metric(ruin_risk, "Balance Sheet Resilience Score")
     if pd.isna(ruin_score):
         return "Ruin risk data is incomplete. Debt, cash, EBITDA, and free cash flow should be checked manually."
-    if ruin_score >= 75:
+    if ruin_score <= 25:
         return "This section shows elevated financial fragility. The next step is to check debt maturities, cash burn, refinancing risk, and dilution risk."
     return "This section is not about daily stock movement. It asks whether the business could face serious financial stress if growth slows, cash flow weakens, or refinancing becomes difficult."
 
@@ -2333,6 +2382,8 @@ def write_report(
     interactive_chart_name: str,
     radar_chart_name: str,
     ai_review_markdown: str | None = None,
+    v4_sections: dict[str, str] | None = None,
+    gate_status: dict[str, str] | None = None,
 ) -> Path:
     report_data = generate_report_data_dict(
         symbol=symbol,
@@ -2384,6 +2435,18 @@ def write_report(
         final_section_number = 17
         files_section_number = 18
 
+    v4_sections = v4_sections or {}
+    gate_status = gate_status or {
+        "DATA_AUDIT_STATUS": STATUS_PASS,
+        "RISK_METHOD_STATUS": STATUS_PASS,
+        "AI_ANALYST_REVIEW_STATUS": STATUS_PASS,
+        "LANGUAGE_LINT_STATUS": STATUS_PASS,
+    }
+    battle_card_section = v4_sections.get("battle_card", "")
+    risk_method_section = v4_sections.get("risk_methodology", "")
+    valuation_sensitivity_section = v4_sections.get("valuation_sensitivity", "")
+    segment_revenue_section = v4_sections.get("segment_revenue", "")
+
     report = f"""# {symbol} Research Report
 
 > Target: `{symbol}`  
@@ -2391,7 +2454,13 @@ def write_report(
 > Period: `{start_date}` to `{end_date or "latest available"}`  
 > Research Status: **{rating}**  
 > Research Profile: **{category}**  
-> Version: `{__version__}`
+> Version: `{__version__}`  
+> DATA_AUDIT_STATUS: **{gate_status.get("DATA_AUDIT_STATUS", STATUS_PASS)}**  
+> RISK_METHOD_STATUS: **{gate_status.get("RISK_METHOD_STATUS", STATUS_PASS)}**  
+> AI_ANALYST_REVIEW_STATUS: **{gate_status.get("AI_ANALYST_REVIEW_STATUS", STATUS_PASS)}**  
+> LANGUAGE_LINT_STATUS: **{gate_status.get("LANGUAGE_LINT_STATUS", STATUS_PASS)}**  
+> OVERALL_REPORT_STATUS: **{gate_status.get("OVERALL_REPORT_STATUS", "VERIFIED")}**  
+> Price Label Check: **{gate_status.get("PRICE_LABEL_CHECK_STATUS", STATUS_PASS)}**
 
 ---
 
@@ -2425,6 +2494,10 @@ The score is a **research prioritization score**, not a prediction.
 ## 3. Key Takeaways
 
 {takeaways_md}
+
+---
+
+{battle_card_section}
 
 ---
 
@@ -2522,6 +2595,10 @@ How to read this chart: drawdown shows pain. A -30% drawdown means an investor b
 
 ---
 
+{risk_method_section}
+
+---
+
 ## 8. Growth and Quality Summary
 
 {markdown_table(fundamental_summary, max_rows=30, percent_columns=FUND_PERCENT_COLS)}
@@ -2549,6 +2626,9 @@ How to read this chart: this is not about day-to-day stock movement. It asks whe
 {markdown_table(ruin_risk, max_rows=20)}
 
 This section tries to separate normal price volatility from business fragility. Historical drawdown is not the same as ruin risk.
+
+Balance Sheet Resilience Score direction: higher score = stronger balance sheet resilience.
+This score measures balance-sheet resilience, not stock-price volatility.
 
 ### Plain-English Meaning
 
@@ -2583,6 +2663,10 @@ How to read this chart: rising revenue is useful, but the important question is 
 
 ---
 
+{segment_revenue_section}
+
+---
+
 ## 11. Personal Margin Stress
 
 {markdown_table(margin_stress, max_rows=20, percent_columns={"Loan / Value"}) if margin_stress is not None and not margin_stress.empty else "_No account-level margin inputs provided. Add `--account-equity` and `--margin-loan` to generate a personal stress table._"}
@@ -2604,6 +2688,10 @@ High valuation requires stronger growth, margin expansion, and cash flow evidenc
 ### Plain-English Meaning
 
 {valuation_plain_english(info, score_table)}
+
+---
+
+{valuation_sensitivity_section}
 
 ---
 
@@ -2690,8 +2778,111 @@ Before making any serious judgment, manually check:
 This folder contains CSV, chart, and Markdown outputs generated by the tool.
 """
 
-    path = out_dir / f"{safe_symbol(symbol)}_research_report.md"
+    path = out_dir / report_filename(safe_symbol(symbol), "research_report.md", gate_status.get("OVERALL_REPORT_STATUS", "VERIFIED"))
     save_text(path, report)
+    return path
+
+
+def write_chinese_report(
+    report_data: dict[str, Any],
+    out_dir: Path,
+    v4_sections: dict[str, str],
+    gate_status: dict[str, str],
+) -> Path:
+    symbol = report_data["ticker"]
+    benchmark = report_data["benchmark"]
+    raw = report_data["raw"]
+    price_summary = raw["price_summary"]
+    fundamental_summary = raw["fundamental_summary"]
+    score_table = raw["score_table"]
+    valuation = raw["valuation"]
+    ruin_risk = raw["ruin_risk"]
+    charts = report_data["charts"]
+    score = report_data["research_score"]["score"]
+
+    content = f"""# {symbol} 股票研究报告
+
+> 标的：`{symbol}`  
+> 基准：`{benchmark}`  
+> 期间：`{report_data["start_date"]}` 到 `{report_data["end_date"] or "最新可得数据"}`  
+> 研究状态：**{report_data["research_status"]}**  
+> 研究画像：**{report_data["research_profile"]}**  
+> 版本：`{__version__}`  
+> DATA_AUDIT_STATUS：**{gate_status.get("DATA_AUDIT_STATUS", STATUS_PASS)}**  
+> RISK_METHOD_STATUS：**{gate_status.get("RISK_METHOD_STATUS", STATUS_PASS)}**  
+> AI_ANALYST_REVIEW_STATUS：**{gate_status.get("AI_ANALYST_REVIEW_STATUS", STATUS_PASS)}**  
+> LANGUAGE_LINT_STATUS：**{gate_status.get("LANGUAGE_LINT_STATUS", STATUS_PASS)}**  
+> OVERALL_REPORT_STATUS：**{gate_status.get("OVERALL_REPORT_STATUS", "VERIFIED")}**  
+> 数据审计状态：**{gate_status.get("DATA_AUDIT_STATUS", STATUS_PASS)}**  
+> 语言检查状态：**{gate_status.get("LANGUAGE_LINT_STATUS", STATUS_PASS)}**  
+> Price Label Check：**{gate_status.get("PRICE_LABEL_CHECK_STATUS", STATUS_PASS)}**
+
+---
+
+## 边界
+
+这份报告用于股票初筛和研究路径生成，不提供买卖建议、目标价、收益承诺或短期预测。
+
+## 核心主线
+
+{symbol} 的核心问题不是“公司能不能赚钱”，而是当前价格是否已经把未来的利润率、现金流和增长韧性提前交易进去。
+
+{v4_sections.get("battle_card_zh", "")}
+
+## 初学者摘要
+
+{markdown_table(pd.DataFrame(report_data["beginner_summary"]), max_rows=10)}
+
+## 价格与基准
+
+![{symbol} vs {benchmark} 实际收盘价]({charts["actual"]})
+
+![{symbol} vs {benchmark} 归一化表现]({charts["normalized"]})
+
+![{symbol} vs {benchmark} 回撤]({charts["drawdown"]})
+
+{markdown_table(price_summary, max_rows=50, percent_columns=PRICE_PERCENT_COLS)}
+
+{v4_sections.get("risk_methodology_zh", "")}
+
+## 成长与质量
+
+{markdown_table(fundamental_summary, max_rows=30, percent_columns=FUND_PERCENT_COLS)}
+
+## 资产负债表韧性
+
+![{symbol} 资产负债表韧性]({charts["ruin_risk"]})
+
+资产负债表韧性分数：分数越高，财务韧性越强。这个分数衡量的是资产负债表韧性，不是股价波动风险。
+
+{markdown_table(ruin_risk, max_rows=20)}
+
+{v4_sections.get("segment_revenue_zh", "")}
+
+## 估值快照
+
+{valuation_group_sections(valuation)}
+
+{v4_sections.get("valuation_sensitivity_zh", "")}
+
+## Research Score
+
+{markdown_table(score_table, max_rows=20, percent_columns={"Weight"}, score_columns=SCORE_COLS)}
+
+Research Score 是研究优先级分数，不是预期收益、不是安全边际、不是买卖信号。
+
+## 最优先核查的 3 件事
+
+1. 分业务线收入和服务业务增长。
+2. 自由现金流是否稳定，还是受一次性项目影响。
+3. 当前估值是否已经透支未来 EPS 增长。
+
+## 结论边界
+
+当前分数为 {fmt_score(score)}。它只说明这家公司值得按上述路径继续核查，不代表应该买入或卖出。
+"""
+    path = out_dir / report_filename(safe_symbol(symbol), "research_report_cn.md", gate_status.get("OVERALL_REPORT_STATUS", "VERIFIED"))
+    save_text(path, content)
     return path
 
 
@@ -2716,6 +2907,10 @@ def run_one(
     ai_review_depth: str = "basic",
     ai_timeout: int = 60,
     ai_max_output_tokens: int = 1200,
+    audit_data: bool = False,
+    cn: bool = False,
+    price_field: str = "adj_close",
+    annualization_days: int = 252,
 ) -> dict[str, Any]:
     symbol = symbol.upper()
     benchmark = benchmark.upper()
@@ -2737,8 +2932,8 @@ def run_one(
     benchmark_price.to_csv(out_dir / f"{safe_symbol(benchmark)}_price_history.csv")
 
     close = pd.DataFrame({
-        symbol: target_price["close"],
-        benchmark: benchmark_price["close"],
+        symbol: select_price_series(target_price, price_field),
+        benchmark: select_price_series(benchmark_price, price_field),
     }).dropna()
 
     if close.empty:
@@ -2758,7 +2953,7 @@ def run_one(
     plot_drawdown(close, symbol, benchmark, drawdown_chart_path)
     write_interactive_price_dashboard(close, normalized, symbol, benchmark, interactive_chart_path)
 
-    price_summary = build_price_summary(close[symbol], close[benchmark], risk_free_rate)
+    price_summary = build_price_summary(close[symbol], close[benchmark], risk_free_rate, annualization_days)
     price_summary.to_csv(
         out_dir / f"{safe_symbol(symbol)}_vs_{safe_symbol(benchmark)}_price_summary.csv",
         index=False,
@@ -2832,35 +3027,101 @@ def run_one(
         terminal_ui.step_done("[5/8] Rendering charts")
         terminal_ui.step_done("[6/8] Building report data")
 
+    risk_method = RiskMethod(
+        price_field=price_field,
+        annualization_days=annualization_days,
+        risk_free_rate=risk_free_rate,
+        benchmark=benchmark,
+    ) if RiskMethod is not None else None
+
+    report_data = generate_report_data_dict(
+        symbol=symbol,
+        benchmark=benchmark,
+        start_date=start_date,
+        end_date=end_date,
+        out_dir=out_dir,
+        profile=profile,
+        valuation=valuation,
+        trends=trends,
+        fundamental_summary=fundamental_summary,
+        price_summary=price_summary,
+        score_table=score_table,
+        info=info,
+        target_price=target_price,
+        warnings=data_warnings,
+        sanity_checks=sanity_checks,
+        ruin_risk=ruin_risk,
+        margin_stress=margin_stress,
+        actual_chart_name=actual_chart_path.name,
+        chart_name=chart_path.name,
+        drawdown_chart_name=drawdown_chart_path.name,
+        score_components_chart_name=score_components_chart_path.name,
+        growth_quality_chart_name=growth_quality_chart_name,
+        ruin_risk_chart_name=ruin_risk_chart_path.name,
+        interactive_chart_name=interactive_chart_path.name,
+        radar_chart_name=radar_chart_path.name,
+    )
+
+    data_audit_status = STATUS_PASS
+    data_audit = None
+    if audit_data and risk_method is not None:
+        data_audit = build_data_audit(report_data, risk_method)
+        data_audit_status = audit_status(data_audit)
+
+    price_check_target = build_price_label_sanity_check(
+        symbol,
+        target_price,
+        float(select_price_series(target_price, price_field).dropna().iloc[-1]),
+        safe_info_float(info, "currentPrice"),
+    )
+    price_check_benchmark = build_price_label_sanity_check(
+        benchmark,
+        benchmark_price,
+        float(select_price_series(benchmark_price, price_field).dropna().iloc[-1]),
+        safe_info_float(benchmark_info, "currentPrice"),
+    )
+    price_label_check = pd.concat([price_check_target, price_check_benchmark], ignore_index=True)
+    if STATUS_FAIL in set(price_label_check["status"]):
+        data_audit_status = STATUS_FAIL
+    elif STATUS_WARNING in set(price_label_check["status"]) and data_audit_status == STATUS_PASS:
+        data_audit_status = STATUS_WARNING
+    price_label_status = STATUS_FAIL if STATUS_FAIL in set(price_label_check["status"]) else STATUS_WARNING if STATUS_WARNING in set(price_label_check["status"]) else STATUS_PASS
+
+    v4_sections = {
+        "battle_card": render_battle_card(report_data, "en"),
+        "battle_card_zh": render_battle_card(report_data, "zh"),
+        "risk_methodology": render_risk_methodology(risk_method, "en") if risk_method is not None else "",
+        "risk_methodology_zh": render_risk_methodology(risk_method, "zh") if risk_method is not None else "",
+        "valuation_sensitivity": render_valuation_sensitivity(report_data, "en"),
+        "valuation_sensitivity_zh": render_valuation_sensitivity(report_data, "zh"),
+        "segment_revenue": render_segment_revenue(report_data, "en"),
+        "segment_revenue_zh": render_segment_revenue(report_data, "zh"),
+    }
+    language_preview = "\n".join(v4_sections.values())
+    lint_en = lint_language(language_preview, "en")
+    lint_zh = lint_language(language_preview, "zh") if cn else {"language": "zh", "banned_phrase_hits": [], "overlong_sentences": [], "overlong_sections": [], "rewritten_sections": [], "rewrite_attempts": 0, "final_status": STATUS_PASS}
+    language_status = STATUS_FAIL if STATUS_FAIL in {lint_en["final_status"], lint_zh["final_status"]} else STATUS_WARNING if STATUS_WARNING in {lint_en["final_status"], lint_zh["final_status"]} else STATUS_PASS
+    risk_status = risk_method_status(risk_method) if risk_method is not None else STATUS_FAIL
+    ai_correction_log = build_ai_correction_log(report_data, "en")
+    ai_analyst_status = validate_ai_correction_log(ai_correction_log)
+    gate_status = {
+        "DATA_AUDIT_STATUS": data_audit_status,
+        "RISK_METHOD_STATUS": risk_status,
+        "AI_ANALYST_REVIEW_STATUS": ai_analyst_status,
+        "LANGUAGE_LINT_STATUS": language_status,
+        "PRICE_LABEL_CHECK_STATUS": price_label_status,
+    }
+    gate_status["OVERALL_REPORT_STATUS"] = overall_report_status(gate_status)
+
+    overall_status = gate_status["OVERALL_REPORT_STATUS"]
+    if data_audit is not None:
+        write_data_audit(out_dir, data_audit, overall_status)
+    write_price_label_sanity_check(out_dir, price_label_check, overall_status)
+    write_ai_correction_log(out_dir, ai_correction_log, overall_status)
+    write_language_lint_report(out_dir, [lint_en, lint_zh], overall_status)
+
     ai_review_markdown = None
     if ai_review:
-        report_data = generate_report_data_dict(
-            symbol=symbol,
-            benchmark=benchmark,
-            start_date=start_date,
-            end_date=end_date,
-            out_dir=out_dir,
-            profile=profile,
-            valuation=valuation,
-            trends=trends,
-            fundamental_summary=fundamental_summary,
-            price_summary=price_summary,
-            score_table=score_table,
-            info=info,
-            target_price=target_price,
-            warnings=data_warnings,
-            sanity_checks=sanity_checks,
-            ruin_risk=ruin_risk,
-            margin_stress=margin_stress,
-            actual_chart_name=actual_chart_path.name,
-            chart_name=chart_path.name,
-            drawdown_chart_name=drawdown_chart_path.name,
-            score_components_chart_name=score_components_chart_path.name,
-            growth_quality_chart_name=growth_quality_chart_name,
-            ruin_risk_chart_name=ruin_risk_chart_path.name,
-            interactive_chart_name=interactive_chart_path.name,
-            radar_chart_name=radar_chart_path.name,
-        )
         if build_ai_review_payload is None or call_ai_review is None or render_ai_review_markdown is None or render_ai_review_skipped is None:
             reason = "AI Review module could not be loaded."
             ai_review_markdown = "## AI Review\n\nAI Review was requested but skipped.\n\nReason: AI Review module could not be loaded.\n\nThe deterministic report was still generated successfully.\n"
@@ -2913,12 +3174,25 @@ def run_one(
         interactive_chart_name=interactive_chart_path.name,
         radar_chart_name=radar_chart_path.name,
         ai_review_markdown=ai_review_markdown,
+        v4_sections=v4_sections,
+        gate_status=gate_status,
     )
+    if cn:
+        write_chinese_report(report_data, out_dir, v4_sections, gate_status)
 
     latest_dir = output / safe_symbol(symbol) / "latest"
     copy_run_to_latest(out_dir, latest_dir)
     if terminal_ui is not None:
         terminal_ui.step_done("[8/8] Writing outputs")
+        if gate_status.get("OVERALL_REPORT_STATUS") == "UNVERIFIED":
+            terminal_ui.step_error(
+                "WARNING: One or more validation gates failed.",
+                "Generated report is marked UNVERIFIED. Check data_audit.md, ai_correction_log.md, language_lint_report.md, price_label_sanity_check.md",
+            )
+    elif gate_status.get("OVERALL_REPORT_STATUS") == "UNVERIFIED":
+        print("WARNING: One or more validation gates failed.")
+        print("Generated report is marked UNVERIFIED.")
+        print("Check: data_audit.md, ai_correction_log.md, language_lint_report.md, price_label_sanity_check.md")
 
     score = get_component_score(score_table, "Research Score")
     rating = rating_from_score(score)
@@ -3048,6 +3322,8 @@ Examples:
     parser.add_argument("--years", type=int, default=5, help="Financial years to include. Default: 5.")
     parser.add_argument("--output", default="reports", help="Output folder. Default: reports.")
     parser.add_argument("--risk-free-rate", type=float, default=0.0, help="Annual risk-free rate for risk-adjusted metrics. Example: 0.04.")
+    parser.add_argument("--price-field", choices=["close", "adj_close"], default="adj_close", help="Price field for return and risk metrics. Default: adj_close with close fallback.")
+    parser.add_argument("--annualization-days", type=int, default=252, help="Trading days used for annualized risk metrics. Default: 252.")
     parser.add_argument("--archive", action="store_true", help="Compatibility flag. v2 archives every run and refreshes latest automatically.")
     parser.add_argument("--run-id", default=None, help="Optional archive folder name under reports/TICKER/runs/.")
     parser.add_argument("--account-equity", type=float, default=None, help="Optional account equity for personal margin stress testing.")
@@ -3057,6 +3333,8 @@ Examples:
     parser.add_argument("--ai-review-depth", choices=["basic", "deep"], default="basic", help="AI review depth. Default: basic.")
     parser.add_argument("--ai-timeout", type=int, default=60, help="OpenAI API timeout in seconds. Default: 60.")
     parser.add_argument("--ai-max-output-tokens", type=int, default=1200, help="Max tokens for AI review output. Default: 1200.")
+    parser.add_argument("--audit-data", action="store_true", help="Generate v4 data audit files: data_audit.md and data_audit.csv.")
+    parser.add_argument("--cn", "--chinese", dest="cn", action="store_true", help="Generate an independent Chinese Markdown report.")
     parser.add_argument("--no-rich", action="store_true", help="Disable Rich terminal UI and use plain output.")
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     return parser.parse_args()
@@ -3092,6 +3370,10 @@ def main() -> None:
                     ai_review_depth=args.ai_review_depth,
                     ai_timeout=args.ai_timeout,
                     ai_max_output_tokens=args.ai_max_output_tokens,
+                    audit_data=args.audit_data,
+                    cn=args.cn,
+                    price_field=args.price_field,
+                    annualization_days=args.annualization_days,
                 )
             )
         except Exception as exc:

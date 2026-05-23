@@ -65,10 +65,10 @@ def _strip_rich(message: str) -> str:
 def print_app_banner(version: str) -> None:
     if _UI._rich:
         _UI.print(f"\n[bold]OpenBB Company Research Tool v{version}[/bold]")
-        _UI.print("[dim]Data-first research workflow with optional AI review[/dim]\n")
+        _UI.print("[dim]Data-first research workflow with bounded AI analyst gate[/dim]\n")
     else:
         _UI.print(f"\nOpenBB Company Research Tool v{version}")
-        _UI.print("Data-first research workflow with optional AI review\n")
+        _UI.print("Data-first research workflow with bounded AI analyst gate\n")
 
 
 def print_run_config(
@@ -113,7 +113,7 @@ def print_ai_review_status(status: str, model: str | None = None, error: str | N
     elif status == "skipped":
         step_warn("[7/8] Running AI review", error or detail)
     elif status == "disabled":
-        step_warn("[7/8] Running AI review", "disabled")
+        step_done("[7/8] Running AI analyst gate", "bounded local review")
     else:
         step_error("[7/8] Running AI review", error or status)
 
@@ -133,4 +133,3 @@ def plain_mode_does_not_crash() -> bool:
     ui = TerminalUI(enabled=False)
     ui.print("terminal-ui-ok")
     return True
-

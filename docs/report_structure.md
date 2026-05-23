@@ -1,6 +1,19 @@
 # Report Structure
 
-v3.0 reports are designed as first-pass research workflows. They organize public-market data into a reviewable structure, but they do not replace primary-source research or investment judgment.
+v4.0 reports are designed as thesis-driven, audit-ready first-pass research workflows. They organize public-market data into a reviewable structure, but they do not replace primary-source research or investment judgment.
+
+v4.0 adds four gates:
+
+- Data Audit Gate
+- Risk Method Gate
+- AI Analyst Review Gate
+- Language Lint Gate
+
+Generated metadata includes `DATA_AUDIT_STATUS`, `RISK_METHOD_STATUS`, `AI_ANALYST_REVIEW_STATUS`, `LANGUAGE_LINT_STATUS`, `OVERALL_REPORT_STATUS`, and `Price Label Check`.
+
+The AI Analyst Review Gate writes `ai_correction_log.md` / `ai_correction_log.json`. It can propose interpretation corrections, answerability classifications, research stance, and the next three checks. It cannot mutate deterministic metrics.
+
+When `--cn` or `--chinese` is passed, the tool generates an independent Chinese report from structured data instead of translating the English report.
 
 The report uses a two-layer reading structure:
 
@@ -175,7 +188,7 @@ These fields are not enough for valuation. They are a first-pass screen for whet
 
 ## 14. Research Score
 
-v3.0 uses research profiles instead of one universal score.
+v4.0 uses research profiles instead of one universal score.
 
 Profiles include:
 

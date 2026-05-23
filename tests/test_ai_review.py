@@ -35,7 +35,7 @@ class AIReviewTests(unittest.TestCase):
             "price_metrics": [{"Metric": "Total Return", "Target": 1.0}],
             "growth_quality_metrics": [{"Metric": "Revenue CAGR", "Value": 0.02}],
             "valuation_snapshot": [{"Metric": "trailingPE", "Value": 30}],
-            "ruin_risk_metrics": [{"Metric": "Ruin Risk Score", "Value": 40}],
+            "ruin_risk_metrics": [{"Metric": "Balance Sheet Resilience Score", "Value": 60}],
             "research_score": {"score": 61.0, "status": "Watchlist"},
             "score_components": [{"Component": "Research Score", "Score": 61.0}],
             "sanity_checks": [],

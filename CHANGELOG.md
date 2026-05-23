@@ -1,5 +1,29 @@
 # Changelog
 
+## v4.0.0
+
+### Added
+
+- Four-gate workflow: Data Audit Gate, Risk Method Gate, AI Analyst Review Gate, and Language Lint Gate
+- Data audit outputs: `data_audit.md` and `data_audit.csv`
+- AI correction log outputs: `ai_correction_log.md` and `ai_correction_log.json`
+- Price label sanity check output: `price_label_sanity_check.md`
+- Risk Metric Methodology section
+- Research Battle Card with long bet, short trigger, market pricing, what must hold, kill criteria, and verification priority
+- Chinese report mode via `--cn` / `--chinese`
+- Language lint report: `language_lint_report.md`
+- Valuation Sensitivity section
+- Segment Revenue manual-required module
+- `python -m openbb_company_research_tool` entrypoint
+
+### Changed
+
+- Version bumped to `4.0.0`
+- Repositioned project as a thesis-driven first-pass equity research workflow generator
+- Reframed balance-sheet risk as Balance Sheet Resilience Score with explicit score direction
+- Added `--price-field` and `--annualization-days` to make risk methodology explicit
+- Added `UNVERIFIED_` naming for failed report and gate-log outputs
+
 ## v3.0.0
 
 ### Added
