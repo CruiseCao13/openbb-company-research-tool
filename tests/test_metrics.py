@@ -21,7 +21,7 @@ class MetricsTests(unittest.TestCase):
 
         self.assertEqual(round(tool.total_return(close), 4), 1.5919)
 
-    def test_output_dir_defaults_to_latest(self):
+    def test_output_dir_defaults_to_runs_folder(self):
         path = tool.output_dir_for_run(
             output=Path("reports"),
             symbol="AAPL",
@@ -32,7 +32,8 @@ class MetricsTests(unittest.TestCase):
             run_id=None,
         )
 
-        self.assertEqual(path, Path("reports/AAPL/latest"))
+        self.assertEqual(path.parts[:3], ("reports", "AAPL", "runs"))
+        self.assertIn("AAPL_vs_SPY", path.name)
 
     def test_output_dir_run_id_implies_runs_folder(self):
         path = tool.output_dir_for_run(
@@ -50,8 +51,25 @@ class MetricsTests(unittest.TestCase):
     def test_empty_warnings_section_is_human_readable(self):
         section = tool.warnings_section([])
 
-        self.assertIn("No obvious data-quality warnings", section)
+        self.assertIn("No legacy warning rule", section)
         self.assertNotIn("No automatic data warnings triggered", section)
+
+    def test_category_classifier_marks_speculative_growth(self):
+        summary = pd.DataFrame(
+            [
+                {"Metric": "Revenue CAGR", "Value": 0.35},
+                {"Metric": "FCF Margin Latest", "Value": -0.20},
+            ]
+        )
+
+        self.assertEqual(tool.classify_research_category({"quoteType": "EQUITY"}, summary), "Speculative Growth")
+
+    def test_margin_stress_builds_personal_cushion_table(self):
+        table = tool.build_margin_stress(100000, 25000, [0.5])
+
+        self.assertEqual(table.iloc[0]["Portfolio Value"], 50000)
+        self.assertEqual(table.iloc[0]["Equity Cushion"], 25000)
+        self.assertEqual(table.iloc[0]["Loan / Value"], 0.5)
 
     def test_actual_close_price_chart_is_written(self):
         close = pd.DataFrame(

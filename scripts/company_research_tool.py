@@ -17,7 +17,7 @@ This tool is NOT a buy/sell recommendation engine.
 
 from __future__ import annotations
 
-__version__ = "1.3.0"
+__version__ = "2.0.0"
 
 import argparse
 from datetime import datetime
@@ -36,6 +36,13 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+
+try:
+    import plotly.graph_objects as go
+    from plotly.subplots import make_subplots
+except Exception:
+    go = None
+    make_subplots = None
 
 try:
     from openbb import obb
@@ -169,6 +176,7 @@ PERCENT_METRICS = {
     "heldPercentInsiders",
     "heldPercentInstitutions",
     "Weight",
+    "Loan / Value",
 }
 
 RATIO_METRICS = {
@@ -205,6 +213,13 @@ SCORE_METRICS = {
     "Benchmark Score",
     "Valuation Sanity Score",
     "Research Potential Score",
+    "Ruin Risk Score",
+}
+
+RISK_METRICS = {
+    "Net Debt / EBITDA",
+    "Debt / FCF",
+    "Cash Runway Years",
 }
 
 CURRENCY_METRICS = {
@@ -223,6 +238,11 @@ CURRENCY_METRICS = {
     "Operating Cash Flow",
     "Capital Expenditure",
     "Free Cash Flow",
+    "Net Debt",
+    "EBITDA",
+    "Portfolio Value",
+    "Margin Loan",
+    "Equity Cushion",
 }
 
 FUND_QUOTE_TYPES = {"ETF", "FUND", "MUTUALFUND", "INDEX"}
@@ -242,6 +262,8 @@ def metric_value_kind(metric: str) -> str:
         return "share_count"
     if metric in SCORE_METRICS:
         return "score"
+    if metric in RISK_METRICS:
+        return "ratio"
     if metric in CURRENCY_METRICS:
         return "currency"
 
@@ -293,7 +315,7 @@ def is_fund_like(info: dict[str, Any]) -> bool:
 
 
 def default_run_id(symbol: str, benchmark: str, start_date: str, end_date: str | None) -> str:
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     parts = [timestamp, f"{safe_symbol(symbol)}_vs_{safe_symbol(benchmark)}", f"start_{start_date}"]
     if end_date:
         parts.append(f"end_{end_date}")
@@ -312,7 +334,17 @@ def output_dir_for_run(
     symbol_dir = output / safe_symbol(symbol)
     if archive or run_id:
         return symbol_dir / "runs" / (run_id or default_run_id(symbol, benchmark, start_date, end_date))
-    return symbol_dir / "latest"
+    return symbol_dir / "runs" / default_run_id(symbol, benchmark, start_date, end_date)
+
+
+def copy_run_to_latest(run_dir: Path, latest_dir: Path) -> None:
+    reset_dir(latest_dir)
+    for child in run_dir.iterdir():
+        target = latest_dir / child.name
+        if child.is_dir():
+            shutil.copytree(child, target)
+        else:
+            shutil.copy2(child, target)
 
 
 def markdown_table(
@@ -643,6 +675,148 @@ def plot_drawdown(close: pd.DataFrame, target: str, benchmark: str, path: Path) 
     plt.close()
 
 
+def build_drawdown_frame(close: pd.DataFrame, target: str, benchmark: str) -> pd.DataFrame:
+    dd = pd.DataFrame(index=close.index)
+    for col in [target, benchmark]:
+        running_max = close[col].cummax()
+        dd[col] = close[col] / running_max - 1
+    return dd
+
+
+def write_interactive_price_dashboard(
+    close: pd.DataFrame,
+    normalized: pd.DataFrame,
+    target: str,
+    benchmark: str,
+    path: Path,
+) -> None:
+    if go is None or make_subplots is None:
+        save_text(
+            path,
+            "<html><body><h1>Interactive chart unavailable</h1>"
+            "<p>Install plotly to generate interactive charts: pip install plotly</p></body></html>",
+        )
+        return
+
+    drawdown = build_drawdown_frame(close, target, benchmark)
+    fig = make_subplots(
+        rows=3,
+        cols=1,
+        shared_xaxes=True,
+        vertical_spacing=0.08,
+        subplot_titles=(
+            "Actual Close Price / 真实收盘价",
+            "Normalized Performance: Start = 100 / 归一化表现",
+            "Drawdown From Previous Peak / 从前高回撤",
+        ),
+    )
+
+    for name in [target, benchmark]:
+        fig.add_trace(go.Scatter(x=close.index, y=close[name], name=f"{name} Close", mode="lines"), row=1, col=1)
+        fig.add_trace(go.Scatter(x=normalized.index, y=normalized[name], name=f"{name} Normalized", mode="lines"), row=2, col=1)
+        fig.add_trace(go.Scatter(x=drawdown.index, y=drawdown[name], name=f"{name} Drawdown", mode="lines"), row=3, col=1)
+
+    fig.update_layout(
+        title=f"{target} vs {benchmark} Interactive Research Chart / 交互式研究图表",
+        hovermode="x unified",
+        template="plotly_white",
+        height=980,
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+    )
+    fig.update_yaxes(title_text="Close Price", row=1, col=1)
+    fig.update_yaxes(title_text="Start = 100", row=2, col=1)
+    fig.update_yaxes(title_text="Drawdown", tickformat=".0%", row=3, col=1)
+    fig.write_html(path, include_plotlyjs="cdn", full_html=True)
+
+
+def write_metric_radar_chart(score_table: pd.DataFrame, path: Path) -> None:
+    if go is None:
+        save_text(
+            path,
+            "<html><body><h1>Score radar unavailable</h1>"
+            "<p>Install plotly to generate interactive radar charts: pip install plotly</p></body></html>",
+        )
+        return
+
+    components = score_table[score_table["Component"] != "Research Potential Score"].copy()
+    if components.empty:
+        save_text(path, "<html><body><h1>No score components available</h1></body></html>")
+        return
+
+    categories = components["Component"].tolist()
+    values = components["Score"].fillna(0).tolist()
+    categories.append(categories[0])
+    values.append(values[0])
+
+    fig = go.Figure(
+        data=[
+            go.Scatterpolar(
+                r=values,
+                theta=categories,
+                fill="toself",
+                name="Research Radar",
+            )
+        ]
+    )
+    fig.update_layout(
+        title="Research Score Radar / 研究评分雷达",
+        template="plotly_white",
+        polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
+        height=620,
+    )
+    fig.write_html(path, include_plotlyjs="cdn", full_html=True)
+
+
+def plot_score_components(score_table: pd.DataFrame, path: Path) -> None:
+    components = score_table[score_table["Component"] != "Research Potential Score"].copy()
+    if components.empty:
+        return
+    components = components.sort_values("Score")
+    ax = components.plot.barh(x="Component", y="Score", legend=False, figsize=(10, 5), color="#3b82f6")
+    ax.set_title("Research Score Components")
+    ax.set_xlabel("Score: 0-100")
+    ax.set_xlim(0, 100)
+    ax.grid(True, axis="x", alpha=0.25)
+    plt.tight_layout()
+    plt.savefig(path, dpi=160)
+    plt.close()
+
+
+def plot_growth_quality(trends: pd.DataFrame, path: Path) -> None:
+    if trends is None or trends.empty:
+        return
+    cols = [c for c in ["Revenue Growth YoY", "Gross Margin", "Operating Margin", "FCF Margin"] if c in trends]
+    if not cols:
+        return
+    ax = trends[cols].plot(figsize=(11, 5), marker="o")
+    ax.set_title("Growth and Quality Trend")
+    ax.set_xlabel("Fiscal Period")
+    ax.set_ylabel("Ratio")
+    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f"{y:.0%}"))
+    ax.grid(True, alpha=0.25)
+    plt.tight_layout()
+    plt.savefig(path, dpi=160)
+    plt.close()
+
+
+def plot_ruin_risk_snapshot(ruin_risk: pd.DataFrame, path: Path) -> None:
+    if ruin_risk is None or ruin_risk.empty:
+        return
+    view = ruin_risk[ruin_risk["Metric"].isin(["Net Debt / EBITDA", "Debt / FCF", "Cash Runway Years", "Ruin Risk Score"])].copy()
+    if view.empty:
+        return
+    view["Display Value"] = pd.to_numeric(view["Value"], errors="coerce").fillna(0)
+    colors = ["#ef4444" if m == "Ruin Risk Score" else "#64748b" for m in view["Metric"]]
+    ax = view.plot.bar(x="Metric", y="Display Value", legend=False, figsize=(10, 5), color=colors)
+    ax.set_title("Ruin Risk Snapshot")
+    ax.set_ylabel("Value")
+    ax.grid(True, axis="y", alpha=0.25)
+    plt.xticks(rotation=20, ha="right")
+    plt.tight_layout()
+    plt.savefig(path, dpi=160)
+    plt.close()
+
+
 # =============================================================================
 # Financial analysis
 # =============================================================================
@@ -833,6 +1007,163 @@ def build_fundamental_summary(trends: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows, columns=["Metric", "Value"])
 
 
+def latest_trend_value(trends: pd.DataFrame, column: str) -> float:
+    if trends is None or trends.empty or column not in trends or trends[column].dropna().empty:
+        return float("nan")
+    return float(trends[column].dropna().iloc[-1])
+
+
+def safe_info_float(info: dict[str, Any], key: str) -> float:
+    try:
+        value = info.get(key)
+        if value is None or pd.isna(value):
+            return float("nan")
+        return float(value)
+    except Exception:
+        return float("nan")
+
+
+def classify_research_category(info: dict[str, Any], fundamental_summary: pd.DataFrame) -> str:
+    quote_type = str(info.get("quoteType", "")).upper()
+    sector = str(info.get("sector", "")).lower()
+    revenue_cagr = get_metric(fundamental_summary, "Revenue CAGR")
+    fcf_margin = get_metric(fundamental_summary, "FCF Margin Latest")
+    operating_margin = get_metric(fundamental_summary, "Operating Margin Latest")
+    market_cap = safe_info_float(info, "marketCap")
+
+    if quote_type in FUND_QUOTE_TYPES:
+        return "ETF / Fund"
+    if "financial" in sector:
+        return "Financials"
+    if any(word in sector for word in ["energy", "utilities", "basic materials"]):
+        return "Cyclical / Asset Heavy"
+    if pd.isna(revenue_cagr) and pd.isna(fcf_margin):
+        return "Data Limited"
+    if not pd.isna(revenue_cagr) and revenue_cagr >= 0.20 and (pd.isna(fcf_margin) or fcf_margin <= 0):
+        return "Speculative Growth"
+    if not pd.isna(revenue_cagr) and revenue_cagr >= 0.15 and not pd.isna(fcf_margin) and fcf_margin > 0:
+        return "Profitable Growth"
+    if market_cap >= 100_000_000_000 and not pd.isna(operating_margin) and operating_margin > 0.15:
+        return "Mature Compounder"
+    return "General Equity"
+
+
+def score_weights_for_category(category: str) -> dict[str, float]:
+    profiles = {
+        "Mature Compounder": {
+            "Growth Score": 0.14,
+            "Profitability Score": 0.28,
+            "Quality Trend Score": 0.18,
+            "Risk Control Score": 0.18,
+            "Benchmark Score": 0.14,
+            "Valuation Sanity Score": 0.08,
+        },
+        "Speculative Growth": {
+            "Growth Score": 0.30,
+            "Profitability Score": 0.10,
+            "Quality Trend Score": 0.14,
+            "Risk Control Score": 0.20,
+            "Benchmark Score": 0.14,
+            "Valuation Sanity Score": 0.12,
+        },
+        "Profitable Growth": {
+            "Growth Score": 0.26,
+            "Profitability Score": 0.22,
+            "Quality Trend Score": 0.16,
+            "Risk Control Score": 0.14,
+            "Benchmark Score": 0.14,
+            "Valuation Sanity Score": 0.08,
+        },
+        "Cyclical / Asset Heavy": {
+            "Growth Score": 0.12,
+            "Profitability Score": 0.20,
+            "Quality Trend Score": 0.12,
+            "Risk Control Score": 0.26,
+            "Benchmark Score": 0.12,
+            "Valuation Sanity Score": 0.18,
+        },
+        "Financials": {
+            "Growth Score": 0.10,
+            "Profitability Score": 0.18,
+            "Quality Trend Score": 0.12,
+            "Risk Control Score": 0.26,
+            "Benchmark Score": 0.16,
+            "Valuation Sanity Score": 0.18,
+        },
+    }
+    return profiles.get(
+        category,
+        {
+            "Growth Score": 0.22,
+            "Profitability Score": 0.22,
+            "Quality Trend Score": 0.16,
+            "Risk Control Score": 0.16,
+            "Benchmark Score": 0.16,
+            "Valuation Sanity Score": 0.08,
+        },
+    )
+
+
+def build_ruin_risk_snapshot(info: dict[str, Any], trends: pd.DataFrame) -> pd.DataFrame:
+    total_debt = safe_info_float(info, "totalDebt")
+    total_cash = safe_info_float(info, "totalCash")
+    ebitda = safe_info_float(info, "ebitda")
+    fcf = safe_info_float(info, "freeCashflow")
+    if pd.isna(fcf):
+        fcf = latest_trend_value(trends, "Free Cash Flow")
+
+    net_debt = total_debt - total_cash if not pd.isna(total_debt) and not pd.isna(total_cash) else float("nan")
+    net_debt_to_ebitda = net_debt / ebitda if not pd.isna(net_debt) and not pd.isna(ebitda) and ebitda != 0 else float("nan")
+    debt_to_fcf = total_debt / fcf if not pd.isna(total_debt) and not pd.isna(fcf) and fcf > 0 else float("nan")
+    cash_runway = total_cash / abs(fcf) if not pd.isna(total_cash) and not pd.isna(fcf) and fcf < 0 else float("nan")
+
+    risk_score = 50.0
+    if not pd.isna(net_debt_to_ebitda):
+        risk_score += clamp(net_debt_to_ebitda * 12, 0, 35)
+    if not pd.isna(debt_to_fcf):
+        risk_score += clamp((debt_to_fcf - 3) * 8, 0, 25)
+    if not pd.isna(cash_runway):
+        risk_score += 25 if cash_runway < 2 else 10 if cash_runway < 4 else 0
+    if not pd.isna(fcf) and fcf < 0 and pd.isna(cash_runway):
+        risk_score += 20
+    risk_score = clamp(risk_score)
+
+    rows = [
+        ("Net Debt", net_debt, "Total debt minus cash. Negative is net cash."),
+        ("EBITDA", ebitda, "Provider EBITDA, when available."),
+        ("Net Debt / EBITDA", net_debt_to_ebitda, "Debt-load proxy. Higher values deserve manual stress testing."),
+        ("Debt / FCF", debt_to_fcf, "Debt compared with free cash flow. Not useful when FCF is negative."),
+        ("Cash Runway Years", cash_runway, "Approximate years of cash runway when FCF is negative."),
+        ("Ruin Risk Score", risk_score, "Heuristic fragility score. Higher means more balance-sheet or cash-burn pressure."),
+    ]
+    return pd.DataFrame(rows, columns=["Metric", "Value", "Interpretation"])
+
+
+def build_margin_stress(
+    account_equity: float | None,
+    margin_loan: float | None,
+    stress_drops: list[float],
+) -> pd.DataFrame:
+    if account_equity is None or margin_loan is None or account_equity <= 0:
+        return pd.DataFrame(columns=["Scenario", "Portfolio Value", "Margin Loan", "Equity Cushion", "Loan / Value"])
+
+    rows = []
+    for drop in stress_drops:
+        portfolio_value = account_equity * (1 - drop)
+        cushion = portfolio_value - margin_loan
+        loan_to_value = margin_loan / portfolio_value if portfolio_value > 0 else float("nan")
+        rows.append(
+            {
+                "Scenario": f"{fmt_percent(-drop)} portfolio shock",
+                "Portfolio Value": portfolio_value,
+                "Margin Loan": margin_loan,
+                "Equity Cushion": cushion,
+                "Loan / Value": loan_to_value,
+            }
+        )
+    return pd.DataFrame(rows)
+
+
 # =============================================================================
 # Score
 # =============================================================================
@@ -943,7 +1274,7 @@ def build_research_score(price_summary: pd.DataFrame, fundamental_summary: pd.Da
     if is_fund_like(info) or fundamental_summary is None or fundamental_summary.empty:
         return pd.DataFrame(
             [
-                {"Component": "Research Potential Score", "Score": float("nan"), "Weight": 1.0},
+                {"Component": "Research Potential Score", "Score": float("nan"), "Weight": 1.0, "Profile": "ETF / Fund"},
             ]
         )
 
@@ -972,18 +1303,12 @@ def build_research_score(price_summary: pd.DataFrame, fundamental_summary: pd.Da
         "Valuation Sanity Score": valuation_sanity_score(info),
     }
 
-    weights = {
-        "Growth Score": 0.22,
-        "Profitability Score": 0.22,
-        "Quality Trend Score": 0.16,
-        "Risk Control Score": 0.16,
-        "Benchmark Score": 0.16,
-        "Valuation Sanity Score": 0.08,
-    }
+    category = classify_research_category(info, fundamental_summary)
+    weights = score_weights_for_category(category)
 
     total = sum(components[k] * weights[k] for k in components)
-    rows = [{"Component": k, "Score": components[k], "Weight": weights[k]} for k in components]
-    rows.append({"Component": "Research Potential Score", "Score": total, "Weight": 1.0})
+    rows = [{"Component": k, "Score": components[k], "Weight": weights[k], "Profile": category} for k in components]
+    rows.append({"Component": "Research Potential Score", "Score": total, "Weight": 1.0, "Profile": category})
     return pd.DataFrame(rows)
 
 
@@ -1148,15 +1473,17 @@ def score_methodology_section(info: dict[str, Any]) -> str:
             "Fund analysis should focus on expense ratio, holdings, benchmark methodology, exposure, liquidity, and tracking error."
         )
 
-    return """This score is a heuristic research-priority score.
+    return """This score is a heuristic research-priority score, now weighted by research profile.
 It is not a valuation model, not a prediction model, and not a buy/sell signal.
 
-- Growth Score: based on revenue CAGR and latest revenue growth.
-- Profitability Score: based on gross margin, operating margin, and FCF margin.
-- Quality Trend Score: based on changes in gross margin, operating margin, and FCF margin.
-- Risk Control Score: based on max drawdown, volatility, and beta.
-- Benchmark Score: based on excess CAGR, information ratio, and Sharpe difference.
-- Valuation Sanity Score: penalty-based score using PE, PS, EV/Revenue, and EV/EBITDA."""
+这个分数是按研究类型加权的启发式“研究优先级”分数，不是估值模型、预测模型或买卖信号。
+
+- Growth Score / 增长: revenue CAGR and latest revenue growth.
+- Profitability Score / 盈利质量: gross margin, operating margin, and FCF margin.
+- Quality Trend Score / 质量趋势: changes in gross margin, operating margin, and FCF margin.
+- Risk Control Score / 风险控制: max drawdown, volatility, and beta.
+- Benchmark Score / 基准对比: excess CAGR, information ratio, and Sharpe difference.
+- Valuation Sanity Score / 估值理性: penalty-based check using PE, PS, EV/Revenue, and EV/EBITDA."""
 
 
 def one_line_verdict(
@@ -1270,9 +1597,121 @@ def build_data_warnings(
     return warnings
 
 
+def build_sanity_checks(
+    symbol: str,
+    benchmark: str,
+    info: dict[str, Any],
+    benchmark_info: dict[str, Any],
+    target_price: pd.DataFrame,
+    trends: pd.DataFrame,
+    ruin_risk: pd.DataFrame,
+) -> pd.DataFrame:
+    rows = []
+
+    def add(severity: str, check: str, finding: str, action: str) -> None:
+        rows.append(
+            {
+                "Severity": severity,
+                "Check": check,
+                "Finding": finding,
+                "Action": action,
+            }
+        )
+
+    target_currency = info.get("currency")
+    benchmark_currency = benchmark_info.get("currency")
+    if target_currency and benchmark_currency and target_currency != benchmark_currency:
+        add(
+            "HIGH",
+            "Currency mismatch / 币种不一致",
+            f"{symbol}: {target_currency}; {benchmark}: {benchmark_currency}.",
+            "Do not treat relative performance as clean without FX adjustment. / 未做汇率调整前不要直接比较相对表现。",
+        )
+
+    financial_years = len(trends.dropna(how="all")) if trends is not None else 0
+    if not is_fund_like(info) and financial_years < 3:
+        add(
+            "HIGH",
+            "Short financial history / 财务历史过短",
+            f"Only {financial_years} usable financial years found.",
+            "Treat score as fragile and verify filings manually. / 评分可靠性偏低，必须人工核对财报。",
+        )
+
+    price_days = len(target_price.dropna()) if target_price is not None else 0
+    if price_days < 252:
+        add(
+            "MEDIUM",
+            "Short price history / 价格历史过短",
+            f"Only {price_days} price rows found.",
+            "Benchmark, beta, drawdown, and Sharpe may be unstable. / 基准比较、beta、回撤、夏普可能不稳定。",
+        )
+
+    if not is_fund_like(info):
+        revenue = latest_trend_value(trends, "Revenue")
+        fcf = latest_trend_value(trends, "Free Cash Flow")
+        operating_cf = latest_trend_value(trends, "Operating Cash Flow")
+        capex = latest_trend_value(trends, "Capital Expenditure")
+
+        if pd.isna(revenue):
+            add(
+                "HIGH",
+                "Missing revenue / 营收缺失",
+                "Revenue is missing from the provider financial statements.",
+                "Do not rely on growth score until revenue is verified. / 核实营收前不要依赖增长评分。",
+            )
+
+        if pd.isna(fcf):
+            add(
+                "HIGH",
+                "Missing FCF / 自由现金流缺失",
+                "Free cash flow is missing from provider data.",
+                "Verify OCF, capex, and FCF from filings. / 从财报核对经营现金流、资本开支和自由现金流。",
+            )
+        elif not pd.isna(operating_cf) and not pd.isna(capex):
+            reconstructed_fcf = operating_cf + capex
+            if abs(fcf) > 1 and abs(reconstructed_fcf - fcf) / max(abs(fcf), 1) > 0.10:
+                add(
+                    "HIGH",
+                    "FCF consistency / 自由现金流一致性",
+                    "Provider FCF differs from OCF plus capex by more than 10%.",
+                    "Verify cash-flow statement manually. / 手动核对现金流量表。",
+                )
+
+        ruin_score = get_metric(ruin_risk, "Ruin Risk Score")
+        if not pd.isna(ruin_score) and ruin_score >= 75:
+            add(
+                "HIGH",
+                "Ruin risk / 毁灭性风险",
+                f"Ruin Risk Score is {fmt_number(ruin_score)}.",
+                "Stress-test debt, cash burn, and refinancing risk. / 压测债务、烧钱速度和再融资风险。",
+            )
+
+    if is_fund_like(info):
+        add(
+            "MEDIUM",
+            "Fund-like instrument / 基金类标的",
+            f"quoteType={info.get('quoteType')}; company fundamentals were skipped.",
+            "Analyze expense ratio, holdings, liquidity, tracking error, and exposure. / 应分析费率、持仓、流动性、跟踪误差和风险暴露。",
+        )
+
+    if not rows:
+        add(
+            "INFO",
+            "No triggered sanity failure / 未触发重大断层",
+            "No automatic high-risk consistency failure was detected.",
+            "Still verify important numbers with primary sources. / 仍需用一手资料核对关键数字。",
+        )
+
+    return pd.DataFrame(rows)
+
+
+def sanity_checks_section(sanity_checks: pd.DataFrame) -> str:
+    return markdown_table(sanity_checks, max_rows=30)
+
+
 def warnings_section(warnings: list[str]) -> str:
     if not warnings:
-        return "No obvious data-quality warnings were detected automatically. Still verify important numbers with primary sources before using this report."
+        return "No legacy warning rule was triggered. See the Sanity Scan below for stronger consistency checks."
     return "\n".join(f"- Warning: {warning}" for warning in warnings)
 
 
@@ -1323,9 +1762,17 @@ def write_report(
     info: dict[str, Any],
     target_price: pd.DataFrame,
     warnings: list[str],
+    sanity_checks: pd.DataFrame,
+    ruin_risk: pd.DataFrame,
+    margin_stress: pd.DataFrame,
     actual_chart_name: str,
     chart_name: str,
     drawdown_chart_name: str,
+    score_components_chart_name: str,
+    growth_quality_chart_name: str | None,
+    ruin_risk_chart_name: str,
+    interactive_chart_name: str,
+    radar_chart_name: str,
 ) -> Path:
     total_score = get_component_score(score_table, "Research Potential Score")
     rating = rating_from_score(total_score)
@@ -1334,19 +1781,21 @@ def write_report(
     takeaways = generate_key_takeaways(symbol, benchmark, price_summary, fundamental_summary, score_table, info)
     takeaways_md = "\n".join([f"- {item}" for item in takeaways]) if takeaways else "_No automatic takeaways available._"
 
-    report = f"""# {symbol} Research Report｜Company Research Data Pack
+    category = classify_research_category(info, fundamental_summary)
+    report = f"""# {symbol} Research Report｜Company Research Radar v2.0
 
 > Target: `{symbol}`  
 > Benchmark: `{benchmark}`  
 > Period: `{start_date}` to `{end_date or "latest available"}`  
 > Research Status: **{rating}**  
+> Research Profile: **{category}**  
 > Version: `{__version__}`
 
 ---
 
 ## 0. Boundary｜边界
 
-This report is a standardized research data pack.
+This report is a bilingual research radar.
 
 It does **not** provide:
 
@@ -1356,6 +1805,8 @@ It does **not** provide:
 - Automatic investment decision
 
 The score is a **research prioritization score**, not a prediction.
+
+本报告是研究雷达，不是投资建议。它的目标是暴露问题、组织证据、降低自我安慰，而不是替你做决定。
 
 ---
 
@@ -1374,6 +1825,10 @@ The score is a **research prioritization score**, not a prediction.
 ## 3. Data Confidence｜数据可信度
 
 {data_confidence_section(trends, valuation, profile, target_price, info)}
+
+### 🧯 Sanity Scan｜主动断层扫描
+
+{sanity_checks_section(sanity_checks)}
 
 ### Automatic Data Warnings
 
@@ -1407,6 +1862,14 @@ You still need to manually answer:
 Benchmark explanation:
 
 > {benchmark_explanation(benchmark)}
+
+### 🕹 Interactive HTML｜交互式图表
+
+[Open interactive price dashboard]({interactive_chart_name})
+
+The HTML chart supports hover, zoom, range selection, and exact-date inspection.
+
+交互式 HTML 图表支持悬停、缩放、区间选择和按日期查看具体数值。
 
 ![{symbol} vs {benchmark} Actual Close Price]({actual_chart_name})
 
@@ -1459,7 +1922,21 @@ Drawdown shows the decline from the previous peak.
 
 ---
 
-## 7. Money Source and Money Flow｜钱从哪里来，流到哪里去
+## 7. Ruin Risk Snapshot｜毁灭性风险快照
+
+![{symbol} Ruin Risk Snapshot]({ruin_risk_chart_name})
+
+{markdown_table(ruin_risk, max_rows=20)}
+
+This section tries to separate normal price volatility from business fragility. Historical drawdown is not the same as ruin risk.
+
+这一节用于区分“价格波动”和“业务毁灭性风险”。历史回撤不等于破产、融资枯竭或商业模式失效风险。
+
+---
+
+## 8. Money Source and Money Flow｜钱从哪里来，流到哪里去
+
+{f"![{symbol} Growth and Quality Trend]({growth_quality_chart_name})" if growth_quality_chart_name else ""}
 
 {markdown_table(
     trends,
@@ -1478,7 +1955,17 @@ Drawdown shows the decline from the previous peak.
 
 ---
 
-## 8. Valuation Snapshot｜估值快照
+## 9. Personal Margin Stress｜个人融资压力测试
+
+{markdown_table(margin_stress, max_rows=20, percent_columns={"Loan / Value"}) if margin_stress is not None and not margin_stress.empty else "_No account-level margin inputs provided. Add `--account-equity` and `--margin-loan` to generate a personal stress table._"}
+
+This optional section is not about the company. It tests whether your own balance sheet can survive stress.
+
+这一节不是分析公司，而是检查你自己的资产负债表能不能扛住压力。
+
+---
+
+## 10. Valuation Snapshot｜估值快照
 
 {valuation_group_sections(valuation)}
 
@@ -1486,7 +1973,11 @@ High valuation requires stronger growth, margin expansion, and cash flow evidenc
 
 ---
 
-## 9. Research Potential Score｜研究潜力评分
+## 11. Research Potential Score｜研究潜力评分
+
+[Open interactive score radar]({radar_chart_name})
+
+![{symbol} Research Score Components]({score_components_chart_name})
 
 {markdown_table(score_table, max_rows=20, percent_columns={"Weight"}, score_columns=SCORE_COLS)}
 
@@ -1508,7 +1999,7 @@ This score is transparent but imperfect. It is used to prioritize research, not 
 
 ---
 
-## 10. Required Manual Verification｜必须人工核对
+## 12. Required Manual Verification｜必须人工核对
 
 Before making any serious judgment, verify:
 
@@ -1522,10 +2013,12 @@ Before making any serious judgment, verify:
 - Management guidance
 - SEC 10-K / 10-Q
 - Company IR materials
+- Sanity Scan HIGH severity items
+- Ruin Risk Snapshot debt and cash-burn assumptions
 
 ---
 
-## 11. Final Research Questions｜最后必须回答
+## 13. Final Research Questions｜最后必须回答
 
 - Why not simply buy `{benchmark}`?
 - Has `{symbol}` earned its extra risk?
@@ -1534,10 +2027,12 @@ Before making any serious judgment, verify:
 - Is free cash flow healthy?
 - Is valuation already pricing in too much future success?
 - If the stock falls 30%-50%, does the thesis still hold?
+- If the stock falls 70%, does the business survive without destructive dilution?
+- Is this company being judged against the right lifecycle and sector peers?
 
 ---
 
-## 12. Generated Files
+## 14. Generated Files
 
 This folder contains CSV, chart, and Markdown outputs generated by the tool.
 """
@@ -1561,15 +2056,14 @@ def run_one(
     risk_free_rate: float,
     archive: bool = False,
     run_id: str | None = None,
+    account_equity: float | None = None,
+    margin_loan: float | None = None,
 ) -> dict[str, Any]:
     symbol = symbol.upper()
     benchmark = benchmark.upper()
 
     out_dir = output_dir_for_run(output, symbol, benchmark, start_date, end_date, archive, run_id)
-    if archive or run_id:
-        ensure_dir(out_dir)
-    else:
-        reset_dir(out_dir)
+    ensure_dir(out_dir)
 
     print(f"\n=== Building research pack: {symbol} vs {benchmark} ===")
 
@@ -1593,10 +2087,13 @@ def run_one(
     actual_chart_path = out_dir / f"{safe_symbol(symbol)}_vs_{safe_symbol(benchmark)}_actual_close_price_chart.png"
     chart_path = out_dir / f"{safe_symbol(symbol)}_vs_{safe_symbol(benchmark)}_performance_chart.png"
     drawdown_chart_path = out_dir / f"{safe_symbol(symbol)}_vs_{safe_symbol(benchmark)}_drawdown_chart.png"
+    interactive_chart_path = out_dir / f"{safe_symbol(symbol)}_vs_{safe_symbol(benchmark)}_interactive_dashboard.html"
+    radar_chart_path = out_dir / f"{safe_symbol(symbol)}_research_score_radar.html"
 
     plot_actual_close_price(close, symbol, benchmark, actual_chart_path)
     plot_normalized_performance(normalized, symbol, benchmark, chart_path)
     plot_drawdown(close, symbol, benchmark, drawdown_chart_path)
+    write_interactive_price_dashboard(close, normalized, symbol, benchmark, interactive_chart_path)
 
     price_summary = build_price_summary(close[symbol], close[benchmark], risk_free_rate)
     price_summary.to_csv(
@@ -1623,6 +2120,22 @@ def run_one(
 
     score_table = build_research_score(price_summary, fundamental_summary, info)
     score_table.to_csv(out_dir / f"{safe_symbol(symbol)}_research_potential_score.csv", index=False)
+    write_metric_radar_chart(score_table, radar_chart_path)
+    score_components_chart_path = out_dir / f"{safe_symbol(symbol)}_research_score_components.png"
+    plot_score_components(score_table, score_components_chart_path)
+
+    ruin_risk = build_ruin_risk_snapshot(info, trends)
+    ruin_risk.to_csv(out_dir / f"{safe_symbol(symbol)}_ruin_risk_snapshot.csv", index=False)
+    ruin_risk_chart_path = out_dir / f"{safe_symbol(symbol)}_ruin_risk_snapshot.png"
+    plot_ruin_risk_snapshot(ruin_risk, ruin_risk_chart_path)
+
+    growth_quality_chart_path = out_dir / f"{safe_symbol(symbol)}_growth_quality_trend.png"
+    plot_growth_quality(trends, growth_quality_chart_path)
+    growth_quality_chart_name = growth_quality_chart_path.name if growth_quality_chart_path.exists() else None
+
+    margin_stress = build_margin_stress(account_equity, margin_loan, [0.20, 0.30, 0.50, 0.70])
+    if not margin_stress.empty:
+        margin_stress.to_csv(out_dir / f"{safe_symbol(symbol)}_personal_margin_stress.csv", index=False)
 
     data_warnings = build_data_warnings(
         symbol=symbol,
@@ -1632,6 +2145,16 @@ def run_one(
         target_price=target_price,
         trends=trends,
     )
+    sanity_checks = build_sanity_checks(
+        symbol=symbol,
+        benchmark=benchmark,
+        info=info,
+        benchmark_info=benchmark_info,
+        target_price=target_price,
+        trends=trends,
+        ruin_risk=ruin_risk,
+    )
+    sanity_checks.to_csv(out_dir / f"{safe_symbol(symbol)}_sanity_checks.csv", index=False)
 
     report_path = write_report(
         symbol=symbol,
@@ -1648,10 +2171,21 @@ def run_one(
         info=info,
         target_price=target_price,
         warnings=data_warnings,
+        sanity_checks=sanity_checks,
+        ruin_risk=ruin_risk,
+        margin_stress=margin_stress,
         actual_chart_name=actual_chart_path.name,
         chart_name=chart_path.name,
         drawdown_chart_name=drawdown_chart_path.name,
+        score_components_chart_name=score_components_chart_path.name,
+        growth_quality_chart_name=growth_quality_chart_name,
+        ruin_risk_chart_name=ruin_risk_chart_path.name,
+        interactive_chart_name=interactive_chart_path.name,
+        radar_chart_name=radar_chart_path.name,
     )
+
+    latest_dir = output / safe_symbol(symbol) / "latest"
+    copy_run_to_latest(out_dir, latest_dir)
 
     score = get_component_score(score_table, "Research Potential Score")
     rating = rating_from_score(score)
@@ -1667,6 +2201,8 @@ def run_one(
         "rating": rating,
         "report": str(report_path),
         "folder": str(out_dir),
+        "latest_folder": str(latest_dir),
+        "profile": classify_research_category(info, fundamental_summary),
         "total_return": get_metric(price_summary, "Total Return", "Target"),
         "benchmark_return": get_metric(price_summary, "Total Return", "Benchmark"),
         "excess_return": get_metric(price_summary, "Total Return", "Difference"),
@@ -1688,13 +2224,9 @@ def write_cross_ticker_comparison(
     if not rows:
         return
 
-    if archive or run_id:
-        comparison_run_id = run_id or datetime.now().strftime("%Y%m%d_%H%M")
-        out_dir = output / "_comparison" / "runs" / comparison_run_id
-        ensure_dir(out_dir)
-    else:
-        out_dir = output / "_comparison" / "latest"
-        reset_dir(out_dir)
+    comparison_run_id = run_id or datetime.now().strftime("%Y%m%d_%H%M%S")
+    out_dir = output / "_comparison" / "runs" / comparison_run_id
+    ensure_dir(out_dir)
 
     df = pd.DataFrame(rows).sort_values("score", ascending=False, na_position="last")
     df.to_csv(out_dir / "cross_ticker_comparison.csv", index=False)
@@ -1729,6 +2261,7 @@ The score is a research-priority score, not a buy/sell signal.
 - Always verify with primary sources before making any decision.
 """
     save_text(out_dir / "cross_ticker_comparison.md", report)
+    copy_run_to_latest(out_dir, output / "_comparison" / "latest")
 
 
 def parse_args() -> argparse.Namespace:
@@ -1753,10 +2286,13 @@ Examples:
   # Custom risk-free rate
   cresearch AAPL --risk-free-rate 0.04
 
-  # Preserve a historical run
-  cresearch AAPL --archive
+  # Optional personal margin stress table
+  cresearch AAPL --account-equity 100000 --margin-loan 25000
 
-  # Preserve a historical run with your own run id
+  # Every run is archived by default; latest is refreshed automatically
+  cresearch AAPL
+
+  # Use your own run id
   cresearch AAPL --run-id test_2023_start
 """
     parser = argparse.ArgumentParser(
@@ -1772,8 +2308,10 @@ Examples:
     parser.add_argument("--years", type=int, default=5, help="Financial years to include. Default: 5.")
     parser.add_argument("--output", default="reports", help="Output folder. Default: reports.")
     parser.add_argument("--risk-free-rate", type=float, default=0.0, help="Annual risk-free rate for risk-adjusted metrics. Example: 0.04.")
-    parser.add_argument("--archive", action="store_true", help="Write output to reports/TICKER/runs/RUN_ID instead of reports/TICKER/latest.")
-    parser.add_argument("--run-id", default=None, help="Optional archive folder name. Implies --archive.")
+    parser.add_argument("--archive", action="store_true", help="Compatibility flag. v2 archives every run and refreshes latest automatically.")
+    parser.add_argument("--run-id", default=None, help="Optional archive folder name under reports/TICKER/runs/.")
+    parser.add_argument("--account-equity", type=float, default=None, help="Optional account equity for personal margin stress testing.")
+    parser.add_argument("--margin-loan", type=float, default=None, help="Optional margin loan balance for personal margin stress testing.")
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     return parser.parse_args()
 
@@ -1797,6 +2335,8 @@ def main() -> None:
                     risk_free_rate=args.risk_free_rate,
                     archive=args.archive,
                     run_id=args.run_id,
+                    account_equity=args.account_equity,
+                    margin_loan=args.margin_loan,
                 )
             )
         except Exception as exc:

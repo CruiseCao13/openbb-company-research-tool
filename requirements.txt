@@ -3,3 +3,4 @@ openbb-yfinance
 yfinance
 pandas
 matplotlib
+plotly

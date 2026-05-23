@@ -1,150 +1,183 @@
-# Report Structure
+# Report Structure / 报告结构
 
-Generated reports are designed as first-pass research data packs. They organize public-market data into a repeatable workflow, but they do not replace primary-source research.
+v2.0 reports are bilingual research radars. They are designed to surface opportunity cost, business quality, data reliability, and fragility risks without pretending to be buy/sell models.
 
-## One-line Verdict
+v2.0 报告是中英双语研究雷达。目标是暴露机会成本、业务质量、数据可靠性和毁灭性风险，而不是假装自己能给出买卖结论。
 
-A short, plain-English summary of what the data suggests.
+## 0. Boundary / 边界
 
-It is intentionally not a buy/sell recommendation. It frames the ticker as a research candidate, watchlist idea, data-limited case, or risk-heavy situation.
+Defines what the report is not.
 
-## Key Takeaways
+说明报告不提供买卖建议、目标价、收益承诺、交易信号或仓位建议。
 
-The most important automatic observations from the run.
+## 1. One-line Verdict / 一句话判断
 
-Typical signals include:
+A concise human-readable summary of the ticker's current research posture.
 
-- Whether the ticker beat or lagged the benchmark
-- Whether raw return and risk-adjusted return tell the same story
-- Whether drawdown was materially worse than the benchmark
-- Whether revenue growth, margin quality, and free cash flow support the narrative
-- Whether valuation makes the thesis harder to justify
+一句话概括该标的目前更像什么：成熟复利股、投机成长股、数据不足案例、ETF 类标的，或需要警惕的高风险标的。
 
-## Data Confidence
+## 2. Key Takeaways / 核心摘要
 
-A quick view of how much trust to place in each data area.
+Summarizes return, risk-adjusted performance, drawdown, growth quality, free cash flow, and valuation pressure.
 
-Price data is often more usable than company fundamentals from free providers. Financial statements, valuation fields, and ownership data should be verified with filings and company investor relations.
+总结收益、风险调整后表现、回撤、增长质量、自由现金流和估值压力。
 
-## Automatic Data Warnings
+## 3. Data Confidence / 数据可信度
 
-Rules-based warnings for issues that can make analysis misleading.
+Separates price data, company profile, financial statements, valuation fields, and segment revenue.
 
-Examples:
+区分价格数据、公司资料、财务报表、估值字段和业务分部收入的可信度。
 
-- Target and benchmark use different currencies
-- Ownership percentage is above 100%
-- PE or EV/EBITDA is negative
-- Price history is shorter than roughly one trading year
-- Financial statement history has fewer than three usable years
-- Revenue or free cash flow data is missing
-- ETF / fund-like instruments are being analyzed
+## 4. Sanity Scan / 主动断层扫描
 
-No warning does not mean the data is correct. It only means no automatic warning rule was triggered.
+The most important v2.0 reliability upgrade.
 
-## Company Profile
+v2.0 最重要的可靠性升级。
 
-Basic company context from the data provider.
+Sanity Scan is not a soft disclaimer. It actively flags issues with severity, finding, and action:
 
-This section is useful for orientation, but business descriptions should be checked against primary sources such as annual reports, 10-K filings, investor presentations, and earnings transcripts.
+Sanity Scan 不是一句“请自行核对”的免责声明，而是主动给出严重度、发现和动作建议：
 
-## Price vs Benchmark
+- Currency mismatch / 币种不一致
+- Short price history / 价格历史过短
+- Short financial history / 财务历史过短
+- Missing revenue / 营收缺失
+- Missing FCF / 自由现金流缺失
+- FCF consistency failure / 自由现金流一致性异常
+- Fund-like instrument / 基金类标的
+- Ruin-risk pressure / 毁灭性风险压力
 
-The benchmark comparison is designed to answer a simple opportunity-cost question:
+## 5. Company Profile / 公司资料
+
+Provides quick context from the data provider.
+
+提供来自数据源的快速背景，但业务描述仍需核对年报、10-K、投资者材料和电话会纪要。
+
+## 6. Price vs Benchmark / 价格与基准比较
+
+Answers the opportunity-cost question:
+
+回答一个核心问题：
 
 ```text
 Why not simply hold the benchmark?
+为什么不直接持有基准？
 ```
 
-The report includes three charts:
+Charts include:
 
-- Actual Close Price: raw closing prices from the provider
-- Normalized Performance: relative performance with the first selected price set to 100
-- Drawdown: decline from each asset's prior peak
+图表包括：
 
-The price summary table includes total return, CAGR, volatility, max drawdown, Sharpe, Sortino, Calmar, beta, alpha, correlation, tracking error, information ratio, and upside/downside capture.
+- Actual Close Price / 真实收盘价
+- Normalized Performance / 归一化表现
+- Drawdown / 回撤
+- Interactive HTML dashboard / 交互式 HTML 图表
 
-## Growth and Quality Summary
+## 7. Ruin Risk Snapshot / 毁灭性风险快照
 
-This section condenses company fundamentals into a few first-pass quality signals:
+Separates ordinary price volatility from business fragility.
 
-- Revenue CAGR
-- Latest revenue growth
-- Gross margin
-- Operating margin
-- Free cash flow margin
-- Positive net income years
-- Positive free cash flow years
+把普通价格波动和业务脆弱性分开。
 
-The goal is to check whether the growth story is supported by economics and cash conversion.
+Metrics include:
 
-## Money Source and Money Flow
+指标包括：
 
-This section shows where money comes from and where it goes.
+- Net Debt / 净债务
+- EBITDA
+- Net Debt / EBITDA
+- Debt / FCF
+- Cash Runway Years / 现金跑道年数
+- Ruin Risk Score / 毁灭性风险分数
 
-Key rows include:
+This section exists because historical max drawdown is not enough. A stock that once fell 30% can still later fall 100% if the business breaks.
 
-- Revenue
-- Gross profit
-- Operating income
-- Net income
-- Operating cash flow
-- Capital expenditure
-- Free cash flow
+这一节存在的原因是：历史最大回撤不够。一个曾经只跌过 30% 的股票，如果商业逻辑崩了，未来仍然可能归零。
 
-For ETF / fund-like instruments, this section is skipped because company financial statements are not the right analytical frame.
+## 8. Money Source and Money Flow / 钱从哪里来，流到哪里去
 
-## Valuation Snapshot
+Shows revenue, gross profit, operating income, net income, operating cash flow, capex, and free cash flow.
 
-Valuation fields are grouped so they are easier to read:
+展示营收、毛利、经营利润、净利润、经营现金流、资本开支和自由现金流。
 
-- Market Size
-- Valuation Multiples
-- Profitability and Growth
-- Cash Flow and Debt
-- Ownership
-- Price Range
+This section is skipped for ETF / fund-like instruments.
 
-These fields are not enough for valuation. They are a quick screen for whether the market is already pricing in a demanding future.
+ETF 或基金类标的会跳过该部分。
 
-## Research Potential Score
+## 9. Valuation Snapshot / 估值快照
 
-The Research Potential Score is a heuristic research-priority score.
+Grouped into:
 
-It is not:
+分组展示：
 
-- A valuation model
-- A prediction model
-- A buy/sell signal
-- Investment advice
+- Market Size / 市值规模
+- Valuation Multiples / 估值倍数
+- Profitability and Growth / 盈利与增长
+- Cash Flow and Debt / 现金流与债务
+- Ownership / 股权结构
+- Price Range / 价格区间
 
-Score components:
+## 10. Personal Margin Stress / 个人融资压力测试
 
-- Growth Score: revenue CAGR and latest revenue growth
-- Profitability Score: gross margin, operating margin, and FCF margin
-- Quality Trend Score: changes in gross margin, operating margin, and FCF margin
-- Risk Control Score: max drawdown, volatility, and beta
-- Benchmark Score: excess CAGR, information ratio, and Sharpe difference
-- Valuation Sanity Score: penalty-based check using PE, PS, EV/Revenue, and EV/EBITDA
+Optional account-level stress testing.
 
-## Required Manual Verification
+可选的个人账户压力测试。
 
-This section lists items that should be verified manually before forming a serious investment view.
+If the user passes `--account-equity` and `--margin-loan`, the report estimates portfolio value, margin loan, equity cushion, and loan-to-value under several drawdown scenarios.
+
+如果用户传入 `--account-equity` 和 `--margin-loan`，报告会估算不同下跌情景下的组合价值、融资余额、权益缓冲和融资比例。
+
+This section is intentionally personal. A stock can be analytically interesting and still be dangerous for a leveraged account.
+
+这一节是刻意个人化的：一只股票可以很值得研究，但仍然可能不适合一个有融资压力的账户。
+
+## 11. Research Potential Score / 研究潜力评分
+
+v2.0 uses research profiles instead of one universal score.
+
+v2.0 不再假装所有公司都适合一个评分模板，而是使用研究类型加权。
+
+Profiles include:
+
+研究类型包括：
+
+- Mature Compounder / 成熟复利型
+- Profitable Growth / 盈利成长型
+- Speculative Growth / 投机成长型
+- Cyclical / Asset Heavy / 周期或重资产型
+- Financials / 金融类
+- ETF / Fund / 基金类
+- Data Limited / 数据不足
+
+The score remains a heuristic. It is not a valuation model, prediction model, or investment recommendation.
+
+评分仍然只是启发式研究优先级，不是估值模型、预测模型或投资建议。
+
+## 12. Required Manual Verification / 必须人工核对
+
+The report explicitly lists what must be checked manually:
+
+报告明确列出必须人工核对的内容：
+
+- Revenue source and segment breakdown / 收入来源和分部拆解
+- Gross margin trend / 毛利率趋势
+- Free cash flow calculation / 自由现金流计算
+- Debt and dilution / 债务和稀释
+- Stock-based compensation / 股权激励
+- One-time gains or losses / 一次性损益
+- Guidance / 管理层指引
+- SEC 10-K / 10-Q
+- Company IR materials / 公司投资者材料
+
+## 13. Final Research Questions / 最后必须回答
+
+The final section forces judgment back to the human.
+
+最后一节把判断权交还给人。
 
 Examples:
 
-- Revenue source and segment breakdown
-- Margin trend
-- Free cash flow calculation
-- Debt and dilution
-- Stock-based compensation
-- One-time gains or losses
-- Management guidance
-- SEC 10-K / 10-Q
-- Company investor relations materials
-
-## Final Research Questions
-
-The final questions force the user back into judgment.
-
-The tool can help organize evidence, but it cannot answer whether a position belongs in a real portfolio.
+- Why not simply buy the benchmark?
+- Has the stock earned its extra risk?
+- If the stock falls 70%, does the business survive without destructive dilution?
+- Is the company being judged against the right lifecycle and sector peers?

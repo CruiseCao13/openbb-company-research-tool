@@ -1,16 +1,17 @@
-# AAPL Research Report｜Company Research Data Pack
+# AAPL Research Report｜Company Research Radar v2.0
 
 > Target: `AAPL`  
 > Benchmark: `SPY`  
 > Period: `2023-01-01` to `latest available`  
-> Research Status: **Research More**  
-> Version: `1.3.0`
+> Research Status: **Watchlist**  
+> Research Profile: **Mature Compounder**  
+> Version: `2.0.0`
 
 ---
 
 ## 0. Boundary｜边界
 
-This report is a standardized research data pack.
+This report is a bilingual research radar.
 
 It does **not** provide:
 
@@ -21,22 +22,26 @@ It does **not** provide:
 
 The score is a **research prioritization score**, not a prediction.
 
+本报告是研究雷达，不是投资建议。它的目标是暴露问题、组织证据、降低自我安慰，而不是替你做决定。
+
 ---
 
 ## 1. One-line Verdict｜一句话判断
 
-AAPL is a steadily growing, cash-generative name that beat SPY on return, but the risk-adjusted picture is less clean, so the current research status is Research More.
+AAPL is a steadily growing, cash-generative name that beat SPY on return, but the risk-adjusted picture is less clean, so the current research status is Watchlist.
 
 ---
 
 ## 2. Key Takeaways｜核心结论摘要
 
 - AAPL beat SPY on both total return and annualized compounding over the selected period.
+- Return leadership came with weaker risk-adjusted efficiency based on Sharpe ratio.
+- The stock outperformed, but did so with a deeper drawdown than the benchmark.
 - Revenue CAGR was 1.81%, which should be checked against the company growth narrative.
 - Latest gross margin was 46.91%, useful for judging product/service economics.
 - Latest FCF margin was 23.73%, showing how much revenue converts into free cash flow.
-- Return leadership came with weaker risk-adjusted efficiency based on Sharpe ratio.
-- The stock outperformed, but did so with a deeper drawdown than the benchmark.
+- Valuation sanity score is weak, so the thesis requires stronger growth and cash-flow evidence.
+- Research Potential Score is 61.34 / 100, classified as Watchlist.
 
 ---
 
@@ -51,9 +56,15 @@ AAPL is a steadily growing, cash-generative name that beat SPY on return, but th
 | Segment Revenue | Manual Required | Usually requires SEC filings or company IR. |
 
 
+### 🧯 Sanity Scan｜主动断层扫描
+
+| Severity | Check | Finding | Action |
+| --- | --- | --- | --- |
+| INFO | No triggered sanity failure / 未触发重大断层 | No automatic high-risk consistency failure was detected. | Still verify important numbers with primary sources. / 仍需用一手资料核对关键数字。 |
+
 ### Automatic Data Warnings
 
-No obvious data-quality warnings were detected automatically. Still verify important numbers with primary sources before using this report.
+No legacy warning rule was triggered. See the Sanity Scan below for stronger consistency checks.
 
 ---
 
@@ -70,8 +81,8 @@ No obvious data-quality warnings were detected automatically. Still verify impor
 | country | United States |
 | exchange | NMS |
 | currency | USD |
-| marketCap | 4.55T |
-| enterpriseValue | 4.50T |
+| marketCap | 4.54T |
+| enterpriseValue | 4.55T |
 | beta | 1.0650 |
 | website | https://www.apple.com |
 
@@ -98,6 +109,14 @@ Benchmark explanation:
 
 > SPY is a broad S&P 500 benchmark. It tests whether the stock deserves capital compared with a simple broad-market ETF.
 
+### 🕹 Interactive HTML｜交互式图表
+
+[Open interactive price dashboard](AAPL_vs_SPY_interactive_dashboard.html)
+
+The HTML chart supports hover, zoom, range selection, and exact-date inspection.
+
+交互式 HTML 图表支持悬停、缩放、区间选择和按日期查看具体数值。
+
 ![AAPL vs SPY Actual Close Price](AAPL_vs_SPY_actual_close_price_chart.png)
 
 Actual close price chart shows the raw closing prices from the data provider.
@@ -123,22 +142,22 @@ Drawdown shows the decline from the previous peak.
 
 | Metric | Target | Benchmark | Difference |
 | --- | --- | --- | --- |
-| Total Return | 147.89% | 95.98% | 51.91% |
-| CAGR | 30.77% | 22.00% | 8.77% |
-| 1Y Return | 53.97% | 28.00% | 25.97% |
-| 6M Return | 16.45% | 14.37% | 2.07% |
-| 3M Return | 13.92% | 8.58% | 5.34% |
+| Total Return | 146.92% | 95.80% | 51.12% |
+| CAGR | 30.62% | 21.97% | 8.66% |
+| 1Y Return | 53.37% | 27.88% | 25.49% |
+| 6M Return | 15.99% | 14.27% | 1.72% |
+| 3M Return | 13.48% | 8.48% | 5.00% |
 | Max Drawdown | -33.43% | -19.00% | -14.43% |
-| Annualized Volatility | 25.43% | 15.19% | 10.23% |
-| Sharpe Ratio | 1.2103 | 1.4479 | -0.2376 |
-| Sortino Ratio | 1.7397 | 1.9756 | -0.2359 |
-| Calmar Ratio | 0.9204 | 1.1580 | -0.2375 |
-| Beta vs Benchmark | 1.1278 | N/A | N/A |
-| Alpha vs Benchmark | 6.34% | N/A | N/A |
-| Correlation vs Benchmark | 0.6740 | N/A | N/A |
+| Annualized Volatility | 25.42% | 15.19% | 10.23% |
+| Sharpe Ratio | 1.2046 | 1.4458 | -0.2411 |
+| Sortino Ratio | 1.7311 | 1.9726 | -0.2415 |
+| Calmar Ratio | 0.9159 | 1.1562 | -0.2403 |
+| Beta vs Benchmark | 1.1275 | N/A | N/A |
+| Alpha vs Benchmark | 6.26% | N/A | N/A |
+| Correlation vs Benchmark | 0.6739 | N/A | N/A |
 | Tracking Error | 18.88% | N/A | N/A |
-| Information Ratio | 0.4646 | N/A | N/A |
-| Upside Capture | 109.27% | N/A | N/A |
+| Information Ratio | 0.4584 | N/A | N/A |
+| Upside Capture | 109.17% | N/A | N/A |
 | Downside Capture | 99.32% | N/A | N/A |
 
 ### How to Read This
@@ -178,7 +197,28 @@ Drawdown shows the decline from the previous peak.
 
 ---
 
-## 7. Money Source and Money Flow｜钱从哪里来，流到哪里去
+## 7. Ruin Risk Snapshot｜毁灭性风险快照
+
+![AAPL Ruin Risk Snapshot](AAPL_ruin_risk_snapshot.png)
+
+| Metric | Value | Interpretation |
+| --- | --- | --- |
+| Net Debt | 16.20B | Total debt minus cash. Negative is net cash. |
+| EBITDA | 159.98B | Provider EBITDA, when available. |
+| Net Debt / EBITDA | 0.1013 | Debt-load proxy. Higher values deserve manual stress testing. |
+| Debt / FCF | 0.8380 | Debt compared with free cash flow. Not useful when FCF is negative. |
+| Cash Runway Years | N/A | Approximate years of cash runway when FCF is negative. |
+| Ruin Risk Score | 51.22 / 100 | N/A |
+
+This section tries to separate normal price volatility from business fragility. Historical drawdown is not the same as ruin risk.
+
+这一节用于区分“价格波动”和“业务毁灭性风险”。历史回撤不等于破产、融资枯竭或商业模式失效风险。
+
+---
+
+## 8. Money Source and Money Flow｜钱从哪里来，流到哪里去
+
+![AAPL Growth and Quality Trend](AAPL_growth_quality_trend.png)
 
 | index | Revenue | Gross Profit | Operating Income | Net Income | Operating Cash Flow | Capital Expenditure | Free Cash Flow | Revenue Growth YoY | Gross Margin | Operating Margin | Net Margin | FCF Margin |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -198,25 +238,40 @@ Drawdown shows the decline from the previous peak.
 
 ---
 
-## 8. Valuation Snapshot｜估值快照
+## 9. Personal Margin Stress｜个人融资压力测试
+
+| Scenario | Portfolio Value | Margin Loan | Equity Cushion | Loan / Value |
+| --- | --- | --- | --- | --- |
+| -20.00% portfolio shock | 80,000.00 | 25,000.00 | 55,000.00 | 31.25% |
+| -30.00% portfolio shock | 70,000.00 | 25,000.00 | 45,000.00 | 35.71% |
+| -50.00% portfolio shock | 50,000.00 | 25,000.00 | 25,000.00 | 50.00% |
+| -70.00% portfolio shock | 30,000.00 | 25,000.00 | 5,000.00 | 83.33% |
+
+This optional section is not about the company. It tests whether your own balance sheet can survive stress.
+
+这一节不是分析公司，而是检查你自己的资产负债表能不能扛住压力。
+
+---
+
+## 10. Valuation Snapshot｜估值快照
 
 ### Market Size
 
 | Metric | Value |
 | --- | --- |
-| marketCap | 4.55T |
-| enterpriseValue | 4.50T |
+| marketCap | 4.54T |
+| enterpriseValue | 4.55T |
 
 ### Valuation Multiples
 
 | Metric | Value |
 | --- | --- |
-| trailingPE | 37.4958 |
-| forwardPE | 32.2882 |
-| priceToSalesTrailing12Months | 10.0873 |
-| priceToBook | 42.7121 |
-| enterpriseToRevenue | 9.9590 |
-| enterpriseToEbitda | 28.1020 |
+| trailingPE | 37.4327 |
+| forwardPE | 32.1559 |
+| priceToSalesTrailing12Months | 10.0472 |
+| priceToBook | 42.5372 |
+| enterpriseToRevenue | 10.0830 |
+| enterpriseToEbitda | 28.4540 |
 
 ### Profitability and Growth
 
@@ -252,43 +307,49 @@ Drawdown shows the decline from the previous peak.
 
 | Metric | Value |
 | --- | --- |
-| fiftyTwoWeekLow | 193.4600 |
-| fiftyTwoWeekHigh | 310.0900 |
+| fiftyTwoWeekLow | 195.0700 |
+| fiftyTwoWeekHigh | 311.4000 |
 
 High valuation requires stronger growth, margin expansion, and cash flow evidence.
 
 ---
 
-## 9. Research Potential Score｜研究潜力评分
+## 11. Research Potential Score｜研究潜力评分
 
-| Component | Score | Weight |
-| --- | --- | --- |
-| Growth Score | 40.75 / 100 | 22.00% |
-| Profitability Score | 85.94 / 100 | 22.00% |
-| Quality Trend Score | 50.75 / 100 | 16.00% |
-| Risk Control Score | 65.42 / 100 | 16.00% |
-| Benchmark Score | 58.41 / 100 | 16.00% |
-| Valuation Sanity Score | 31.78 / 100 | 8.00% |
-| Research Potential Score | 58.35 / 100 | 100.00% |
+[Open interactive score radar](AAPL_research_score_radar.html)
+
+![AAPL Research Score Components](AAPL_research_score_components.png)
+
+| Component | Score | Weight | Profile |
+| --- | --- | --- | --- |
+| Growth Score | 40.75 / 100 | 14.00% | Mature Compounder |
+| Profitability Score | 85.94 / 100 | 28.00% | Mature Compounder |
+| Quality Trend Score | 50.75 / 100 | 18.00% | Mature Compounder |
+| Risk Control Score | 65.43 / 100 | 18.00% | Mature Compounder |
+| Benchmark Score | 58.22 / 100 | 14.00% | Mature Compounder |
+| Valuation Sanity Score | 31.37 / 100 | 8.00% | Mature Compounder |
+| Research Potential Score | 61.34 / 100 | 100.00% | Mature Compounder |
 
 ### Why This Score?
 
-This score is a heuristic research-priority score.
+This score is a heuristic research-priority score, now weighted by research profile.
 It is not a valuation model, not a prediction model, and not a buy/sell signal.
 
-- Growth Score: based on revenue CAGR and latest revenue growth.
-- Profitability Score: based on gross margin, operating margin, and FCF margin.
-- Quality Trend Score: based on changes in gross margin, operating margin, and FCF margin.
-- Risk Control Score: based on max drawdown, volatility, and beta.
-- Benchmark Score: based on excess CAGR, information ratio, and Sharpe difference.
-- Valuation Sanity Score: penalty-based score using PE, PS, EV/Revenue, and EV/EBITDA.
+这个分数是按研究类型加权的启发式“研究优先级”分数，不是估值模型、预测模型或买卖信号。
+
+- Growth Score / 增长: revenue CAGR and latest revenue growth.
+- Profitability Score / 盈利质量: gross margin, operating margin, and FCF margin.
+- Quality Trend Score / 质量趋势: changes in gross margin, operating margin, and FCF margin.
+- Risk Control Score / 风险控制: max drawdown, volatility, and beta.
+- Benchmark Score / 基准对比: excess CAGR, information ratio, and Sharpe difference.
+- Valuation Sanity Score / 估值理性: penalty-based check using PE, PS, EV/Revenue, and EV/EBITDA.
 
 Main score support:
 - Profitability Score: 85.94 / 100
-- Risk Control Score: 65.42 / 100
+- Risk Control Score: 65.43 / 100
 
 Main score drag:
-- Valuation Sanity Score: 31.78 / 100
+- Valuation Sanity Score: 31.37 / 100
 - Growth Score: 40.75 / 100
 
 ### Score Meaning
@@ -303,7 +364,7 @@ This score is transparent but imperfect. It is used to prioritize research, not 
 
 ---
 
-## 10. Required Manual Verification｜必须人工核对
+## 12. Required Manual Verification｜必须人工核对
 
 Before making any serious judgment, verify:
 
@@ -317,10 +378,12 @@ Before making any serious judgment, verify:
 - Management guidance
 - SEC 10-K / 10-Q
 - Company IR materials
+- Sanity Scan HIGH severity items
+- Ruin Risk Snapshot debt and cash-burn assumptions
 
 ---
 
-## 11. Final Research Questions｜最后必须回答
+## 13. Final Research Questions｜最后必须回答
 
 - Why not simply buy `SPY`?
 - Has `AAPL` earned its extra risk?
@@ -329,9 +392,11 @@ Before making any serious judgment, verify:
 - Is free cash flow healthy?
 - Is valuation already pricing in too much future success?
 - If the stock falls 30%-50%, does the thesis still hold?
+- If the stock falls 70%, does the business survive without destructive dilution?
+- Is this company being judged against the right lifecycle and sector peers?
 
 ---
 
-## 12. Generated Files
+## 14. Generated Files
 
 This folder contains CSV, chart, and Markdown outputs generated by the tool.
