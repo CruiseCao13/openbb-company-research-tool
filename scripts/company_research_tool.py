@@ -17,7 +17,7 @@ This tool is NOT a buy/sell recommendation engine.
 
 from __future__ import annotations
 
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 
 import argparse
 from datetime import datetime
@@ -212,7 +212,7 @@ SCORE_METRICS = {
     "Risk Control Score",
     "Benchmark Score",
     "Valuation Sanity Score",
-    "Research Potential Score",
+    "Research Score",
     "Ruin Risk Score",
 }
 
@@ -246,6 +246,29 @@ CURRENCY_METRICS = {
 }
 
 FUND_QUOTE_TYPES = {"ETF", "FUND", "MUTUALFUND", "INDEX"}
+CHART_COLORS = {
+    "target": "#2563eb",
+    "benchmark": "#64748b",
+    "positive": "#059669",
+    "negative": "#dc2626",
+    "accent": "#7c3aed",
+    "grid": "#d8dee9",
+    "text": "#111827",
+}
+
+plt.rcParams.update(
+    {
+        "font.family": "DejaVu Sans",
+        "axes.titlesize": 15,
+        "axes.titleweight": "bold",
+        "axes.labelsize": 10,
+        "xtick.labelsize": 9,
+        "ytick.labelsize": 9,
+        "legend.fontsize": 9,
+        "figure.facecolor": "white",
+        "axes.facecolor": "white",
+    }
+)
 
 
 def metric_value_kind(metric: str) -> str:
@@ -602,6 +625,53 @@ def capture_ratios(target: pd.Series, benchmark: pd.Series) -> tuple[float, floa
     return upside, downside
 
 
+def chart_subtitle(start: pd.Timestamp, end: pd.Timestamp, benchmark: str) -> str:
+    return f"Period: {start.date()} to {end.date()} | Benchmark: {benchmark} | Source: OpenBB / yfinance"
+
+
+def style_finance_axis(ax: Any) -> None:
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["left"].set_color("#cbd5e1")
+    ax.spines["bottom"].set_color("#cbd5e1")
+    ax.grid(True, color=CHART_COLORS["grid"], linewidth=0.8, alpha=0.7)
+    ax.tick_params(colors="#334155")
+    ax.yaxis.label.set_color("#334155")
+    ax.xaxis.label.set_color("#334155")
+
+
+def add_subtitle(ax: Any, subtitle: str) -> None:
+    ax.text(
+        0,
+        1.02,
+        subtitle,
+        transform=ax.transAxes,
+        ha="left",
+        va="bottom",
+        fontsize=9,
+        color="#475569",
+    )
+
+
+def annotate_last_value(ax: Any, series: pd.Series, label: str, color: str, percent: bool = False) -> None:
+    series = series.dropna()
+    if series.empty:
+        return
+    x = series.index[-1]
+    y = series.iloc[-1]
+    text = f"{label}: {fmt_percent(y)}" if percent else f"{label}: {fmt_number(y)}"
+    ax.annotate(
+        text,
+        xy=(x, y),
+        xytext=(8, 0),
+        textcoords="offset points",
+        color=color,
+        fontsize=9,
+        va="center",
+        bbox=dict(boxstyle="round,pad=0.25", fc="white", ec=color, alpha=0.9),
+    )
+
+
 def build_price_summary(target_close: pd.Series, benchmark_close: pd.Series, risk_free_rate: float) -> pd.DataFrame:
     beta, alpha = beta_alpha(target_close, benchmark_close, risk_free_rate)
     upside, downside = capture_ratios(target_close, benchmark_close)
@@ -635,43 +705,70 @@ def build_price_summary(target_close: pd.Series, benchmark_close: pd.Series, ris
 
 
 def plot_normalized_performance(normalized: pd.DataFrame, target: str, benchmark: str, path: Path) -> None:
-    ax = normalized.plot(
-        title=f"{target} vs {benchmark} Normalized Performance",
-        figsize=(12, 6),
+    target_return = normalized[target].iloc[-1] / normalized[target].iloc[0] - 1
+    benchmark_return = normalized[benchmark].iloc[-1] / normalized[benchmark].iloc[0] - 1
+    title = (
+        f"{target} outperformed {benchmark}, but risk metrics still matter"
+        if target_return > benchmark_return
+        else f"{target} lagged {benchmark} over the selected period"
     )
+    fig, ax = plt.subplots(figsize=(13.5, 7))
+    ax.plot(normalized.index, normalized[target], label=target, color=CHART_COLORS["target"], linewidth=2.2)
+    ax.plot(normalized.index, normalized[benchmark], label=benchmark, color=CHART_COLORS["benchmark"], linewidth=2.0)
+    ax.set_title(title, loc="left", color=CHART_COLORS["text"], pad=24)
+    add_subtitle(ax, chart_subtitle(normalized.index[0], normalized.index[-1], benchmark))
     ax.set_xlabel("Date")
     ax.set_ylabel("Normalized Price: Start = 100")
-    ax.grid(True, alpha=0.25)
+    annotate_last_value(ax, normalized[target], f"{target} total return", CHART_COLORS["target"])
+    annotate_last_value(ax, normalized[benchmark], f"{benchmark} total return", CHART_COLORS["benchmark"])
+    style_finance_axis(ax)
+    ax.legend(loc="upper left", frameon=False, ncols=2)
     plt.tight_layout()
-    plt.savefig(path, dpi=160)
+    plt.savefig(path, dpi=220, bbox_inches="tight")
     plt.close()
 
 
 def plot_actual_close_price(close: pd.DataFrame, target: str, benchmark: str, path: Path) -> None:
-    ax = close.plot(
-        title=f"{target} vs {benchmark} Actual Close Price",
-        figsize=(12, 6),
-    )
+    fig, ax = plt.subplots(figsize=(13.5, 7))
+    ax.plot(close.index, close[target], label=target, color=CHART_COLORS["target"], linewidth=2.2)
+    ax.plot(close.index, close[benchmark], label=benchmark, color=CHART_COLORS["benchmark"], linewidth=2.0)
+    ax.set_title(f"{target} and {benchmark}: actual close price", loc="left", color=CHART_COLORS["text"], pad=24)
+    add_subtitle(ax, chart_subtitle(close.index[0], close.index[-1], benchmark))
     ax.set_xlabel("Date")
     ax.set_ylabel("Close Price")
-    ax.grid(True, alpha=0.25)
+    annotate_last_value(ax, close[target], f"{target} latest", CHART_COLORS["target"])
+    annotate_last_value(ax, close[benchmark], f"{benchmark} latest", CHART_COLORS["benchmark"])
+    style_finance_axis(ax)
+    ax.legend(loc="upper left", frameon=False, ncols=2)
     plt.tight_layout()
-    plt.savefig(path, dpi=160)
+    plt.savefig(path, dpi=220, bbox_inches="tight")
     plt.close()
 
 
 def plot_drawdown(close: pd.DataFrame, target: str, benchmark: str, path: Path) -> None:
-    dd = pd.DataFrame()
-    for col in [target, benchmark]:
-        running_max = close[col].cummax()
-        dd[col] = close[col] / running_max - 1
-
-    ax = dd.plot(title=f"{target} vs {benchmark} Drawdown", figsize=(12, 5))
+    dd = build_drawdown_frame(close, target, benchmark)
+    target_mdd = dd[target].min()
+    benchmark_mdd = dd[benchmark].min()
+    title = (
+        f"{target} outperformed with deeper drawdowns"
+        if target_mdd < benchmark_mdd
+        else f"{target} had a shallower drawdown profile than {benchmark}"
+    )
+    fig, ax = plt.subplots(figsize=(13.5, 6.5))
+    ax.plot(dd.index, dd[target], label=target, color=CHART_COLORS["target"], linewidth=2.2)
+    ax.plot(dd.index, dd[benchmark], label=benchmark, color=CHART_COLORS["benchmark"], linewidth=2.0)
+    ax.fill_between(dd.index, dd[target], 0, color=CHART_COLORS["target"], alpha=0.08)
+    ax.set_title(title, loc="left", color=CHART_COLORS["text"], pad=24)
+    add_subtitle(ax, chart_subtitle(close.index[0], close.index[-1], benchmark))
     ax.set_xlabel("Date")
     ax.set_ylabel("Drawdown")
-    ax.grid(True, alpha=0.25)
+    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f"{y:.0%}"))
+    annotate_last_value(ax, pd.Series([target_mdd], index=[dd[target].idxmin()]), f"{target} max drawdown", CHART_COLORS["negative"], percent=True)
+    annotate_last_value(ax, pd.Series([benchmark_mdd], index=[dd[benchmark].idxmin()]), f"{benchmark} max drawdown", CHART_COLORS["benchmark"], percent=True)
+    style_finance_axis(ax)
+    ax.legend(loc="lower left", frameon=False, ncols=2)
     plt.tight_layout()
-    plt.savefig(path, dpi=160)
+    plt.savefig(path, dpi=220, bbox_inches="tight")
     plt.close()
 
 
@@ -703,29 +800,90 @@ def write_interactive_price_dashboard(
         rows=3,
         cols=1,
         shared_xaxes=True,
-        vertical_spacing=0.08,
+        vertical_spacing=0.07,
         subplot_titles=(
-            "Actual Close Price / 真实收盘价",
-            "Normalized Performance: Start = 100 / 归一化表现",
-            "Drawdown From Previous Peak / 从前高回撤",
+            "Actual close price",
+            "Normalized performance: start = 100",
+            "Drawdown from previous peak",
         ),
     )
 
+    colors = {target: CHART_COLORS["target"], benchmark: CHART_COLORS["benchmark"]}
     for name in [target, benchmark]:
-        fig.add_trace(go.Scatter(x=close.index, y=close[name], name=f"{name} Close", mode="lines"), row=1, col=1)
-        fig.add_trace(go.Scatter(x=normalized.index, y=normalized[name], name=f"{name} Normalized", mode="lines"), row=2, col=1)
-        fig.add_trace(go.Scatter(x=drawdown.index, y=drawdown[name], name=f"{name} Drawdown", mode="lines"), row=3, col=1)
+        fig.add_trace(
+            go.Scatter(
+                x=close.index,
+                y=close[name],
+                name=f"{name} close",
+                mode="lines",
+                line=dict(color=colors[name], width=2.4),
+                hovertemplate=f"{name}<br>Date=%{{x|%Y-%m-%d}}<br>Close=%{{y:.2f}}<extra></extra>",
+            ),
+            row=1,
+            col=1,
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=normalized.index,
+                y=normalized[name],
+                name=f"{name} normalized",
+                mode="lines",
+                line=dict(color=colors[name], width=2.4),
+                hovertemplate=f"{name}<br>Date=%{{x|%Y-%m-%d}}<br>Index=%{{y:.2f}}<extra></extra>",
+                showlegend=False,
+            ),
+            row=2,
+            col=1,
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=drawdown.index,
+                y=drawdown[name],
+                name=f"{name} drawdown",
+                mode="lines",
+                line=dict(color=colors[name], width=2.4),
+                hovertemplate=f"{name}<br>Date=%{{x|%Y-%m-%d}}<br>Drawdown=%{{y:.2%}}<extra></extra>",
+                showlegend=False,
+            ),
+            row=3,
+            col=1,
+        )
 
     fig.update_layout(
-        title=f"{target} vs {benchmark} Interactive Research Chart / 交互式研究图表",
+        title={
+            "text": f"{target} vs {benchmark}: price, relative performance, and drawdown",
+            "x": 0.02,
+            "xanchor": "left",
+        },
         hovermode="x unified",
-        template="plotly_white",
+        template="simple_white",
         height=980,
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+        margin=dict(l=70, r=40, t=90, b=50),
+        legend=dict(orientation="h", yanchor="bottom", y=1.03, xanchor="left", x=0),
+        font=dict(family="Arial, sans-serif", size=13, color=CHART_COLORS["text"]),
+        plot_bgcolor="white",
+        paper_bgcolor="white",
     )
     fig.update_yaxes(title_text="Close Price", row=1, col=1)
     fig.update_yaxes(title_text="Start = 100", row=2, col=1)
     fig.update_yaxes(title_text="Drawdown", tickformat=".0%", row=3, col=1)
+    fig.update_xaxes(
+        rangeslider=dict(visible=True, thickness=0.04),
+        rangeselector=dict(
+            buttons=list(
+                [
+                    dict(count=3, label="3M", step="month", stepmode="backward"),
+                    dict(count=6, label="6M", step="month", stepmode="backward"),
+                    dict(count=1, label="1Y", step="year", stepmode="backward"),
+                    dict(step="all", label="All"),
+                ]
+            )
+        ),
+        row=3,
+        col=1,
+    )
+    fig.update_xaxes(showgrid=True, gridcolor="#e5e7eb")
+    fig.update_yaxes(showgrid=True, gridcolor="#e5e7eb", zerolinecolor="#cbd5e1")
     fig.write_html(path, include_plotlyjs="cdn", full_html=True)
 
 
@@ -738,7 +896,7 @@ def write_metric_radar_chart(score_table: pd.DataFrame, path: Path) -> None:
         )
         return
 
-    components = score_table[score_table["Component"] != "Research Potential Score"].copy()
+    components = score_table[score_table["Component"] != "Research Score"].copy()
     if components.empty:
         save_text(path, "<html><body><h1>No score components available</h1></body></html>")
         return
@@ -759,26 +917,33 @@ def write_metric_radar_chart(score_table: pd.DataFrame, path: Path) -> None:
         ]
     )
     fig.update_layout(
-        title="Research Score Radar / 研究评分雷达",
-        template="plotly_white",
+        title={"text": "Research score components", "x": 0.03, "xanchor": "left"},
+        template="simple_white",
         polar=dict(radialaxis=dict(visible=True, range=[0, 100])),
         height=620,
+        font=dict(family="Arial, sans-serif", size=13, color=CHART_COLORS["text"]),
+        paper_bgcolor="white",
     )
     fig.write_html(path, include_plotlyjs="cdn", full_html=True)
 
 
 def plot_score_components(score_table: pd.DataFrame, path: Path) -> None:
-    components = score_table[score_table["Component"] != "Research Potential Score"].copy()
+    components = score_table[score_table["Component"] != "Research Score"].copy()
     if components.empty:
         return
     components = components.sort_values("Score")
-    ax = components.plot.barh(x="Component", y="Score", legend=False, figsize=(10, 5), color="#3b82f6")
-    ax.set_title("Research Score Components")
+    colors = [CHART_COLORS["negative"] if v < 45 else CHART_COLORS["accent"] if v < 60 else CHART_COLORS["positive"] for v in components["Score"]]
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.barh(components["Component"], components["Score"], color=colors)
+    ax.set_title("What supports or weakens the research score", loc="left", color=CHART_COLORS["text"], pad=22)
+    add_subtitle(ax, "Score components are heuristics, not investment recommendations")
     ax.set_xlabel("Score: 0-100")
     ax.set_xlim(0, 100)
-    ax.grid(True, axis="x", alpha=0.25)
+    for i, value in enumerate(components["Score"]):
+        ax.text(min(value + 1.5, 98), i, f"{value:.1f}", va="center", fontsize=9, color="#334155")
+    style_finance_axis(ax)
     plt.tight_layout()
-    plt.savefig(path, dpi=160)
+    plt.savefig(path, dpi=220, bbox_inches="tight")
     plt.close()
 
 
@@ -788,14 +953,19 @@ def plot_growth_quality(trends: pd.DataFrame, path: Path) -> None:
     cols = [c for c in ["Revenue Growth YoY", "Gross Margin", "Operating Margin", "FCF Margin"] if c in trends]
     if not cols:
         return
-    ax = trends[cols].plot(figsize=(11, 5), marker="o")
-    ax.set_title("Growth and Quality Trend")
+    fig, ax = plt.subplots(figsize=(12.5, 6))
+    palette = [CHART_COLORS["target"], CHART_COLORS["positive"], CHART_COLORS["accent"], CHART_COLORS["negative"]]
+    for idx, col in enumerate(cols):
+        ax.plot(trends.index, trends[col], marker="o", linewidth=2.0, label=col, color=palette[idx % len(palette)])
+    ax.set_title("Growth quality: revenue, margins, and cash conversion", loc="left", color=CHART_COLORS["text"], pad=22)
+    add_subtitle(ax, "Use this to check whether growth is supported by economics and cash flow")
     ax.set_xlabel("Fiscal Period")
     ax.set_ylabel("Ratio")
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f"{y:.0%}"))
-    ax.grid(True, alpha=0.25)
+    style_finance_axis(ax)
+    ax.legend(loc="best", frameon=False)
     plt.tight_layout()
-    plt.savefig(path, dpi=160)
+    plt.savefig(path, dpi=220, bbox_inches="tight")
     plt.close()
 
 
@@ -806,14 +976,18 @@ def plot_ruin_risk_snapshot(ruin_risk: pd.DataFrame, path: Path) -> None:
     if view.empty:
         return
     view["Display Value"] = pd.to_numeric(view["Value"], errors="coerce").fillna(0)
-    colors = ["#ef4444" if m == "Ruin Risk Score" else "#64748b" for m in view["Metric"]]
-    ax = view.plot.bar(x="Metric", y="Display Value", legend=False, figsize=(10, 5), color=colors)
-    ax.set_title("Ruin Risk Snapshot")
+    colors = [CHART_COLORS["negative"] if m == "Ruin Risk Score" else CHART_COLORS["benchmark"] for m in view["Metric"]]
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.bar(view["Metric"], view["Display Value"], color=colors)
+    ax.set_title("Ruin risk: balance sheet and cash-flow fragility", loc="left", color=CHART_COLORS["text"], pad=22)
+    add_subtitle(ax, "Higher values deserve manual review; this is not a bankruptcy model")
     ax.set_ylabel("Value")
-    ax.grid(True, axis="y", alpha=0.25)
+    for i, value in enumerate(view["Display Value"]):
+        ax.text(i, value, f"{value:.2f}", ha="center", va="bottom", fontsize=9, color="#334155")
+    style_finance_axis(ax)
     plt.xticks(rotation=20, ha="right")
     plt.tight_layout()
-    plt.savefig(path, dpi=160)
+    plt.savefig(path, dpi=220, bbox_inches="tight")
     plt.close()
 
 
@@ -1190,6 +1364,10 @@ def get_metric(df: pd.DataFrame, metric: str, column: str = "Value") -> float:
 def get_component_score(score_table: pd.DataFrame, component: str) -> float:
     try:
         row = score_table[score_table["Component"] == component]
+        if row.empty and component == "Research Score":
+            row = score_table[score_table["Component"] == "Research Potential Score"]
+        if row.empty and component == "Research Potential Score":
+            row = score_table[score_table["Component"] == "Research Score"]
         if row.empty:
             return float("nan")
         return float(row.iloc[0]["Score"])
@@ -1274,7 +1452,7 @@ def build_research_score(price_summary: pd.DataFrame, fundamental_summary: pd.Da
     if is_fund_like(info) or fundamental_summary is None or fundamental_summary.empty:
         return pd.DataFrame(
             [
-                {"Component": "Research Potential Score", "Score": float("nan"), "Weight": 1.0, "Profile": "ETF / Fund"},
+                {"Component": "Research Score", "Score": float("nan"), "Weight": 1.0, "Profile": "ETF / Fund"},
             ]
         )
 
@@ -1308,7 +1486,7 @@ def build_research_score(price_summary: pd.DataFrame, fundamental_summary: pd.Da
 
     total = sum(components[k] * weights[k] for k in components)
     rows = [{"Component": k, "Score": components[k], "Weight": weights[k], "Profile": category} for k in components]
-    rows.append({"Component": "Research Potential Score", "Score": total, "Weight": 1.0, "Profile": category})
+    rows.append({"Component": "Research Score", "Score": total, "Weight": 1.0, "Profile": category})
     return pd.DataFrame(rows)
 
 
@@ -1374,15 +1552,29 @@ def generate_key_takeaways(
     gross_margin = get_metric(fundamental_summary, "Gross Margin Latest")
     fcf_margin = get_metric(fundamental_summary, "FCF Margin Latest")
     valuation_score = get_component_score(score_table, "Valuation Sanity Score")
-    total_score = get_component_score(score_table, "Research Potential Score")
+    total_score = get_component_score(score_table, "Research Score")
+    category = classify_research_category(info, fundamental_summary)
+    ps = safe_info_float(info, "priceToSalesTrailing12Months")
+    pe = safe_info_float(info, "trailingPE")
 
     if not pd.isna(total_diff) and not pd.isna(cagr_diff):
         if total_diff > 0 and cagr_diff > 0:
-            takeaways.append(f"{symbol} beat {benchmark} on both total return and annualized compounding over the selected period.")
+            if not pd.isna(revenue_cagr) and revenue_cagr < 0.05:
+                takeaways.append(
+                    f"{symbol} beat {benchmark}, but the outperformance was not supported by fast revenue growth; the thesis depends more on margins, cash flow, buybacks, and market willingness to keep paying a premium multiple."
+                )
+            else:
+                takeaways.append(
+                    f"{symbol} beat {benchmark} on both total return and annualized compounding, so the first question is whether the business quality justifies the extra single-stock risk."
+                )
         elif total_diff < 0 and cagr_diff < 0:
-            takeaways.append(f"{symbol} lagged {benchmark} on both total return and annualized compounding over the selected period.")
+            takeaways.append(
+                f"{symbol} lagged {benchmark} on both total return and annualized compounding, which weakens the opportunity-cost case unless the forward thesis has changed materially."
+            )
         else:
-            takeaways.append(f"{symbol}'s relative performance versus {benchmark} was mixed across total return and CAGR.")
+            takeaways.append(
+                f"{symbol}'s relative performance versus {benchmark} was mixed, so the benchmark comparison should be treated as inconclusive rather than supportive."
+            )
     elif not pd.isna(total_diff):
         takeaways.append(
             f"{symbol} {'outperformed' if total_diff > 0 else 'underperformed'} {benchmark} in total return over the selected period."
@@ -1400,7 +1592,9 @@ def generate_key_takeaways(
     )
 
     if raw_return_up_risk_efficiency_down:
-        takeaways.append("Return leadership came with weaker risk-adjusted efficiency based on Sharpe ratio.")
+        takeaways.append(
+            "The stock delivered better raw return, but weaker Sharpe efficiency means the investor was paid less cleanly for each unit of volatility."
+        )
     elif not pd.isna(sharpe_diff):
         if sharpe_diff > 0:
             takeaways.append("Risk-adjusted performance was stronger than the benchmark based on Sharpe ratio.")
@@ -1408,21 +1602,21 @@ def generate_key_takeaways(
             takeaways.append("Risk-adjusted performance was weaker than the benchmark based on Sharpe ratio.")
 
     if raw_return_up_deeper_drawdown:
-        takeaways.append("The stock outperformed, but did so with a deeper drawdown than the benchmark.")
+        takeaways.append(
+            "The outperformance came with deeper drawdowns, so position sizing and holding-period discipline matter more than the headline return suggests."
+        )
     elif not pd.isna(mdd_diff):
         if mdd_diff < 0:
             takeaways.append("The stock had a deeper max drawdown than the benchmark, meaning higher downside risk.")
         else:
             takeaways.append("The stock had a shallower max drawdown than the benchmark.")
 
-    if not pd.isna(revenue_cagr):
-        takeaways.append(f"Revenue CAGR was {fmt_percent(revenue_cagr)}, which should be checked against the company growth narrative.")
-
-    if not pd.isna(gross_margin):
-        takeaways.append(f"Latest gross margin was {fmt_percent(gross_margin)}, useful for judging product/service economics.")
-
-    if not pd.isna(fcf_margin):
-        takeaways.append(f"Latest FCF margin was {fmt_percent(fcf_margin)}, showing how much revenue converts into free cash flow.")
+    if not pd.isna(revenue_cagr) and not pd.isna(gross_margin) and not pd.isna(fcf_margin):
+        takeaways.append(
+            f"The business profile is {category}: revenue CAGR is {fmt_percent(revenue_cagr)}, gross margin is {fmt_percent(gross_margin)}, and FCF margin is {fmt_percent(fcf_margin)}. That points to {'cash-flow quality' if fcf_margin > 0 else 'a need to prove cash conversion'}, not just top-line momentum."
+        )
+    elif not pd.isna(revenue_cagr):
+        takeaways.append(f"Revenue CAGR is {fmt_percent(revenue_cagr)}, but the report needs more complete margin and cash-flow context before treating that growth as high quality.")
 
     if not pd.isna(revenue_cagr) and not pd.isna(gross_margin) and not pd.isna(fcf_margin):
         if revenue_cagr > 0.20 and gross_margin > 0.50 and fcf_margin > 0:
@@ -1432,12 +1626,22 @@ def generate_key_takeaways(
 
     if not pd.isna(valuation_score):
         if valuation_score < 45:
-            takeaways.append("Valuation sanity score is weak, so the thesis requires stronger growth and cash-flow evidence.")
+            valuation_context = []
+            if not pd.isna(pe):
+                valuation_context.append(f"PE around {pe:.1f}x")
+            if not pd.isna(ps):
+                valuation_context.append(f"PS around {ps:.1f}x")
+            suffix = f" ({', '.join(valuation_context)})" if valuation_context else ""
+            takeaways.append(
+                f"Valuation is the main friction point{suffix}; future returns depend on the company maintaining margin quality and the market continuing to accept a premium multiple."
+            )
         elif valuation_score >= 65:
-            takeaways.append("Valuation sanity score is acceptable, but still requires manual comparison with peers and history.")
+            takeaways.append("Valuation does not look like the primary problem in this first pass, but it still needs peer and history checks.")
 
     if not pd.isna(total_score):
-        takeaways.append(f"Research Potential Score is {fmt_score(total_score)}, classified as {rating_from_score(total_score)}.")
+        takeaways.append(
+            f"The research score is {fmt_score(total_score)} ({rating_from_score(total_score)}), which should be read as a triage label rather than a conclusion."
+        )
 
     return takeaways[:8]
 
@@ -1446,7 +1650,7 @@ def explain_score(score_table: pd.DataFrame) -> str:
     if score_table is None or score_table.empty:
         return "_No score explanation available._"
 
-    components = score_table[score_table["Component"] != "Research Potential Score"].copy()
+    components = score_table[score_table["Component"] != "Research Score"].copy()
     if components.empty:
         return "_No score components available._"
 
@@ -1469,21 +1673,19 @@ def explain_score(score_table: pd.DataFrame) -> str:
 def score_methodology_section(info: dict[str, Any]) -> str:
     if is_fund_like(info):
         return (
-            "Research Potential Score is not calculated for ETF / fund / index-like instruments in this version. "
+            "Research Score is not calculated for ETF / fund / index-like instruments in this version. "
             "Fund analysis should focus on expense ratio, holdings, benchmark methodology, exposure, liquidity, and tracking error."
         )
 
-    return """This score is a heuristic research-priority score, now weighted by research profile.
+    return """This score is a heuristic screening score weighted by research profile.
 It is not a valuation model, not a prediction model, and not a buy/sell signal.
 
-这个分数是按研究类型加权的启发式“研究优先级”分数，不是估值模型、预测模型或买卖信号。
-
-- Growth Score / 增长: revenue CAGR and latest revenue growth.
-- Profitability Score / 盈利质量: gross margin, operating margin, and FCF margin.
-- Quality Trend Score / 质量趋势: changes in gross margin, operating margin, and FCF margin.
-- Risk Control Score / 风险控制: max drawdown, volatility, and beta.
-- Benchmark Score / 基准对比: excess CAGR, information ratio, and Sharpe difference.
-- Valuation Sanity Score / 估值理性: penalty-based check using PE, PS, EV/Revenue, and EV/EBITDA."""
+- Growth Score: revenue CAGR and latest revenue growth.
+- Profitability Score: gross margin, operating margin, and FCF margin.
+- Quality Trend Score: changes in gross margin, operating margin, and FCF margin.
+- Risk Control Score: max drawdown, volatility, and beta.
+- Benchmark Score: excess CAGR, information ratio, and Sharpe difference.
+- Valuation Sanity Score: penalty-based check using PE, PS, EV/Revenue, and EV/EBITDA."""
 
 
 def one_line_verdict(
@@ -1494,7 +1696,7 @@ def one_line_verdict(
     score_table: pd.DataFrame,
     info: dict[str, Any],
 ) -> str:
-    total_score = get_component_score(score_table, "Research Potential Score")
+    total_score = get_component_score(score_table, "Research Score")
     rating = rating_from_score(total_score)
 
     if is_fund_like(info):
@@ -1508,16 +1710,16 @@ def one_line_verdict(
     revenue_cagr = get_metric(fundamental_summary, "Revenue CAGR")
     gross_margin = get_metric(fundamental_summary, "Gross Margin Latest")
     fcf_margin = get_metric(fundamental_summary, "FCF Margin Latest")
+    valuation_score = get_component_score(score_table, "Valuation Sanity Score")
 
-    traits = []
-    if not pd.isna(revenue_cagr):
-        traits.append("fast-growing" if revenue_cagr >= 0.20 else "steadily growing" if revenue_cagr > 0 else "slow-growing")
-    if not pd.isna(gross_margin) and gross_margin >= 0.50:
-        traits.append("high-margin")
-    if not pd.isna(fcf_margin):
-        traits.append("cash-generative" if fcf_margin > 0 else "not yet converting growth into free cash flow")
-
-    company_phrase = ", ".join(traits) if traits else "data-limited"
+    if not pd.isna(revenue_cagr) and revenue_cagr < 0.05 and not pd.isna(fcf_margin) and fcf_margin > 0:
+        company_phrase = "a mature cash-flow business rather than a high-growth story"
+    elif not pd.isna(revenue_cagr) and revenue_cagr >= 0.20 and not pd.isna(fcf_margin) and fcf_margin <= 0:
+        company_phrase = "a growth story that still needs to prove cash conversion"
+    elif not pd.isna(fcf_margin) and fcf_margin > 0:
+        company_phrase = "a cash-generative business"
+    else:
+        company_phrase = "a data-limited research case"
 
     if pd.isna(cagr_diff):
         benchmark_phrase = f"needs more evidence before its opportunity cost versus {benchmark} can be judged"
@@ -1532,7 +1734,11 @@ def one_line_verdict(
     if not pd.isna(max_dd) and max_dd <= -0.40:
         risk_phrase = " The deep drawdown history means downside risk needs special attention."
 
-    return f"{symbol} is a {company_phrase} name that {benchmark_phrase}, so the current research status is {rating}.{risk_phrase}"
+    valuation_phrase = ""
+    if not pd.isna(valuation_score) and valuation_score < 45:
+        valuation_phrase = " Valuation is the main constraint on the first-pass setup."
+
+    return f"{symbol} looks like {company_phrase}; it {benchmark_phrase}, so the current research status is {rating}.{valuation_phrase}{risk_phrase}"
 
 
 def build_data_warnings(
@@ -1623,27 +1829,27 @@ def build_sanity_checks(
     if target_currency and benchmark_currency and target_currency != benchmark_currency:
         add(
             "HIGH",
-            "Currency mismatch / 币种不一致",
+            "Currency mismatch",
             f"{symbol}: {target_currency}; {benchmark}: {benchmark_currency}.",
-            "Do not treat relative performance as clean without FX adjustment. / 未做汇率调整前不要直接比较相对表现。",
+            "Do not treat relative performance as clean without FX adjustment.",
         )
 
     financial_years = len(trends.dropna(how="all")) if trends is not None else 0
     if not is_fund_like(info) and financial_years < 3:
         add(
             "HIGH",
-            "Short financial history / 财务历史过短",
+            "Short financial history",
             f"Only {financial_years} usable financial years found.",
-            "Treat score as fragile and verify filings manually. / 评分可靠性偏低，必须人工核对财报。",
+            "Treat score as fragile and verify filings manually.",
         )
 
     price_days = len(target_price.dropna()) if target_price is not None else 0
     if price_days < 252:
         add(
             "MEDIUM",
-            "Short price history / 价格历史过短",
+            "Short price history",
             f"Only {price_days} price rows found.",
-            "Benchmark, beta, drawdown, and Sharpe may be unstable. / 基准比较、beta、回撤、夏普可能不稳定。",
+            "Benchmark, beta, drawdown, and Sharpe may be unstable.",
         )
 
     if not is_fund_like(info):
@@ -1655,51 +1861,51 @@ def build_sanity_checks(
         if pd.isna(revenue):
             add(
                 "HIGH",
-                "Missing revenue / 营收缺失",
+                "Missing revenue",
                 "Revenue is missing from the provider financial statements.",
-                "Do not rely on growth score until revenue is verified. / 核实营收前不要依赖增长评分。",
+                "Do not rely on growth score until revenue is verified.",
             )
 
         if pd.isna(fcf):
             add(
                 "HIGH",
-                "Missing FCF / 自由现金流缺失",
+                "Missing FCF",
                 "Free cash flow is missing from provider data.",
-                "Verify OCF, capex, and FCF from filings. / 从财报核对经营现金流、资本开支和自由现金流。",
+                "Verify OCF, capex, and FCF from filings.",
             )
         elif not pd.isna(operating_cf) and not pd.isna(capex):
             reconstructed_fcf = operating_cf + capex
             if abs(fcf) > 1 and abs(reconstructed_fcf - fcf) / max(abs(fcf), 1) > 0.10:
                 add(
                     "HIGH",
-                    "FCF consistency / 自由现金流一致性",
+                    "FCF consistency",
                     "Provider FCF differs from OCF plus capex by more than 10%.",
-                    "Verify cash-flow statement manually. / 手动核对现金流量表。",
+                    "Verify cash-flow statement manually.",
                 )
 
         ruin_score = get_metric(ruin_risk, "Ruin Risk Score")
         if not pd.isna(ruin_score) and ruin_score >= 75:
             add(
                 "HIGH",
-                "Ruin risk / 毁灭性风险",
+                "Ruin risk",
                 f"Ruin Risk Score is {fmt_number(ruin_score)}.",
-                "Stress-test debt, cash burn, and refinancing risk. / 压测债务、烧钱速度和再融资风险。",
+                "Stress-test debt, cash burn, and refinancing risk.",
             )
 
     if is_fund_like(info):
         add(
             "MEDIUM",
-            "Fund-like instrument / 基金类标的",
+            "Fund-like instrument",
             f"quoteType={info.get('quoteType')}; company fundamentals were skipped.",
-            "Analyze expense ratio, holdings, liquidity, tracking error, and exposure. / 应分析费率、持仓、流动性、跟踪误差和风险暴露。",
+            "Analyze expense ratio, holdings, liquidity, tracking error, and exposure.",
         )
 
     if not rows:
         add(
             "INFO",
-            "No triggered sanity failure / 未触发重大断层",
+            "No triggered sanity failure",
             "No automatic high-risk consistency failure was detected.",
-            "Still verify important numbers with primary sources. / 仍需用一手资料核对关键数字。",
+            "Still verify important numbers with primary sources.",
         )
 
     return pd.DataFrame(rows)
@@ -1711,7 +1917,7 @@ def sanity_checks_section(sanity_checks: pd.DataFrame) -> str:
 
 def warnings_section(warnings: list[str]) -> str:
     if not warnings:
-        return "No legacy warning rule was triggered. See the Sanity Scan below for stronger consistency checks."
+        return "No additional warning rule was triggered. Review the sanity checks above before relying on the data."
     return "\n".join(f"- Warning: {warning}" for warning in warnings)
 
 
@@ -1736,6 +1942,207 @@ def data_confidence_section(
 | Valuation Snapshot | {valuation_conf} | Useful for first-pass valuation risk, not enough for final judgment. |
 | Segment Revenue | Manual Required | Usually requires SEC filings or company IR. |
 """
+
+
+def status_from_score(score: float, strong: float = 65, weak: float = 40, reverse: bool = False) -> str:
+    if pd.isna(score):
+        return "Unknown"
+    if reverse:
+        if score >= strong:
+            return "Weak"
+        if score <= weak:
+            return "Strong"
+        return "Medium"
+    if score >= strong:
+        return "Strong"
+    if score <= weak:
+        return "Weak"
+    return "Medium"
+
+
+def plain_status_from_score(score: float) -> str:
+    status = status_from_score(score)
+    return "Moderate" if status == "Medium" else status
+
+
+def valuation_status(score: float) -> str:
+    if pd.isna(score):
+        return "Unknown"
+    if score < 45:
+        return "Expensive"
+    if score >= 70:
+        return "Reasonable"
+    return "Needs Review"
+
+
+def risk_level_from_ruin_score(score: float) -> str:
+    if pd.isna(score):
+        return "Unknown"
+    if score >= 75:
+        return "High"
+    if score >= 45:
+        return "Medium"
+    return "Low"
+
+
+def stock_risk_status(risk_score: float) -> str:
+    if pd.isna(risk_score):
+        return "Unknown"
+    if risk_score >= 70:
+        return "Low / Moderate"
+    if risk_score >= 45:
+        return "Medium"
+    return "High"
+
+
+def beginner_summary_table(
+    fundamental_summary: pd.DataFrame,
+    score_table: pd.DataFrame,
+    ruin_risk: pd.DataFrame,
+    sanity_checks: pd.DataFrame,
+) -> pd.DataFrame:
+    growth_score_value = get_component_score(score_table, "Growth Score")
+    profitability_score_value = get_component_score(score_table, "Profitability Score")
+    valuation_score_value = get_component_score(score_table, "Valuation Sanity Score")
+    risk_score_value = get_component_score(score_table, "Risk Control Score")
+    ruin_score = get_metric(ruin_risk, "Ruin Risk Score")
+    revenue_cagr = get_metric(fundamental_summary, "Revenue CAGR")
+    fcf_margin = get_metric(fundamental_summary, "FCF Margin Latest")
+
+    high_severity = 0
+    if sanity_checks is not None and not sanity_checks.empty and "Severity" in sanity_checks:
+        high_severity = int((sanity_checks["Severity"] == "HIGH").sum())
+
+    rows = [
+        {
+            "Area": "Business Quality",
+            "Status": plain_status_from_score(profitability_score_value),
+            "Plain-English Meaning": "The company appears cash-generative and profitable." if not pd.isna(fcf_margin) and fcf_margin > 0 else "Cash conversion is not yet clearly proven.",
+        },
+        {
+            "Area": "Growth",
+            "Status": plain_status_from_score(growth_score_value),
+            "Plain-English Meaning": f"Revenue growth is {fmt_percent(revenue_cagr)} in this data window." if not pd.isna(revenue_cagr) else "Revenue growth data is incomplete.",
+        },
+        {
+            "Area": "Valuation",
+            "Status": valuation_status(valuation_score_value),
+            "Plain-English Meaning": "The stock needs strong future execution to justify the current multiple." if not pd.isna(valuation_score_value) and valuation_score_value < 45 else "Valuation does not look like the main first-pass issue.",
+        },
+        {
+            "Area": "Balance Sheet Risk",
+            "Status": risk_level_from_ruin_score(ruin_score),
+            "Plain-English Meaning": "Debt or cash-flow fragility deserves manual review." if not pd.isna(ruin_score) and ruin_score >= 75 else "Debt and cash-flow fragility do not appear to be the main first-pass risk.",
+        },
+        {
+            "Area": "Stock Risk",
+            "Status": stock_risk_status(risk_score_value),
+            "Plain-English Meaning": "The stock can still have painful drawdowns even when the business is strong.",
+        },
+        {
+            "Area": "Data Confidence",
+            "Status": "Weak" if high_severity else "Medium",
+            "Plain-English Meaning": "High-severity sanity checks were triggered." if high_severity else "Good enough for screening, but important numbers still need primary-source verification.",
+        },
+    ]
+    return pd.DataFrame(rows)
+
+
+def how_to_read_report_section() -> str:
+    return """This report is designed for first-pass research.
+
+You do not need to understand every financial term at the beginning. Start with five questions:
+
+1. What does the company sell?
+2. Is revenue growing?
+3. Does the company turn revenue into real cash?
+4. Is the balance sheet fragile?
+5. Is the stock already priced for perfection?
+
+If a metric looks unfamiliar, read the plain-English note below each section first, then use the table as evidence.
+
+Metric guide: [docs/metric_guide.md](../../../docs/metric_guide.md)"""
+
+
+def price_plain_english(symbol: str, benchmark: str, price_summary: pd.DataFrame) -> str:
+    total_diff = get_metric(price_summary, "Total Return", "Difference")
+    sharpe_diff = get_metric(price_summary, "Sharpe Ratio", "Difference")
+    mdd_diff = get_metric(price_summary, "Max Drawdown", "Difference")
+
+    if not pd.isna(total_diff) and total_diff > 0:
+        result = f"{symbol} made more money than {benchmark} during this period."
+    elif not pd.isna(total_diff):
+        result = f"{symbol} made less money than {benchmark} during this period."
+    else:
+        result = "The return comparison is incomplete."
+
+    risk_parts = []
+    if not pd.isna(sharpe_diff) and sharpe_diff < 0:
+        risk_parts.append("Its risk-adjusted return was weaker, which means the extra return was not as efficient as it first appears.")
+    if not pd.isna(mdd_diff) and mdd_diff < 0:
+        risk_parts.append("It also had a deeper drawdown, so investors had to tolerate more pain along the way.")
+    if not risk_parts:
+        risk_parts.append("The risk metrics do not show an obvious penalty versus the benchmark in this first pass.")
+
+    return f"{result} {' '.join(risk_parts)} The key question is not just which line went up more, but whether the extra return was worth the extra volatility and drawdown."
+
+
+def growth_plain_english(fundamental_summary: pd.DataFrame) -> str:
+    revenue_cagr = get_metric(fundamental_summary, "Revenue CAGR")
+    fcf_margin = get_metric(fundamental_summary, "FCF Margin Latest")
+    gross_margin = get_metric(fundamental_summary, "Gross Margin Latest")
+    if pd.isna(revenue_cagr):
+        return "Growth data is incomplete, so the business trend needs manual verification."
+    if revenue_cagr < 0.05 and not pd.isna(fcf_margin) and fcf_margin > 0:
+        return f"Growth is not the main story here. Revenue CAGR is {fmt_percent(revenue_cagr)}, so the case depends more on profitability, cash flow, capital returns, and valuation discipline."
+    if revenue_cagr >= 0.20 and not pd.isna(fcf_margin) and fcf_margin <= 0:
+        return "Revenue is growing quickly, but the company has not yet proven that growth turns into free cash flow."
+    if not pd.isna(gross_margin) and not pd.isna(fcf_margin):
+        return f"The business shows {fmt_percent(gross_margin)} gross margin and {fmt_percent(fcf_margin)} FCF margin. That helps judge whether growth is supported by real economics."
+    return "Use this section to check whether revenue growth is supported by margins and cash conversion."
+
+
+def ruin_plain_english(ruin_risk: pd.DataFrame) -> str:
+    ruin_score = get_metric(ruin_risk, "Ruin Risk Score")
+    if pd.isna(ruin_score):
+        return "Ruin risk data is incomplete. Debt, cash, EBITDA, and free cash flow should be checked manually."
+    if ruin_score >= 75:
+        return "This section shows elevated financial fragility. The next step is to check debt maturities, cash burn, refinancing risk, and dilution risk."
+    return "This section is not about daily stock movement. It asks whether the business could face serious financial stress if growth slows, cash flow weakens, or refinancing becomes difficult."
+
+
+def cash_flow_plain_english(trends: pd.DataFrame) -> str:
+    if trends is None or trends.empty:
+        return "Cash-flow data is missing or not applicable. Do not infer business quality from an empty table."
+    fcf = latest_trend_value(trends, "Free Cash Flow")
+    revenue = latest_trend_value(trends, "Revenue")
+    if not pd.isna(fcf) and fcf > 0:
+        return "The company generated positive free cash flow in the latest available period. That cash can support reinvestment, buybacks, debt reduction, or dividends."
+    if not pd.isna(revenue) and (pd.isna(fcf) or fcf <= 0):
+        return "Revenue exists, but free cash flow is weak or missing. For beginners, this means sales have not clearly turned into surplus cash."
+    return "Use this section to connect the business model to real cash generation."
+
+
+def valuation_plain_english(info: dict[str, Any], score_table: pd.DataFrame) -> str:
+    valuation_score = get_component_score(score_table, "Valuation Sanity Score")
+    pe = safe_info_float(info, "trailingPE")
+    ps = safe_info_float(info, "priceToSalesTrailing12Months")
+    details = []
+    if not pd.isna(pe):
+        details.append(f"PE is around {pe:.1f}x")
+    if not pd.isna(ps):
+        details.append(f"price-to-sales is around {ps:.1f}x")
+    prefix = f"{', and '.join(details)}. " if details else ""
+    if not pd.isna(valuation_score) and valuation_score < 45:
+        return prefix + "The market is already pricing in a lot of future success, so the company needs strong execution to justify the valuation."
+    return prefix + "Valuation does not look like the main first-pass problem, but it still needs peer and history checks."
+
+
+def margin_plain_english(margin_stress: pd.DataFrame) -> str:
+    if margin_stress is None or margin_stress.empty:
+        return "No personal account inputs were provided. This section stays empty unless you add account equity and margin loan values."
+    worst = margin_stress.iloc[-1]
+    return f"Under the largest stress scenario shown here, the equity cushion would be {fmt_number(worst['Equity Cushion'])} and loan/value would be {fmt_percent(worst['Loan / Value'])}. This is about your own balance sheet, not the company."
 
 
 # =============================================================================
@@ -1774,15 +2181,16 @@ def write_report(
     interactive_chart_name: str,
     radar_chart_name: str,
 ) -> Path:
-    total_score = get_component_score(score_table, "Research Potential Score")
+    total_score = get_component_score(score_table, "Research Score")
     rating = rating_from_score(total_score)
 
     verdict = one_line_verdict(symbol, benchmark, price_summary, fundamental_summary, score_table, info)
     takeaways = generate_key_takeaways(symbol, benchmark, price_summary, fundamental_summary, score_table, info)
     takeaways_md = "\n".join([f"- {item}" for item in takeaways]) if takeaways else "_No automatic takeaways available._"
+    beginner_summary = beginner_summary_table(fundamental_summary, score_table, ruin_risk, sanity_checks)
 
     category = classify_research_category(info, fundamental_summary)
-    report = f"""# {symbol} Research Report｜Company Research Radar v2.0
+    report = f"""# {symbol} Research Report
 
 > Target: `{symbol}`  
 > Benchmark: `{benchmark}`  
@@ -1793,9 +2201,9 @@ def write_report(
 
 ---
 
-## 0. Boundary｜边界
+## 0. Boundary
 
-This report is a bilingual research radar.
+This report is a structured first-pass research workflow.
 
 It does **not** provide:
 
@@ -1806,27 +2214,37 @@ It does **not** provide:
 
 The score is a **research prioritization score**, not a prediction.
 
-本报告是研究雷达，不是投资建议。它的目标是暴露问题、组织证据、降低自我安慰，而不是替你做决定。
-
 ---
 
-## 1. One-line Verdict｜一句话判断
+## 1. One-line Verdict
 
 {verdict}
 
 ---
 
-## 2. Key Takeaways｜核心结论摘要
+## 2. How to Read This Report
+
+{how_to_read_report_section()}
+
+---
+
+## 3. Key Takeaways
 
 {takeaways_md}
 
 ---
 
-## 3. Data Confidence｜数据可信度
+## 4. Beginner Summary
+
+{markdown_table(beginner_summary, max_rows=10)}
+
+---
+
+## 5. Data Confidence
 
 {data_confidence_section(trends, valuation, profile, target_price, info)}
 
-### 🧯 Sanity Scan｜主动断层扫描
+### Sanity Checks
 
 {sanity_checks_section(sanity_checks)}
 
@@ -1836,7 +2254,7 @@ The score is a **research prioritization score**, not a prediction.
 
 ---
 
-## 4. Company Profile｜公司资料
+## 6. Company Profile
 
 {markdown_table(profile, max_rows=30)}
 
@@ -1857,26 +2275,24 @@ You still need to manually answer:
 
 ---
 
-## 5. Price vs Benchmark｜价格与基准比较
+## 7. Price vs Benchmark
 
 Benchmark explanation:
 
 > {benchmark_explanation(benchmark)}
 
-### 🕹 Interactive HTML｜交互式图表
+### Interactive HTML
 
 [Open interactive price dashboard]({interactive_chart_name})
 
 The HTML chart supports hover, zoom, range selection, and exact-date inspection.
-
-交互式 HTML 图表支持悬停、缩放、区间选择和按日期查看具体数值。
 
 ![{symbol} vs {benchmark} Actual Close Price]({actual_chart_name})
 
 Actual close price chart shows the raw closing prices from the data provider.
 Use this to inspect absolute price levels, gaps, and broad trend shape before comparing relative returns.
 
-真实收盘价图显示数据源返回的原始收盘价，用于查看绝对价格水平、价格缺口和整体走势。
+How to read this chart: it shows price level, not valuation. A higher line does not mean the stock is cheaper or safer.
 
 ![{symbol} vs {benchmark}]({chart_name})
 
@@ -1884,7 +2300,7 @@ Performance chart uses normalized price.
 The first available price in the selected period is set to 100.
 This allows comparison of relative performance, not absolute stock price.
 
-该图使用归一化价格。起始日价格被设为 100，用于比较相对收益，而不是显示真实股价。
+How to read this chart: both lines start at 100. If one line ends higher, it performed better during this period. This does not prove it is a better investment today.
 
 ![{symbol} vs {benchmark} Drawdown]({drawdown_chart_name})
 
@@ -1892,7 +2308,7 @@ Drawdown shows the decline from the previous peak.
 0% means no drawdown.
 -20% means the asset fell 20% from its previous high.
 
-回撤图表示资产从此前高点下跌的幅度。0% 表示没有回撤，-20% 表示从高点下跌 20%。
+How to read this chart: drawdown shows pain. A -30% drawdown means an investor buying near the previous peak would have seen the position fall by about 30%.
 
 {markdown_table(price_summary, max_rows=50, percent_columns=PRICE_PERCENT_COLS)}
 
@@ -1906,9 +2322,13 @@ Drawdown shows the decline from the previous peak.
 - **Information Ratio**: excess return per unit of tracking risk.
 - **Upside / Downside Capture**: whether the stock captures more upside or downside than benchmark.
 
+### Plain-English Meaning
+
+{price_plain_english(symbol, benchmark, price_summary)}
+
 ---
 
-## 6. Growth and Quality Summary｜增长与质量比较
+## 8. Growth and Quality Summary
 
 {markdown_table(fundamental_summary, max_rows=30, percent_columns=FUND_PERCENT_COLS)}
 
@@ -1920,23 +2340,33 @@ Drawdown shows the decline from the previous peak.
 - Is operating margin improving?
 - Is free cash flow improving?
 
+### Plain-English Meaning
+
+{growth_plain_english(fundamental_summary)}
+
 ---
 
-## 7. Ruin Risk Snapshot｜毁灭性风险快照
+## 9. Ruin Risk
 
-![{symbol} Ruin Risk Snapshot]({ruin_risk_chart_name})
+![{symbol} Ruin Risk]({ruin_risk_chart_name})
+
+How to read this chart: this is not about day-to-day stock movement. It asks whether the business could face financial stress if growth slows, cash flow weakens, or refinancing becomes difficult.
 
 {markdown_table(ruin_risk, max_rows=20)}
 
 This section tries to separate normal price volatility from business fragility. Historical drawdown is not the same as ruin risk.
 
-这一节用于区分“价格波动”和“业务毁灭性风险”。历史回撤不等于破产、融资枯竭或商业模式失效风险。
+### Plain-English Meaning
+
+{ruin_plain_english(ruin_risk)}
 
 ---
 
-## 8. Money Source and Money Flow｜钱从哪里来，流到哪里去
+## 10. Business Model and Cash Flow
 
 {f"![{symbol} Growth and Quality Trend]({growth_quality_chart_name})" if growth_quality_chart_name else ""}
+
+How to read this chart: rising revenue is useful, but the important question is whether the company keeps enough cash after costs, operations, and capital spending.
 
 {markdown_table(
     trends,
@@ -1953,33 +2383,49 @@ This section tries to separate normal price volatility from business fragility. 
 - Operating cash flow shows whether business operations generate cash.
 - Free cash flow shows whether cash remains after capital expenditure.
 
+### Plain-English Meaning
+
+{cash_flow_plain_english(trends)}
+
 ---
 
-## 9. Personal Margin Stress｜个人融资压力测试
+## 11. Personal Margin Stress
 
 {markdown_table(margin_stress, max_rows=20, percent_columns={"Loan / Value"}) if margin_stress is not None and not margin_stress.empty else "_No account-level margin inputs provided. Add `--account-equity` and `--margin-loan` to generate a personal stress table._"}
 
 This optional section is not about the company. It tests whether your own balance sheet can survive stress.
 
-这一节不是分析公司，而是检查你自己的资产负债表能不能扛住压力。
+### Plain-English Meaning
+
+{margin_plain_english(margin_stress)}
 
 ---
 
-## 10. Valuation Snapshot｜估值快照
+## 12. Valuation Snapshot
 
 {valuation_group_sections(valuation)}
 
 High valuation requires stronger growth, margin expansion, and cash flow evidence.
 
+### Plain-English Meaning
+
+{valuation_plain_english(info, score_table)}
+
 ---
 
-## 11. Research Potential Score｜研究潜力评分
+## 13. Research Score
 
 [Open interactive score radar]({radar_chart_name})
 
 ![{symbol} Research Score Components]({score_components_chart_name})
 
+How to read this chart: the bars show which parts of the screening model help or hurt the score. They do not say whether the stock is cheap or safe.
+
 {markdown_table(score_table, max_rows=20, percent_columns={"Weight"}, score_columns=SCORE_COLS)}
+
+### Beginner Warning
+
+A high score is not a buy signal. A low score is not a sell signal. The score only helps prioritize further research under this model.
 
 ### Why This Score?
 
@@ -1999,7 +2445,7 @@ This score is transparent but imperfect. It is used to prioritize research, not 
 
 ---
 
-## 12. Required Manual Verification｜必须人工核对
+## 14. Manual Verification
 
 Before making any serious judgment, verify:
 
@@ -2013,12 +2459,24 @@ Before making any serious judgment, verify:
 - Management guidance
 - SEC 10-K / 10-Q
 - Company IR materials
-- Sanity Scan HIGH severity items
-- Ruin Risk Snapshot debt and cash-burn assumptions
+- Sanity Checks HIGH severity items
+- Ruin Risk debt and cash-burn assumptions
 
 ---
 
-## 13. Final Research Questions｜最后必须回答
+## 15. What to Check Next
+
+Before making any serious judgment, manually check:
+
+1. Latest 10-K / 10-Q revenue breakdown
+2. Whether growth comes from volume, price, services, or accounting effects
+3. Whether free cash flow is stable or one-off
+4. Whether valuation is justified by future growth
+5. Whether the company has hidden dilution, debt, or margin pressure
+
+---
+
+## 16. Final Research Questions
 
 - Why not simply buy `{benchmark}`?
 - Has `{symbol}` earned its extra risk?
@@ -2032,7 +2490,7 @@ Before making any serious judgment, verify:
 
 ---
 
-## 14. Generated Files
+## 17. Generated Files
 
 This folder contains CSV, chart, and Markdown outputs generated by the tool.
 """
@@ -2187,7 +2645,7 @@ def run_one(
     latest_dir = output / safe_symbol(symbol) / "latest"
     copy_run_to_latest(out_dir, latest_dir)
 
-    score = get_component_score(score_table, "Research Potential Score")
+    score = get_component_score(score_table, "Research Score")
     rating = rating_from_score(score)
 
     print(f"Done: {symbol}")

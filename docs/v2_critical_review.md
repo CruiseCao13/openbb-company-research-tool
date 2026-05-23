@@ -19,7 +19,7 @@ Direction:
 - Consider Altman Z-Score where data quality allows.
 - Separate temporary price decline risk from business failure risk.
 
-### One-Size-Fits-All Research Potential Score
+### One-Size-Fits-All Research Score
 
 Current scoring applies one heuristic model across companies with different lifecycles, sectors, and capital intensity.
 
@@ -34,7 +34,7 @@ Direction:
 - Make scoring weights explicit by category.
 - Consider disabling cross-category ranking unless the category is shown clearly.
 
-### Money Source and Flow Is Not Universal
+### Business Model and Cash Flow Is Not Universal
 
 Current financial statement summary works best for standard operating companies with usable yfinance data.
 

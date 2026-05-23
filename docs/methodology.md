@@ -54,7 +54,7 @@ The goal is to measure opportunity cost.
 - Positive Net Income Years
 - Positive FCF Years
 
-## Research Potential Score
+## Research Score
 
 The score combines:
 

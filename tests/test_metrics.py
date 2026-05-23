@@ -51,7 +51,7 @@ class MetricsTests(unittest.TestCase):
     def test_empty_warnings_section_is_human_readable(self):
         section = tool.warnings_section([])
 
-        self.assertIn("No legacy warning rule", section)
+        self.assertIn("No additional warning rule", section)
         self.assertNotIn("No automatic data warnings triggered", section)
 
     def test_category_classifier_marks_speculative_growth(self):

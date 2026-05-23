@@ -1,6 +1,6 @@
 [project]
 name = "openbb-company-research-tool"
-version = "2.0.0"
+version = "2.1.0"
 description = "A bilingual company research radar with benchmark comparison, interactive charts, sanity checks, and category-aware scoring."
 readme = "README.md"
 requires-python = ">=3.10"

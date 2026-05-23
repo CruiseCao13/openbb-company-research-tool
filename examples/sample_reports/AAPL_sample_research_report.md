@@ -1,17 +1,17 @@
-# AAPL Research Report｜Company Research Radar v2.0
+# AAPL Research Report
 
 > Target: `AAPL`  
 > Benchmark: `SPY`  
 > Period: `2023-01-01` to `latest available`  
 > Research Status: **Watchlist**  
 > Research Profile: **Mature Compounder**  
-> Version: `2.0.0`
+> Version: `2.1.0`
 
 ---
 
-## 0. Boundary｜边界
+## 0. Boundary
 
-This report is a bilingual research radar.
+This report is a structured first-pass research workflow.
 
 It does **not** provide:
 
@@ -22,30 +22,57 @@ It does **not** provide:
 
 The score is a **research prioritization score**, not a prediction.
 
-本报告是研究雷达，不是投资建议。它的目标是暴露问题、组织证据、降低自我安慰，而不是替你做决定。
+---
+
+## 1. One-line Verdict
+
+AAPL looks like a mature cash-flow business rather than a high-growth story; it beat SPY on return, but the risk-adjusted picture is less clean, so the current research status is Watchlist. Valuation is the main constraint on the first-pass setup.
 
 ---
 
-## 1. One-line Verdict｜一句话判断
+## 2. How to Read This Report
 
-AAPL is a steadily growing, cash-generative name that beat SPY on return, but the risk-adjusted picture is less clean, so the current research status is Watchlist.
+This report is designed for first-pass research.
+
+You do not need to understand every financial term at the beginning. Start with five questions:
+
+1. What does the company sell?
+2. Is revenue growing?
+3. Does the company turn revenue into real cash?
+4. Is the balance sheet fragile?
+5. Is the stock already priced for perfection?
+
+If a metric looks unfamiliar, read the plain-English note below each section first, then use the table as evidence.
+
+Metric guide: [docs/metric_guide.md](../../docs/metric_guide.md)
 
 ---
 
-## 2. Key Takeaways｜核心结论摘要
+## 3. Key Takeaways
 
-- AAPL beat SPY on both total return and annualized compounding over the selected period.
-- Return leadership came with weaker risk-adjusted efficiency based on Sharpe ratio.
-- The stock outperformed, but did so with a deeper drawdown than the benchmark.
-- Revenue CAGR was 1.81%, which should be checked against the company growth narrative.
-- Latest gross margin was 46.91%, useful for judging product/service economics.
-- Latest FCF margin was 23.73%, showing how much revenue converts into free cash flow.
-- Valuation sanity score is weak, so the thesis requires stronger growth and cash-flow evidence.
-- Research Potential Score is 61.34 / 100, classified as Watchlist.
+- AAPL beat SPY, but the outperformance was not supported by fast revenue growth; the thesis depends more on margins, cash flow, buybacks, and market willingness to keep paying a premium multiple.
+- The stock delivered better raw return, but weaker Sharpe efficiency means the investor was paid less cleanly for each unit of volatility.
+- The outperformance came with deeper drawdowns, so position sizing and holding-period discipline matter more than the headline return suggests.
+- The business profile is Mature Compounder: revenue CAGR is 1.81%, gross margin is 46.91%, and FCF margin is 23.73%. That points to cash-flow quality, not just top-line momentum.
+- Valuation is the main friction point (PE around 37.4x, PS around 10.0x); future returns depend on the company maintaining margin quality and the market continuing to accept a premium multiple.
+- The research score is 61.34 / 100 (Watchlist), which should be read as a triage label rather than a conclusion.
 
 ---
 
-## 3. Data Confidence｜数据可信度
+## 4. Beginner Summary
+
+| Area | Status | Plain-English Meaning |
+| --- | --- | --- |
+| Business Quality | Strong | The company appears cash-generative and profitable. |
+| Growth | Moderate | Revenue growth is 1.81% in this data window. |
+| Valuation | Expensive | The stock needs strong future execution to justify the current multiple. |
+| Balance Sheet Risk | Medium | Debt and cash-flow fragility do not appear to be the main first-pass risk. |
+| Stock Risk | Medium | The stock can still have painful drawdowns even when the business is strong. |
+| Data Confidence | Medium | Good enough for screening, but important numbers still need primary-source verification. |
+
+---
+
+## 5. Data Confidence
 
 | Data Area | Confidence | Notes |
 |---|---|---|
@@ -56,19 +83,19 @@ AAPL is a steadily growing, cash-generative name that beat SPY on return, but th
 | Segment Revenue | Manual Required | Usually requires SEC filings or company IR. |
 
 
-### 🧯 Sanity Scan｜主动断层扫描
+### Sanity Checks
 
 | Severity | Check | Finding | Action |
 | --- | --- | --- | --- |
-| INFO | No triggered sanity failure / 未触发重大断层 | No automatic high-risk consistency failure was detected. | Still verify important numbers with primary sources. / 仍需用一手资料核对关键数字。 |
+| INFO | No triggered sanity failure | No automatic high-risk consistency failure was detected. | Still verify important numbers with primary sources. |
 
 ### Automatic Data Warnings
 
-No legacy warning rule was triggered. See the Sanity Scan below for stronger consistency checks.
+No additional warning rule was triggered. Review the sanity checks above before relying on the data.
 
 ---
 
-## 4. Company Profile｜公司资料
+## 6. Company Profile
 
 | Field | Value |
 | --- | --- |
@@ -103,26 +130,24 @@ You still need to manually answer:
 
 ---
 
-## 5. Price vs Benchmark｜价格与基准比较
+## 7. Price vs Benchmark
 
 Benchmark explanation:
 
 > SPY is a broad S&P 500 benchmark. It tests whether the stock deserves capital compared with a simple broad-market ETF.
 
-### 🕹 Interactive HTML｜交互式图表
+### Interactive HTML
 
 [Open interactive price dashboard](AAPL_vs_SPY_interactive_dashboard.html)
 
 The HTML chart supports hover, zoom, range selection, and exact-date inspection.
-
-交互式 HTML 图表支持悬停、缩放、区间选择和按日期查看具体数值。
 
 ![AAPL vs SPY Actual Close Price](AAPL_vs_SPY_actual_close_price_chart.png)
 
 Actual close price chart shows the raw closing prices from the data provider.
 Use this to inspect absolute price levels, gaps, and broad trend shape before comparing relative returns.
 
-真实收盘价图显示数据源返回的原始收盘价，用于查看绝对价格水平、价格缺口和整体走势。
+How to read this chart: it shows price level, not valuation. A higher line does not mean the stock is cheaper or safer.
 
 ![AAPL vs SPY](AAPL_vs_SPY_normalized_performance_chart.png)
 
@@ -130,7 +155,7 @@ Performance chart uses normalized price.
 The first available price in the selected period is set to 100.
 This allows comparison of relative performance, not absolute stock price.
 
-该图使用归一化价格。起始日价格被设为 100，用于比较相对收益，而不是显示真实股价。
+How to read this chart: both lines start at 100. If one line ends higher, it performed better during this period. This does not prove it is a better investment today.
 
 ![AAPL vs SPY Drawdown](AAPL_vs_SPY_drawdown_chart.png)
 
@@ -138,7 +163,7 @@ Drawdown shows the decline from the previous peak.
 0% means no drawdown.
 -20% means the asset fell 20% from its previous high.
 
-回撤图表示资产从此前高点下跌的幅度。0% 表示没有回撤，-20% 表示从高点下跌 20%。
+How to read this chart: drawdown shows pain. A -30% drawdown means an investor buying near the previous peak would have seen the position fall by about 30%.
 
 | Metric | Target | Benchmark | Difference |
 | --- | --- | --- | --- |
@@ -170,9 +195,13 @@ Drawdown shows the decline from the previous peak.
 - **Information Ratio**: excess return per unit of tracking risk.
 - **Upside / Downside Capture**: whether the stock captures more upside or downside than benchmark.
 
+### Plain-English Meaning
+
+AAPL made more money than SPY during this period. Its risk-adjusted return was weaker, which means the extra return was not as efficient as it first appears. It also had a deeper drawdown, so investors had to tolerate more pain along the way. The key question is not just which line went up more, but whether the extra return was worth the extra volatility and drawdown.
+
 ---
 
-## 6. Growth and Quality Summary｜增长与质量比较
+## 8. Growth and Quality Summary
 
 | Metric | Value |
 | --- | --- |
@@ -195,11 +224,17 @@ Drawdown shows the decline from the previous peak.
 - Is operating margin improving?
 - Is free cash flow improving?
 
+### Plain-English Meaning
+
+Growth is not the main story here. Revenue CAGR is 1.81%, so the case depends more on profitability, cash flow, capital returns, and valuation discipline.
+
 ---
 
-## 7. Ruin Risk Snapshot｜毁灭性风险快照
+## 9. Ruin Risk
 
-![AAPL Ruin Risk Snapshot](AAPL_ruin_risk_snapshot.png)
+![AAPL Ruin Risk](AAPL_ruin_risk_snapshot.png)
+
+How to read this chart: this is not about day-to-day stock movement. It asks whether the business could face financial stress if growth slows, cash flow weakens, or refinancing becomes difficult.
 
 | Metric | Value | Interpretation |
 | --- | --- | --- |
@@ -212,13 +247,17 @@ Drawdown shows the decline from the previous peak.
 
 This section tries to separate normal price volatility from business fragility. Historical drawdown is not the same as ruin risk.
 
-这一节用于区分“价格波动”和“业务毁灭性风险”。历史回撤不等于破产、融资枯竭或商业模式失效风险。
+### Plain-English Meaning
+
+This section is not about daily stock movement. It asks whether the business could face serious financial stress if growth slows, cash flow weakens, or refinancing becomes difficult.
 
 ---
 
-## 8. Money Source and Money Flow｜钱从哪里来，流到哪里去
+## 10. Business Model and Cash Flow
 
 ![AAPL Growth and Quality Trend](AAPL_growth_quality_trend.png)
+
+How to read this chart: rising revenue is useful, but the important question is whether the company keeps enough cash after costs, operations, and capital spending.
 
 | index | Revenue | Gross Profit | Operating Income | Net Income | Operating Cash Flow | Capital Expenditure | Free Cash Flow | Revenue Growth YoY | Gross Margin | Operating Margin | Net Margin | FCF Margin |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -236,9 +275,13 @@ This section tries to separate normal price volatility from business fragility. 
 - Operating cash flow shows whether business operations generate cash.
 - Free cash flow shows whether cash remains after capital expenditure.
 
+### Plain-English Meaning
+
+The company generated positive free cash flow in the latest available period. That cash can support reinvestment, buybacks, debt reduction, or dividends.
+
 ---
 
-## 9. Personal Margin Stress｜个人融资压力测试
+## 11. Personal Margin Stress
 
 | Scenario | Portfolio Value | Margin Loan | Equity Cushion | Loan / Value |
 | --- | --- | --- | --- | --- |
@@ -249,11 +292,13 @@ This section tries to separate normal price volatility from business fragility. 
 
 This optional section is not about the company. It tests whether your own balance sheet can survive stress.
 
-这一节不是分析公司，而是检查你自己的资产负债表能不能扛住压力。
+### Plain-English Meaning
+
+Under the largest stress scenario shown here, the equity cushion would be 5,000.00 and loan/value would be 83.33%. This is about your own balance sheet, not the company.
 
 ---
 
-## 10. Valuation Snapshot｜估值快照
+## 12. Valuation Snapshot
 
 ### Market Size
 
@@ -312,13 +357,19 @@ This optional section is not about the company. It tests whether your own balanc
 
 High valuation requires stronger growth, margin expansion, and cash flow evidence.
 
+### Plain-English Meaning
+
+PE is around 37.4x, and price-to-sales is around 10.0x. The market is already pricing in a lot of future success, so the company needs strong execution to justify the valuation.
+
 ---
 
-## 11. Research Potential Score｜研究潜力评分
+## 13. Research Score
 
 [Open interactive score radar](AAPL_research_score_radar.html)
 
 ![AAPL Research Score Components](AAPL_research_score_components.png)
+
+How to read this chart: the bars show which parts of the screening model help or hurt the score. They do not say whether the stock is cheap or safe.
 
 | Component | Score | Weight | Profile |
 | --- | --- | --- | --- |
@@ -328,21 +379,23 @@ High valuation requires stronger growth, margin expansion, and cash flow evidenc
 | Risk Control Score | 65.43 / 100 | 18.00% | Mature Compounder |
 | Benchmark Score | 58.22 / 100 | 14.00% | Mature Compounder |
 | Valuation Sanity Score | 31.37 / 100 | 8.00% | Mature Compounder |
-| Research Potential Score | 61.34 / 100 | 100.00% | Mature Compounder |
+| Research Score | 61.34 / 100 | 100.00% | Mature Compounder |
+
+### Beginner Warning
+
+A high score is not a buy signal. A low score is not a sell signal. The score only helps prioritize further research under this model.
 
 ### Why This Score?
 
-This score is a heuristic research-priority score, now weighted by research profile.
+This score is a heuristic screening score weighted by research profile.
 It is not a valuation model, not a prediction model, and not a buy/sell signal.
 
-这个分数是按研究类型加权的启发式“研究优先级”分数，不是估值模型、预测模型或买卖信号。
-
-- Growth Score / 增长: revenue CAGR and latest revenue growth.
-- Profitability Score / 盈利质量: gross margin, operating margin, and FCF margin.
-- Quality Trend Score / 质量趋势: changes in gross margin, operating margin, and FCF margin.
-- Risk Control Score / 风险控制: max drawdown, volatility, and beta.
-- Benchmark Score / 基准对比: excess CAGR, information ratio, and Sharpe difference.
-- Valuation Sanity Score / 估值理性: penalty-based check using PE, PS, EV/Revenue, and EV/EBITDA.
+- Growth Score: revenue CAGR and latest revenue growth.
+- Profitability Score: gross margin, operating margin, and FCF margin.
+- Quality Trend Score: changes in gross margin, operating margin, and FCF margin.
+- Risk Control Score: max drawdown, volatility, and beta.
+- Benchmark Score: excess CAGR, information ratio, and Sharpe difference.
+- Valuation Sanity Score: penalty-based check using PE, PS, EV/Revenue, and EV/EBITDA.
 
 Main score support:
 - Profitability Score: 85.94 / 100
@@ -364,7 +417,7 @@ This score is transparent but imperfect. It is used to prioritize research, not 
 
 ---
 
-## 12. Required Manual Verification｜必须人工核对
+## 14. Manual Verification
 
 Before making any serious judgment, verify:
 
@@ -378,12 +431,24 @@ Before making any serious judgment, verify:
 - Management guidance
 - SEC 10-K / 10-Q
 - Company IR materials
-- Sanity Scan HIGH severity items
-- Ruin Risk Snapshot debt and cash-burn assumptions
+- Sanity Checks HIGH severity items
+- Ruin Risk debt and cash-burn assumptions
 
 ---
 
-## 13. Final Research Questions｜最后必须回答
+## 15. What to Check Next
+
+Before making any serious judgment, manually check:
+
+1. Latest 10-K / 10-Q revenue breakdown
+2. Whether growth comes from volume, price, services, or accounting effects
+3. Whether free cash flow is stable or one-off
+4. Whether valuation is justified by future growth
+5. Whether the company has hidden dilution, debt, or margin pressure
+
+---
+
+## 16. Final Research Questions
 
 - Why not simply buy `SPY`?
 - Has `AAPL` earned its extra risk?
@@ -397,6 +462,6 @@ Before making any serious judgment, verify:
 
 ---
 
-## 14. Generated Files
+## 17. Generated Files
 
 This folder contains CSV, chart, and Markdown outputs generated by the tool.

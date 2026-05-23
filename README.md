@@ -1,19 +1,32 @@
-# OpenBB Company Research Tool v2.0
+# OpenBB Company Research Tool v2.1
 
-**EN:** A bilingual company research radar that turns a ticker into a structured research pack with benchmark comparison, interactive charts, sanity checks, ruin-risk indicators, category-aware scoring, and Markdown reports.
+A Python-based company research workflow for turning public market data into structured, archived, and reviewable research reports.
 
-**中文：** 一个中英双语公司研究雷达。输入股票代码后，自动生成基准对比、交互式图表、主动断层扫描、毁灭性风险快照、分类加权评分和 Markdown 研究报告。
+It is built for first-pass company research, not for buy/sell decisions.
 
-> Built for first-pass research, not for buy/sell decisions.  
-> 用来做第一层研究，不用来替代投资判断。
+v2.1 adds a beginner clarity layer: professional metrics stay in the report, but key sections now include plain-English explanations, chart-reading notes, and links to a metric guide.
 
-## ✦ 30-Second Demo / 30 秒理解
+This tool helps retail investors answer a few basic but important questions before getting emotional about a stock:
+
+- What does the company actually do?
+- How has it performed against a benchmark?
+- Is the business growing with quality?
+- Are there obvious balance-sheet or cash-flow risks?
+- Is the data complete enough to trust?
+- What should be manually verified before making any judgment?
+
+> This is not a stock-picking machine.  
+> It is a research workflow designed to reduce false confidence, messy notes, and emotional decision-making.
+
+---
+
+## 30-Second Demo
 
 ```bash
 cresearch AAPL --benchmark SPY --start 2023-01-01
 ```
 
-The tool creates:
+The tool creates a structured research folder:
 
 ```text
 reports/AAPL/
@@ -33,11 +46,13 @@ reports/AAPL/
     └── 20260523_..._AAPL_vs_SPY_start_2023-01-01/
 ```
 
-Every run is archived. `latest/` is refreshed as a convenient copy of the newest run.
+Every run is automatically archived under `runs/`.
 
-每次运行都会自动归档，`latest/` 只是最新结果的便捷副本，不再靠你记得手动加 `--archive`。
+`latest/` is refreshed as a convenient copy of the newest run, so the user can quickly open the most recent report without losing historical outputs.
 
-## ✦ Sample Report / 示例报告
+---
+
+## Sample Report
 
 - [AAPL sample research report](examples/sample_reports/AAPL_sample_research_report.md)
 - [Interactive HTML dashboard](examples/sample_reports/AAPL_vs_SPY_interactive_dashboard.html)
@@ -52,105 +67,139 @@ One-line Verdict:
 AAPL is a steadily growing, cash-generative name that beat SPY on return,
 but the risk-adjusted picture is less clean.
 
-Sanity Scan:
+Sanity Checks:
 No automatic high-risk consistency failure was detected.
 Still verify important numbers with primary sources.
 ```
 
-## ✦ Charts / 图表展示
+The generated report starts with a short "How to Read This Report" section, followed by a Beginner Summary table that translates the main evidence into practical research meaning.
 
-### 1. Actual Close Price / 真实收盘价
+---
 
-Raw closing prices. Useful for inspecting absolute price level, gaps, and trend shape.
+## Charts
 
-原始收盘价，用于观察绝对价格、跳空和趋势形态。
+### Actual Close Price
+
+Raw closing prices for the stock and benchmark.
+
+Useful for checking absolute price levels, gaps, and overall trend shape.
+
+Each generated report includes a short note explaining how to read the chart and what the chart does not prove.
 
 ![AAPL vs SPY actual close price](examples/sample_reports/AAPL_vs_SPY_actual_close_price_chart.png)
 
-### 2. Normalized Performance / 归一化表现
+### Normalized Performance
 
-Starts both assets at 100 so relative performance is comparable.
-
-把起始日价格设为 100，用于比较相对收益，而不是比较绝对股价。
+Both assets start at 100, making relative performance easier to compare.
 
 ![AAPL vs SPY normalized performance](examples/sample_reports/AAPL_vs_SPY_normalized_performance_chart.png)
 
-### 3. Drawdown / 回撤
+### Drawdown
 
-Shows decline from each asset's previous peak.
-
-展示资产从前期高点下跌的幅度。
+Shows how far each asset has fallen from its previous peak.
 
 ![AAPL vs SPY drawdown](examples/sample_reports/AAPL_vs_SPY_drawdown_chart.png)
 
-### 4. Score Components / 评分组件
+### Research Score Components
 
-Shows what supports or drags the Research Potential Score.
-
-展示研究评分由哪些部分支撑、哪些部分拖累。
+Breaks down what supports or weakens the research score.
 
 ![AAPL research score components](examples/sample_reports/AAPL_research_score_components.png)
 
-### 5. Growth and Quality Trend / 增长与质量趋势
+### Growth Quality Trend
 
-Shows revenue growth, margin quality, and free cash flow conversion.
-
-展示营收增长、利润率质量和自由现金流转化。
+Tracks revenue growth, margin quality, and free-cash-flow conversion.
 
 ![AAPL growth and quality trend](examples/sample_reports/AAPL_growth_quality_trend.png)
 
-### 6. Ruin Risk Snapshot / 毁灭性风险快照
+### Ruin Risk
 
-Separates price volatility from balance-sheet and cash-burn fragility.
-
-把普通价格波动和资产负债表/烧钱风险分开看。
+Separates normal price volatility from deeper business fragility such as leverage, weak cash flow, or limited cash runway.
 
 ![AAPL ruin risk snapshot](examples/sample_reports/AAPL_ruin_risk_snapshot.png)
 
-## ✦ What v2.0 Fixes / v2.0 解决什么
+---
+
+## What v2.1 Improves
+
+| Problem | v2.1 Response |
+| --- | --- |
+| Finance terms can intimidate beginners | Adds plain-English meaning under major report sections |
+| Scores can be mistaken for buy/sell signals | Adds an explicit beginner warning under Research Score |
+| Charts can be misread as proof | Adds chart-reading notes explaining what each chart shows and does not show |
+| Metric definitions were scattered | Adds [docs/metric_guide.md](docs/metric_guide.md) |
+| Reports could still feel like metric dumps | Adds a Beginner Summary table and clearer next-step research prompts |
+
+## What v2.0 Improved
 
 | Problem | v2.0 Response |
-|---|---|
-| Static PNGs are hard to inspect | Adds Plotly interactive HTML dashboard |
-| Historical drawdown can understate ruin risk | Adds Ruin Risk Snapshot |
-| One-size-fits-all score is biased | Adds sector/lifecycle-aware score weights |
-| Data warnings were too passive | Adds Sanity Scan with severity and actions |
-| Users forget to archive | Archives every run by default |
-| Reports were English-heavy | Makes report surfaces bilingual |
-| Tool was too generic | Adds optional personal margin stress testing |
+| --- | --- |
+| Static PNG charts are hard to inspect | Adds Plotly interactive HTML dashboard |
+| Historical drawdown can understate business risk | Adds balance-sheet and cash-flow risk checks |
+| One-size-fits-all scoring can be misleading | Adds sector/lifecycle-aware scoring weights |
+| Data warnings were too passive | Adds sanity checks with severity, finding, and action |
+| Users may forget to archive reports | Archives every run by default |
+| Reports lacked a clear review workflow | Adds structured report sections and manual verification prompts |
+| Generic analysis ignores personal leverage risk | Adds optional margin stress testing |
 
-## ✦ Core Features / 核心功能
+---
+
+## Core Features
 
 - Benchmark comparison against `SPY`, `VOO`, `QQQ`, or another ticker
-- Static PNG charts plus interactive Plotly HTML dashboard
+- Static PNG charts and Plotly interactive HTML dashboard
 - Actual close price, normalized performance, and drawdown views
-- Return, volatility, Sharpe, Sortino, Calmar, beta, alpha, tracking error, information ratio, capture ratios
-- Company profile, valuation snapshot, financial statement summary
-- Growth quality and free cash flow trend
-- Ruin-risk indicators such as Net Debt / EBITDA, Debt / FCF, and cash runway
-- Active sanity checks for missing data, short history, currency mismatch, FCF inconsistency, and fund-like instruments
-- Category-aware scoring for mature compounders, speculative growth, profitable growth, cyclicals, financials, ETFs, and data-limited cases
-- Optional personal margin stress test with `--account-equity` and `--margin-loan`
+- Return, volatility, Sharpe, Sortino, Calmar, beta, alpha, tracking error, information ratio, and capture ratios
+- Company profile, valuation snapshot, and financial statement summary
+- Growth quality and free-cash-flow trend
+- Beginner Summary table and plain-English explanations
+- Chart-reading notes in generated reports
+- Beginner-friendly metric guide
+- Balance-sheet and cash-flow risk indicators:
+  - Net Debt / EBITDA
+  - Debt / FCF
+  - Cash runway
+  - EBITDA availability
+  - Free-cash-flow coverage
+- Sanity checks for:
+  - missing data
+  - short price history
+  - currency mismatch
+  - free-cash-flow inconsistency
+  - fund-like instruments
+- Category-aware scoring for:
+  - mature compounders
+  - speculative growth companies
+  - profitable growth companies
+  - cyclicals
+  - financials
+  - ETFs
+  - data-limited cases
+- Optional personal margin stress test with:
+  - `--account-equity`
+  - `--margin-loan`
 - Cross-ticker comparison when multiple symbols are passed
 
-## ✦ What It Is Not / 它不是
+---
+
+## What It Is Not
 
 This project does **not** provide:
 
-- Buy / sell recommendations
-- Price targets
-- Guaranteed returns
-- Trading signals
-- Portfolio allocation instructions
-- Automated investment decisions
+- buy or sell recommendations
+- price targets
+- guaranteed returns
+- trading signals
+- portfolio allocation instructions
+- automated investment decisions
 
-这个项目不提供买卖建议、目标价、收益承诺、交易信号或仓位建议。
+The research score is a heuristic screening score.
 
-The score is a research-priority heuristic, not a valuation model or prediction model.
+It is not a valuation model, prediction model, or investment recommendation.
 
-评分只是研究优先级启发式模型，不是估值模型或预测模型。
+---
 
-## ✦ Quick Start / 快速开始
+## Quick Start
 
 ```bash
 zsh setup_environment.zsh
@@ -169,16 +218,18 @@ pip install -r requirements.txt
 python scripts/company_research_tool.py AAPL --benchmark SPY --start 2023-01-01
 ```
 
-## ✦ Usage / 用法
+---
+
+## Usage
 
 ```bash
-# Basic research radar
+# Basic company research
 cresearch AAPL
 
-# Multiple tickers ranked together
+# Compare multiple tickers
 cresearch AAPL TSLA RKLB
 
-# Growth-heavy benchmark
+# Use a growth-heavy benchmark
 cresearch NVDA MSFT --benchmark QQQ
 
 # Compare one stock against another
@@ -187,51 +238,68 @@ cresearch TSLA --benchmark AAPL --start 2020-01-01
 # Custom risk-free rate
 cresearch AAPL --risk-free-rate 0.04
 
-# Optional personal margin stress
+# Optional personal margin stress test
 cresearch AAPL --account-equity 100000 --margin-loan 25000
 
 # Custom run folder
 cresearch AAPL --run-id thesis_check_2026_05_23
 ```
 
-## ✦ Report Structure / 报告结构
+---
 
-Each report follows a research workflow:
+## Report Structure
 
-1. Boundary / 边界
-2. One-line Verdict / 一句话判断
-3. Key Takeaways / 核心摘要
-4. Data Confidence / 数据可信度
-5. Sanity Scan / 主动断层扫描
-6. Company Profile / 公司资料
-7. Price vs Benchmark / 价格与基准比较
-8. Ruin Risk Snapshot / 毁灭性风险快照
-9. Money Source and Money Flow / 钱从哪里来，流到哪里去
-10. Valuation Snapshot / 估值快照
-11. Personal Margin Stress / 个人融资压力测试
-12. Research Potential Score / 研究潜力评分
-13. Manual Verification / 必须人工核对
-14. Final Research Questions / 最后必须回答
+Each report follows a repeatable research workflow:
 
-See [docs/report_structure.md](docs/report_structure.md) for details.
+1. Boundary
+2. One-line Verdict
+3. Key Takeaways
+4. Data Confidence
+5. Data Confidence and Sanity Checks
+6. Company Profile
+7. Price vs Benchmark
+8. Growth and Quality Summary
+9. Ruin Risk
+10. Business Model and Cash Flow
+11. Personal Margin Stress
+12. Valuation Snapshot
+13. Research Score
+14. Manual Verification
+15. What to Check Next
+16. Final Research Questions
 
-## ✦ Data Sources / 数据源
+See [docs/report_structure.md](docs/report_structure.md) for the report flow and [docs/metric_guide.md](docs/metric_guide.md) for plain-English metric definitions.
+
+---
+
+## Data Sources
 
 - OpenBB
 - OpenBB yfinance provider
 - yfinance
 
-Free/public financial data can be delayed, incomplete, inconsistent, or wrong. For serious decisions, verify key numbers with SEC filings, company investor relations, earnings releases, and official financial statements.
+Free and public financial data can be delayed, incomplete, inconsistent, or wrong.
 
-免费公开数据可能延迟、缺失、不一致或错误。严肃判断前必须用 SEC 文件、公司 IR、业绩材料和正式财报核对。
+For serious decisions, key numbers should be verified with:
 
-## ✦ Setup Note / 安装说明
+- SEC filings
+- company investor relations pages
+- earnings releases
+- official financial statements
 
-`setup_environment.zsh` creates a `cresearch` wrapper pointing to the current project folder. If you move the project folder, rerun:
+---
+
+## Setup Note
+
+`setup_environment.zsh` creates a `cresearch` wrapper pointing to the current project folder.
+
+If you move the project folder, rerun:
 
 ```bash
 zsh setup_environment.zsh
 ```
+
+---
 
 ## License
 
