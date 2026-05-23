@@ -1,6 +1,6 @@
 # Report Structure
 
-v2.1 reports are designed as first-pass research workflows. They organize public-market data into a reviewable structure, but they do not replace primary-source research or investment judgment.
+v3.0 reports are designed as first-pass research workflows. They organize public-market data into a reviewable structure, but they do not replace primary-source research or investment judgment.
 
 The report uses a two-layer reading structure:
 
@@ -175,7 +175,7 @@ These fields are not enough for valuation. They are a first-pass screen for whet
 
 ## 14. Research Score
 
-v2.1 uses research profiles instead of one universal score.
+v3.0 uses research profiles instead of one universal score.
 
 Profiles include:
 
@@ -195,7 +195,28 @@ Generated reports include a beginner warning:
 A high score is not a buy signal. A low score is not a sell signal.
 ```
 
-## 15. Manual Verification
+## 15. AI Review
+
+Optional section generated only when `--ai-review` is requested.
+
+The AI Review reads structured report data, not the final Markdown, and checks:
+
+- whether the conclusion is supported by the evidence
+- what risks or weak assumptions may be missing
+- what a beginner might misunderstand
+- what should be verified next
+
+Boundaries:
+
+- no buy/sell/hold recommendations
+- no price targets
+- no short-term movement predictions
+- no invented numbers
+- no external data fetching
+
+If the API key, package, network, or model call fails, the deterministic report is still generated and this section explains why the AI Review was skipped.
+
+## 16. Manual Verification
 
 The report explicitly lists what should be checked manually before forming a serious view:
 
@@ -210,7 +231,7 @@ The report explicitly lists what should be checked manually before forming a ser
 - SEC 10-K / 10-Q
 - company investor relations materials
 
-## 16. What to Check Next
+## 17. What to Check Next
 
 Turns the report into an action list for further research:
 
@@ -220,7 +241,7 @@ Turns the report into an action list for further research:
 - valuation support
 - hidden dilution, debt, or margin pressure
 
-## 17. Final Research Questions
+## 18. Final Research Questions
 
 The final section forces judgment back to the human.
 

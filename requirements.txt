@@ -4,3 +4,6 @@ yfinance
 pandas
 matplotlib
 plotly
+openai
+pydantic
+rich

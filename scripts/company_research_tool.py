@@ -17,7 +17,7 @@ This tool is NOT a buy/sell recommendation engine.
 
 from __future__ import annotations
 
-__version__ = "2.1.0"
+__version__ = "3.0.0"
 
 import argparse
 from datetime import datetime
@@ -57,6 +57,26 @@ except Exception as exc:
         "  pip install -r requirements.txt\n\n"
         f"Original error: {exc}"
     )
+
+try:
+    from ai_review import (
+        DEFAULT_AI_MODEL,
+        build_ai_review_payload,
+        call_ai_review,
+        render_ai_review_markdown,
+        render_ai_review_skipped,
+    )
+except Exception:
+    DEFAULT_AI_MODEL = "gpt-4o-mini"
+    build_ai_review_payload = None
+    call_ai_review = None
+    render_ai_review_markdown = None
+    render_ai_review_skipped = None
+
+try:
+    import terminal_ui
+except Exception:
+    terminal_ui = None
 
 
 # =============================================================================
@@ -2145,6 +2165,138 @@ def margin_plain_english(margin_stress: pd.DataFrame) -> str:
     return f"Under the largest stress scenario shown here, the equity cushion would be {fmt_number(worst['Equity Cushion'])} and loan/value would be {fmt_percent(worst['Loan / Value'])}. This is about your own balance sheet, not the company."
 
 
+def df_records(df: pd.DataFrame | None) -> list[dict[str, Any]]:
+    if df is None or df.empty:
+        return []
+    clean = df.copy()
+    clean = clean.where(pd.notna(clean), None)
+    return clean.to_dict(orient="records")
+
+
+def generated_file_list(out_dir: Path) -> list[str]:
+    if not out_dir.exists():
+        return []
+    return sorted(path.name for path in out_dir.iterdir() if path.is_file())
+
+
+def manual_verification_items() -> list[str]:
+    return [
+        "Revenue source and segment breakdown",
+        "Gross margin trend",
+        "Operating income quality",
+        "Free cash flow calculation",
+        "Debt and dilution",
+        "Stock-based compensation",
+        "One-time gains/losses",
+        "Management guidance",
+        "SEC 10-K / 10-Q",
+        "Company IR materials",
+        "Sanity Checks HIGH severity items",
+        "Ruin Risk debt and cash-burn assumptions",
+    ]
+
+
+def final_research_questions(symbol: str, benchmark: str) -> list[str]:
+    return [
+        f"Why not simply buy {benchmark}?",
+        f"Has {symbol} earned its extra risk?",
+        "Is growth real or narrative-driven?",
+        "Is profit quality improving?",
+        "Is free cash flow healthy?",
+        "Is valuation already pricing in too much future success?",
+        "If the stock falls 30%-50%, does the thesis still hold?",
+        "If the stock falls 70%, does the business survive without destructive dilution?",
+        "Is this company being judged against the right lifecycle and sector peers?",
+    ]
+
+
+def generate_report_data_dict(
+    symbol: str,
+    benchmark: str,
+    start_date: str,
+    end_date: str | None,
+    out_dir: Path,
+    profile: pd.DataFrame,
+    valuation: pd.DataFrame,
+    trends: pd.DataFrame,
+    fundamental_summary: pd.DataFrame,
+    price_summary: pd.DataFrame,
+    score_table: pd.DataFrame,
+    info: dict[str, Any],
+    target_price: pd.DataFrame,
+    warnings: list[str],
+    sanity_checks: pd.DataFrame,
+    ruin_risk: pd.DataFrame,
+    margin_stress: pd.DataFrame,
+    actual_chart_name: str,
+    chart_name: str,
+    drawdown_chart_name: str,
+    score_components_chart_name: str,
+    growth_quality_chart_name: str | None,
+    ruin_risk_chart_name: str,
+    interactive_chart_name: str,
+    radar_chart_name: str,
+    ai_review_markdown: str | None = None,
+) -> dict[str, Any]:
+    total_score = get_component_score(score_table, "Research Score")
+    rating = rating_from_score(total_score)
+    category = classify_research_category(info, fundamental_summary)
+    beginner_summary = beginner_summary_table(fundamental_summary, score_table, ruin_risk, sanity_checks)
+    key_takeaways = generate_key_takeaways(symbol, benchmark, price_summary, fundamental_summary, score_table, info)
+
+    return {
+        "ticker": symbol,
+        "symbol": symbol,
+        "benchmark": benchmark,
+        "version": __version__,
+        "start_date": start_date,
+        "end_date": end_date,
+        "research_profile": category,
+        "research_status": rating,
+        "one_line_verdict": one_line_verdict(symbol, benchmark, price_summary, fundamental_summary, score_table, info),
+        "key_takeaways": key_takeaways,
+        "beginner_summary": df_records(beginner_summary),
+        "price_metrics": df_records(price_summary),
+        "growth_quality_metrics": df_records(fundamental_summary),
+        "valuation_snapshot": df_records(valuation),
+        "ruin_risk_metrics": df_records(ruin_risk),
+        "research_score": {"score": None if pd.isna(total_score) else float(total_score), "status": rating},
+        "score_components": df_records(score_table),
+        "sanity_checks": df_records(sanity_checks),
+        "data_confidence": data_confidence_section(trends, valuation, profile, target_price, info),
+        "manual_verification": manual_verification_items(),
+        "final_research_questions": final_research_questions(symbol, benchmark),
+        "generated_files": generated_file_list(out_dir),
+        "company_profile": df_records(profile),
+        "business_model_and_cash_flow": df_records(trends),
+        "raw": {
+            "profile": profile,
+            "valuation": valuation,
+            "trends": trends,
+            "fundamental_summary": fundamental_summary,
+            "price_summary": price_summary,
+            "score_table": score_table,
+            "target_price": target_price,
+            "warnings": warnings,
+            "sanity_checks": sanity_checks,
+            "ruin_risk": ruin_risk,
+            "margin_stress": margin_stress,
+            "info": info,
+        },
+        "charts": {
+            "actual": actual_chart_name,
+            "normalized": chart_name,
+            "drawdown": drawdown_chart_name,
+            "score_components": score_components_chart_name,
+            "growth_quality": growth_quality_chart_name,
+            "ruin_risk": ruin_risk_chart_name,
+            "interactive": interactive_chart_name,
+            "radar": radar_chart_name,
+        },
+        "ai_review_markdown": ai_review_markdown,
+    }
+
+
 # =============================================================================
 # Report
 # =============================================================================
@@ -2180,16 +2332,58 @@ def write_report(
     ruin_risk_chart_name: str,
     interactive_chart_name: str,
     radar_chart_name: str,
+    ai_review_markdown: str | None = None,
 ) -> Path:
-    total_score = get_component_score(score_table, "Research Score")
-    rating = rating_from_score(total_score)
+    report_data = generate_report_data_dict(
+        symbol=symbol,
+        benchmark=benchmark,
+        start_date=start_date,
+        end_date=end_date,
+        out_dir=out_dir,
+        profile=profile,
+        valuation=valuation,
+        trends=trends,
+        fundamental_summary=fundamental_summary,
+        price_summary=price_summary,
+        score_table=score_table,
+        info=info,
+        target_price=target_price,
+        warnings=warnings,
+        sanity_checks=sanity_checks,
+        ruin_risk=ruin_risk,
+        margin_stress=margin_stress,
+        actual_chart_name=actual_chart_name,
+        chart_name=chart_name,
+        drawdown_chart_name=drawdown_chart_name,
+        score_components_chart_name=score_components_chart_name,
+        growth_quality_chart_name=growth_quality_chart_name,
+        ruin_risk_chart_name=ruin_risk_chart_name,
+        interactive_chart_name=interactive_chart_name,
+        radar_chart_name=radar_chart_name,
+        ai_review_markdown=ai_review_markdown,
+    )
 
-    verdict = one_line_verdict(symbol, benchmark, price_summary, fundamental_summary, score_table, info)
-    takeaways = generate_key_takeaways(symbol, benchmark, price_summary, fundamental_summary, score_table, info)
+    total_score = report_data["research_score"]["score"]
+    rating = report_data["research_status"]
+
+    verdict = report_data["one_line_verdict"]
+    takeaways = report_data["key_takeaways"]
     takeaways_md = "\n".join([f"- {item}" for item in takeaways]) if takeaways else "_No automatic takeaways available._"
-    beginner_summary = beginner_summary_table(fundamental_summary, score_table, ruin_risk, sanity_checks)
+    beginner_summary = pd.DataFrame(report_data["beginner_summary"])
 
-    category = classify_research_category(info, fundamental_summary)
+    category = report_data["research_profile"]
+    ai_review_section = ""
+    manual_section_number = 14
+    next_section_number = 15
+    final_section_number = 16
+    files_section_number = 17
+    if report_data.get("ai_review_markdown"):
+        ai_review_section = f"\n---\n\n{report_data['ai_review_markdown'].strip()}\n"
+        manual_section_number = 15
+        next_section_number = 16
+        final_section_number = 17
+        files_section_number = 18
+
     report = f"""# {symbol} Research Report
 
 > Target: `{symbol}`  
@@ -2445,7 +2639,8 @@ This score is transparent but imperfect. It is used to prioritize research, not 
 
 ---
 
-## 14. Manual Verification
+{ai_review_section}
+## {manual_section_number}. Manual Verification
 
 Before making any serious judgment, verify:
 
@@ -2464,7 +2659,7 @@ Before making any serious judgment, verify:
 
 ---
 
-## 15. What to Check Next
+## {next_section_number}. What to Check Next
 
 Before making any serious judgment, manually check:
 
@@ -2476,7 +2671,7 @@ Before making any serious judgment, manually check:
 
 ---
 
-## 16. Final Research Questions
+## {final_section_number}. Final Research Questions
 
 - Why not simply buy `{benchmark}`?
 - Has `{symbol}` earned its extra risk?
@@ -2490,7 +2685,7 @@ Before making any serious judgment, manually check:
 
 ---
 
-## 17. Generated Files
+## {files_section_number}. Generated Files
 
 This folder contains CSV, chart, and Markdown outputs generated by the tool.
 """
@@ -2516,6 +2711,11 @@ def run_one(
     run_id: str | None = None,
     account_equity: float | None = None,
     margin_loan: float | None = None,
+    ai_review: bool = False,
+    ai_model: str = DEFAULT_AI_MODEL,
+    ai_review_depth: str = "basic",
+    ai_timeout: int = 60,
+    ai_max_output_tokens: int = 1200,
 ) -> dict[str, Any]:
     symbol = symbol.upper()
     benchmark = benchmark.upper()
@@ -2523,10 +2723,15 @@ def run_one(
     out_dir = output_dir_for_run(output, symbol, benchmark, start_date, end_date, archive, run_id)
     ensure_dir(out_dir)
 
-    print(f"\n=== Building research pack: {symbol} vs {benchmark} ===")
+    if terminal_ui is not None:
+        terminal_ui.print_run_config(symbol, benchmark, ai_review, archive_enabled=True, model=ai_model)
+    else:
+        print(f"\n=== Building research pack: {symbol} vs {benchmark} ===")
 
     target_price = fetch_price_history(symbol, start_date, end_date)
     benchmark_price = fetch_price_history(benchmark, start_date, end_date)
+    if terminal_ui is not None:
+        terminal_ui.step_done("[1/8] Fetching market data")
 
     target_price.to_csv(out_dir / f"{safe_symbol(symbol)}_price_history.csv")
     benchmark_price.to_csv(out_dir / f"{safe_symbol(benchmark)}_price_history.csv")
@@ -2569,31 +2774,33 @@ def run_one(
 
     if is_fund_like(info):
         trends = pd.DataFrame()
-        print(f"[WARN] {symbol} appears to be a fund-like instrument. Skipping company financial statements.")
+        if terminal_ui is not None:
+            terminal_ui.step_warn("[2/8] Loading fundamentals", f"{symbol} appears fund-like; financial statements skipped")
+        else:
+            print(f"[WARN] {symbol} appears to be a fund-like instrument. Skipping company financial statements.")
     else:
         trends = fetch_money_source_and_flow(symbol, out_dir, years)
+        if terminal_ui is not None:
+            terminal_ui.step_done("[2/8] Loading fundamentals")
 
     fundamental_summary = build_fundamental_summary(trends)
     fundamental_summary.to_csv(out_dir / f"{safe_symbol(symbol)}_fundamental_summary.csv", index=False)
 
     score_table = build_research_score(price_summary, fundamental_summary, info)
     score_table.to_csv(out_dir / f"{safe_symbol(symbol)}_research_potential_score.csv", index=False)
-    write_metric_radar_chart(score_table, radar_chart_path)
     score_components_chart_path = out_dir / f"{safe_symbol(symbol)}_research_score_components.png"
-    plot_score_components(score_table, score_components_chart_path)
 
     ruin_risk = build_ruin_risk_snapshot(info, trends)
     ruin_risk.to_csv(out_dir / f"{safe_symbol(symbol)}_ruin_risk_snapshot.csv", index=False)
     ruin_risk_chart_path = out_dir / f"{safe_symbol(symbol)}_ruin_risk_snapshot.png"
-    plot_ruin_risk_snapshot(ruin_risk, ruin_risk_chart_path)
 
     growth_quality_chart_path = out_dir / f"{safe_symbol(symbol)}_growth_quality_trend.png"
-    plot_growth_quality(trends, growth_quality_chart_path)
-    growth_quality_chart_name = growth_quality_chart_path.name if growth_quality_chart_path.exists() else None
 
     margin_stress = build_margin_stress(account_equity, margin_loan, [0.20, 0.30, 0.50, 0.70])
     if not margin_stress.empty:
         margin_stress.to_csv(out_dir / f"{safe_symbol(symbol)}_personal_margin_stress.csv", index=False)
+    if terminal_ui is not None:
+        terminal_ui.step_done("[3/8] Calculating metrics")
 
     data_warnings = build_data_warnings(
         symbol=symbol,
@@ -2613,6 +2820,71 @@ def run_one(
         ruin_risk=ruin_risk,
     )
     sanity_checks.to_csv(out_dir / f"{safe_symbol(symbol)}_sanity_checks.csv", index=False)
+    if terminal_ui is not None:
+        terminal_ui.step_done("[4/8] Running sanity checks")
+
+    write_metric_radar_chart(score_table, radar_chart_path)
+    plot_score_components(score_table, score_components_chart_path)
+    plot_ruin_risk_snapshot(ruin_risk, ruin_risk_chart_path)
+    plot_growth_quality(trends, growth_quality_chart_path)
+    growth_quality_chart_name = growth_quality_chart_path.name if growth_quality_chart_path.exists() else None
+    if terminal_ui is not None:
+        terminal_ui.step_done("[5/8] Rendering charts")
+        terminal_ui.step_done("[6/8] Building report data")
+
+    ai_review_markdown = None
+    if ai_review:
+        report_data = generate_report_data_dict(
+            symbol=symbol,
+            benchmark=benchmark,
+            start_date=start_date,
+            end_date=end_date,
+            out_dir=out_dir,
+            profile=profile,
+            valuation=valuation,
+            trends=trends,
+            fundamental_summary=fundamental_summary,
+            price_summary=price_summary,
+            score_table=score_table,
+            info=info,
+            target_price=target_price,
+            warnings=data_warnings,
+            sanity_checks=sanity_checks,
+            ruin_risk=ruin_risk,
+            margin_stress=margin_stress,
+            actual_chart_name=actual_chart_path.name,
+            chart_name=chart_path.name,
+            drawdown_chart_name=drawdown_chart_path.name,
+            score_components_chart_name=score_components_chart_path.name,
+            growth_quality_chart_name=growth_quality_chart_name,
+            ruin_risk_chart_name=ruin_risk_chart_path.name,
+            interactive_chart_name=interactive_chart_path.name,
+            radar_chart_name=radar_chart_path.name,
+        )
+        if build_ai_review_payload is None or call_ai_review is None or render_ai_review_markdown is None or render_ai_review_skipped is None:
+            reason = "AI Review module could not be loaded."
+            ai_review_markdown = "## AI Review\n\nAI Review was requested but skipped.\n\nReason: AI Review module could not be loaded.\n\nThe deterministic report was still generated successfully.\n"
+            if terminal_ui is not None:
+                terminal_ui.print_ai_review_status("skipped", model=ai_model, error=reason)
+        else:
+            payload = build_ai_review_payload(report_data, depth=ai_review_depth)
+            if terminal_ui is not None:
+                with terminal_ui.ai_review_spinner():
+                    review = call_ai_review(payload, model=ai_model, timeout=ai_timeout, max_output_tokens=ai_max_output_tokens)
+            else:
+                print("Calling OpenAI API, this may take a few seconds...")
+                review = call_ai_review(payload, model=ai_model, timeout=ai_timeout, max_output_tokens=ai_max_output_tokens)
+            error = getattr(call_ai_review, "last_error", None)
+            if review is None:
+                ai_review_markdown = render_ai_review_skipped(error or "AI Review was not available.")
+                if terminal_ui is not None:
+                    terminal_ui.print_ai_review_status("skipped", model=ai_model, error=error)
+            else:
+                ai_review_markdown = render_ai_review_markdown(review)
+                if terminal_ui is not None:
+                    terminal_ui.print_ai_review_status("completed", model=ai_model)
+    elif terminal_ui is not None:
+        terminal_ui.print_ai_review_status("disabled")
 
     report_path = write_report(
         symbol=symbol,
@@ -2640,17 +2912,24 @@ def run_one(
         ruin_risk_chart_name=ruin_risk_chart_path.name,
         interactive_chart_name=interactive_chart_path.name,
         radar_chart_name=radar_chart_path.name,
+        ai_review_markdown=ai_review_markdown,
     )
 
     latest_dir = output / safe_symbol(symbol) / "latest"
     copy_run_to_latest(out_dir, latest_dir)
+    if terminal_ui is not None:
+        terminal_ui.step_done("[8/8] Writing outputs")
 
     score = get_component_score(score_table, "Research Score")
     rating = rating_from_score(score)
 
-    print(f"Done: {symbol}")
-    print(f"Report: {report_path}")
-    print(f"Score: {fmt_score(score)} ({rating})")
+    if terminal_ui is not None:
+        terminal_ui.print_final_outputs(report_path, interactive_chart_path, out_dir)
+        print(f"Score: {fmt_score(score)} ({rating})")
+    else:
+        print(f"Done: {symbol}")
+        print(f"Report: {report_path}")
+        print(f"Score: {fmt_score(score)} ({rating})")
 
     return {
         "symbol": symbol,
@@ -2747,6 +3026,9 @@ Examples:
   # Optional personal margin stress table
   cresearch AAPL --account-equity 100000 --margin-loan 25000
 
+  # Optional AI review layer
+  cresearch AAPL --ai-review
+
   # Every run is archived by default; latest is refreshed automatically
   cresearch AAPL
 
@@ -2770,6 +3052,12 @@ Examples:
     parser.add_argument("--run-id", default=None, help="Optional archive folder name under reports/TICKER/runs/.")
     parser.add_argument("--account-equity", type=float, default=None, help="Optional account equity for personal margin stress testing.")
     parser.add_argument("--margin-loan", type=float, default=None, help="Optional margin loan balance for personal margin stress testing.")
+    parser.add_argument("--ai-review", action="store_true", help="Add optional OpenAI AI Review section to the report.")
+    parser.add_argument("--ai-model", default=os.getenv("OPENAI_MODEL", DEFAULT_AI_MODEL), help=f"AI model for --ai-review. Default: OPENAI_MODEL or {DEFAULT_AI_MODEL}.")
+    parser.add_argument("--ai-review-depth", choices=["basic", "deep"], default="basic", help="AI review depth. Default: basic.")
+    parser.add_argument("--ai-timeout", type=int, default=60, help="OpenAI API timeout in seconds. Default: 60.")
+    parser.add_argument("--ai-max-output-tokens", type=int, default=1200, help="Max tokens for AI review output. Default: 1200.")
+    parser.add_argument("--no-rich", action="store_true", help="Disable Rich terminal UI and use plain output.")
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     return parser.parse_args()
 
@@ -2778,6 +3066,10 @@ def main() -> None:
     args = parse_args()
     output = Path(args.output)
     ensure_dir(output)
+
+    if terminal_ui is not None:
+        terminal_ui.configure(enabled=not args.no_rich)
+        terminal_ui.print_app_banner(__version__)
 
     rows = []
     for symbol in args.symbols:
@@ -2795,6 +3087,11 @@ def main() -> None:
                     run_id=args.run_id,
                     account_equity=args.account_equity,
                     margin_loan=args.margin_loan,
+                    ai_review=args.ai_review,
+                    ai_model=args.ai_model,
+                    ai_review_depth=args.ai_review_depth,
+                    ai_timeout=args.ai_timeout,
+                    ai_max_output_tokens=args.ai_max_output_tokens,
                 )
             )
         except Exception as exc:

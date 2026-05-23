@@ -28,4 +28,5 @@ data/processed/*
 # Secrets
 .env
 .env.*
+!.env.example
 *.log

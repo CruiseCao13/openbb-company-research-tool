@@ -87,6 +87,89 @@ class MetricsTests(unittest.TestCase):
             self.assertTrue(path.exists())
             self.assertGreater(path.stat().st_size, 0)
 
+    def test_generate_report_data_dict_contains_required_fields(self):
+        profile = pd.DataFrame([{"Field": "symbol", "Value": "AAPL"}])
+        valuation = pd.DataFrame([{"Metric": "trailingPE", "Value": 30.0}])
+        trends = pd.DataFrame([{"Revenue": 100.0, "Free Cash Flow": 20.0}])
+        fundamental_summary = pd.DataFrame(
+            [
+                {"Metric": "Revenue CAGR", "Value": 0.05},
+                {"Metric": "Gross Margin Latest", "Value": 0.45},
+                {"Metric": "FCF Margin Latest", "Value": 0.20},
+            ]
+        )
+        price_summary = pd.DataFrame(
+            [
+                {"Metric": "Total Return", "Target": 0.20, "Benchmark": 0.10, "Difference": 0.10},
+                {"Metric": "Sharpe Ratio", "Target": 1.0, "Benchmark": 1.2, "Difference": -0.2},
+                {"Metric": "Max Drawdown", "Target": -0.20, "Benchmark": -0.10, "Difference": -0.10},
+            ]
+        )
+        score_table = pd.DataFrame(
+            [
+                {"Component": "Research Score", "Score": 61.0, "Weight": 1.0, "Profile": "Mature Compounder"},
+                {"Component": "Growth Score", "Score": 55.0, "Weight": 0.2, "Profile": "Mature Compounder"},
+                {"Component": "Profitability Score", "Score": 75.0, "Weight": 0.2, "Profile": "Mature Compounder"},
+                {"Component": "Valuation Sanity Score", "Score": 35.0, "Weight": 0.2, "Profile": "Mature Compounder"},
+                {"Component": "Risk Control Score", "Score": 60.0, "Weight": 0.2, "Profile": "Mature Compounder"},
+            ]
+        )
+        target_price = pd.DataFrame({"close": [100.0, 110.0]})
+        sanity_checks = pd.DataFrame([{"Severity": "INFO", "Check": "No triggered sanity failure"}])
+        ruin_risk = pd.DataFrame([{"Metric": "Ruin Risk Score", "Value": 45.0}])
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            report_data = tool.generate_report_data_dict(
+                symbol="AAPL",
+                benchmark="SPY",
+                start_date="2023-01-01",
+                end_date=None,
+                out_dir=Path(tmp_dir),
+                profile=profile,
+                valuation=valuation,
+                trends=trends,
+                fundamental_summary=fundamental_summary,
+                price_summary=price_summary,
+                score_table=score_table,
+                info={"quoteType": "EQUITY", "trailingPE": 30.0},
+                target_price=target_price,
+                warnings=[],
+                sanity_checks=sanity_checks,
+                ruin_risk=ruin_risk,
+                margin_stress=pd.DataFrame(),
+                actual_chart_name="actual.png",
+                chart_name="normalized.png",
+                drawdown_chart_name="drawdown.png",
+                score_components_chart_name="score.png",
+                growth_quality_chart_name="growth.png",
+                ruin_risk_chart_name="ruin.png",
+                interactive_chart_name="dashboard.html",
+                radar_chart_name="radar.html",
+            )
+
+        for key in [
+            "ticker",
+            "benchmark",
+            "version",
+            "research_profile",
+            "research_status",
+            "one_line_verdict",
+            "key_takeaways",
+            "beginner_summary",
+            "price_metrics",
+            "growth_quality_metrics",
+            "valuation_snapshot",
+            "ruin_risk_metrics",
+            "research_score",
+            "score_components",
+            "sanity_checks",
+            "data_confidence",
+            "manual_verification",
+            "final_research_questions",
+            "generated_files",
+        ]:
+            self.assertIn(key, report_data)
+
 
 if __name__ == "__main__":
     unittest.main()

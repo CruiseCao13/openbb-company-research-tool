@@ -1,5 +1,23 @@
 # Changelog
 
+## v3.0.0
+
+### Added
+
+- Optional AI Review layer using OpenAI Chat Completions structured outputs
+- `scripts/ai_review.py` with Pydantic schema, compact payload builder, API call, Markdown renderer, and graceful fallback
+- `scripts/terminal_ui.py` with Rich terminal output and plain-print fallback
+- CLI flags: `--ai-review`, `--ai-model`, `--ai-review-depth`, `--ai-timeout`, `--ai-max-output-tokens`, and `--no-rich`
+- `.env.example` with `OPENAI_API_KEY` and `OPENAI_MODEL`
+- Tests for AI review payloads, skipped fallback, argument parsing, and terminal fallback
+
+### Changed
+
+- Version bumped to `3.0.0`
+- Deterministic report data is aggregated into a structured dictionary before AI review and report rendering
+- README and report structure docs now explain: Data calculates. AI reviews. Human decides.
+- Dependencies now include `openai`, `pydantic`, and `rich`
+
 ## v2.1.0
 
 ### Added
