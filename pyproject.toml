@@ -1,7 +1,7 @@
 [project]
 name = "openbb-company-research-tool"
-version = "4.0.0"
-description = "A thesis-driven, audit-ready, bilingual first-pass equity research workflow generator."
+version = "4.2.0"
+description = "A human-readable, thesis-driven, bilingual first-pass equity research workflow generator."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }

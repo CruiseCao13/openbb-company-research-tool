@@ -1,35 +1,50 @@
 # AAPL 股票研究报告
 
-> 标的：`AAPL`  
-> 基准：`SPY`  
-> 期间：`2023-01-01` 到 `最新可得数据`  
-> 研究状态：**Watchlist**  
-> 研究画像：**Mature Compounder**  
-> 版本：`4.0.0`  
-> DATA_AUDIT_STATUS：**WARNING**  
-> RISK_METHOD_STATUS：**PASS**  
-> AI_ANALYST_REVIEW_STATUS：**WARNING**  
-> LANGUAGE_LINT_STATUS：**PASS**  
-> OVERALL_REPORT_STATUS：**WARNING**  
-> 数据审计状态：**WARNING**  
-> 语言检查状态：**PASS**  
-> Price Label Check：**PASS**
+---
+
+## 1. 报告状态卡片
+
+| 项目 | 内容 |
+| --- | --- |
+| 标的 | AAPL |
+| 基准 | SPY |
+| 期间 | 2023-01-01 至 最新可得数据 |
+| 研究状态 | 观察名单 |
+| 研究类型 | 成熟复利型公司 |
+| 报告状态 | 需要复核 |
+| 数据审计 | 有警告 |
+| 风险方法 | 通过 |
+| AI 二次复核 | 通过 |
+| 语言检查 | 通过 |
+| 价格标签校验 | 通过 |
+
+这张状态卡告诉你这份报告现在能不能直接使用。出现“有警告”不代表报告作废，而是提醒你：相关数字、方法或数据标签还需要复核，不能直接当成最终证据。
 
 ---
 
-## 边界
+## 2. 一句话结论
 
-这份报告用于股票初筛和研究路径生成，不提供买卖建议、目标价、收益承诺或短期预测。
+AAPL 更像成熟现金流公司，不是高增长故事。它在本周期总收益为 146.92%，高于 SPY 的 95.80%，但收入复合增速只有约 1.81%，当前市盈率约 37.4327 倍。所以这份报告的核心结论不是“公司差”，而是“估值已经要求利润率、现金流和回购继续守住”。
 
-## 核心主线
+---
 
-AAPL 的核心问题不是“公司能不能赚钱”，而是当前价格是否已经把未来的利润率、现金流和增长韧性提前交易进去。
+## 3. 核心判断
 
-## 投研博弈卡片
+AAPL 的核心问题不是“公司能不能赚钱”，而是当前价格是否已经把未来很多年的利润率、现金流和回购能力提前计入。读这份报告时，不要先问“能不能买”，而要先问：当前证据是否足够支持继续研究，以及哪些关键假设一旦失效就会推翻原来的乐观判断。
+
+---
+
+## 4. AI 二次复核红旗
+
+AI 二次复核层只负责找茬、分辨哪些问题能回答、哪些问题不能回答，并生成下一步核查动作。它不能修改底层财务指标，也不能把缺失数据补成事实。详细记录见 `ai_correction_log.md`。
+
+---
+
+## 5. 投研博弈卡片
 
 ### 买入的核心赌注
 
-AAPL 不是纯高增长故事。核心赌注是利润率、现金流、生态粘性和回购能力能继续支撑 EPS。只要这些支柱不塌，市场就可能继续接受高估值。
+AAPL 不是纯高增长故事。核心赌注是利润率、现金流、生态粘性和回购能力能继续支撑每股收益。只要这些支柱不塌，市场就可能继续接受高估值。
 
 ### 做空或离场的死穴
 
@@ -37,14 +52,14 @@ AAPL 不是纯高增长故事。核心赌注是利润率、现金流、生态粘
 
 ### 市场已经交易了什么
 
-当前估值已经在交易高质量现金流和长期韧性。PE 约 37.4327，PS 约 10.0472，这意味着市场不只是在买当期收入增长。
+当前价格反映的不只是今年赚了多少钱，还包括市场对长期现金流和经营韧性的信任。市盈率约 37.4327 倍，市销率约 10.0472 倍，这意味着市场不只是在买当期收入增长。
 
 ### 什么必须守住
 
 - 毛利率不能持续下滑。
 - 自由现金流率要保持健康。
 - 核心业务不能出现结构性失速。
-- 回购对 EPS 的支撑不能失效。
+- 回购对每股收益的支撑不能失效。
 - 监管不能打穿关键利润池。
 
 ### 一票否决条件
@@ -52,201 +67,211 @@ AAPL 不是纯高增长故事。核心赌注是利润率、现金流、生态粘
 - 服务业务增速明显放缓。
 - 毛利率连续两个季度下滑。
 - 核心收入下滑且没有服务业务接住。
-- 高估值削弱回购对 EPS 的支撑。
+- 高估值削弱回购对每股收益的支撑。
 - 监管压力伤害高利润业务。
 
 ### 最优先核查的 3 件事
 
 1. 分业务线收入和服务业务增长。
 2. 自由现金流是否稳定，还是受一次性项目影响。
-3. 当前估值是否已经透支未来 EPS 增长。
+3. 当前估值是否已经透支未来每股收益增长。
+
+---
+
+## 6. 关键问题与回答
+
+### 问题：为什么不直接买 SPY？
+
+**回答：** 如果只看收益，AAPL 在这个周期里可能比 SPY 更强。但这不自动证明它更适合持有，因为单一个股通常要承担更高波动、更深回撤和更强的估值风险。
+
+**证据：** AAPL 的总收益为 146.92%，SPY 为 95.80%。AAPL 的最大回撤为 -33.43%，SPY 为 -19.00%。
+
+**边界：** 这只能说明过去这段时间的风险收益特征，不能预测未来。下一步要判断的是：未来是否还有足够超额收益，来补偿更高的个股风险。
+
+### 问题：AAPL 是高增长公司吗？
+
+**回答：** 不是。它现在更像成熟现金流公司，而不是高速增长公司。
+
+**证据：** 报告中的收入复合增速约为 1.81%。真正支撑研究价值的，不是收入爆发，而是利润率、自由现金流、回购和估值能否维持。
+
+**边界：** 这不代表公司差。它只是说明当前投资逻辑不是“收入爆发”，而是“高利润率、强现金流和估值韧性”。
+
+### 问题：当前估值贵在哪里？
+
+**回答：** 贵在市场已经提前支付了很多未来稳定性的价格。对一家收入增速不快的成熟公司来说，约 37.4327 倍市盈率需要很强的利润率、现金流和回购来支撑。
+
+**证据：** 报告显示市盈率约 37.4327 倍，市销率约 10.0472 倍，而收入复合增速并不高。
+
+**边界：** 估值高不等于马上会跌。真正要验证的是：服务业务、毛利率和回购能不能继续撑住这个倍数。
 
 
-## 初学者摘要
+---
 
-| Area | Status | Plain-English Meaning |
-| --- | --- | --- |
-| Business Quality | Strong | The company appears cash-generative and profitable. |
-| Growth | Moderate | Revenue growth is 1.81% in this data window. |
-| Valuation | Expensive | The stock needs strong future execution to justify the current multiple. |
-| Balance Sheet Risk | Low | Debt and cash-flow fragility do not appear to be the main first-pass risk. |
-| Stock Risk | Medium | The stock can still have painful drawdowns even when the business is strong. |
-| Data Confidence | Medium | Good enough for screening, but important numbers still need primary-source verification. |
+## 7. 图表解读
 
-## 价格与基准
+### 实际收盘价
 
-![AAPL vs SPY 实际收盘价](AAPL_vs_SPY_actual_close_price_chart.png)
+![AAPL 与 SPY 实际收盘价](AAPL_vs_SPY_actual_close_price_chart.png)
 
-![AAPL vs SPY 归一化表现](AAPL_vs_SPY_normalized_performance_chart.png)
+**图表看什么：** 这张图展示 AAPL 和 SPY 的实际收盘价走势。它适合看价格趋势、阶段高点和回撤位置，但不能直接比较两者收益率，因为价格基数不同。
 
-![AAPL vs SPY 回撤](AAPL_vs_SPY_drawdown_chart.png)
+**读出来的结论：** AAPL 在这个周期里的价格运动更明显，持有体验也更不平稳。只看实际价格线，容易高估“涨得多”的意义。
 
-| Metric | Target | Benchmark | Difference |
-| --- | --- | --- | --- |
-| Total Return | 146.92% | 95.80% | 51.12% |
-| CAGR | 30.62% | 21.97% | 8.66% |
-| 1Y Return | 53.37% | 27.88% | 25.49% |
-| 6M Return | 15.99% | 14.27% | 1.72% |
-| 3M Return | 13.48% | 8.48% | 5.00% |
-| Max Drawdown | -33.43% | -19.00% | -14.43% |
-| Annualized Volatility | 25.42% | 15.19% | 10.23% |
-| Sharpe Ratio | 1.2046 | 1.4458 | -0.2411 |
-| Sortino Ratio | 1.7311 | 1.9726 | -0.2415 |
-| Calmar Ratio | 0.9159 | 1.1562 | -0.2403 |
-| Beta vs Benchmark | 1.1275 | [METRIC_MISSING_RAW] | [METRIC_MISSING_RAW] |
-| Alpha vs Benchmark | 6.26% | [METRIC_MISSING_RAW] | [METRIC_MISSING_RAW] |
-| Correlation vs Benchmark | 0.6739 | [METRIC_MISSING_RAW] | [METRIC_MISSING_RAW] |
-| Tracking Error | 18.88% | [METRIC_MISSING_RAW] | [METRIC_MISSING_RAW] |
-| Information Ratio | 0.4584 | [METRIC_MISSING_RAW] | [METRIC_MISSING_RAW] |
-| Upside Capture | 109.17% | [METRIC_MISSING_RAW] | [METRIC_MISSING_RAW] |
-| Downside Capture | 99.32% | [METRIC_MISSING_RAW] | [METRIC_MISSING_RAW] |
+**不要误读：** 实际价格图不是估值图。股价更高不代表更贵，股价更低也不代表更便宜。
 
-## 风险指标方法
+**下一步怎么查：** 继续看归一化表现和回撤，再结合风险指标判断这段超额收益是否值得。
 
-RISK_METHOD_STATUS: PASS
+### 归一化表现
 
-- 价格字段：`adj_close`
-- 收益率频率：daily
-- 年化天数：252
-- 无风险利率：0.00%
-- 基准：SPY
-- 缺失值处理：对齐交易日，删除目标和基准任一缺失的行。
-- 股息处理：股息是否进入收益率，取决于数据源的复权价格口径。
+![AAPL 与 SPY 归一化表现](AAPL_vs_SPY_performance_chart.png)
 
-风险指标使用日频复权收盘价、252 个交易日年化、0.00% 无风险利率。股息是否进入收益率，取决于数据源的复权价格口径。
+**图表看什么：** 这张图把 AAPL 和 SPY 都从 100 开始计算，目的是比较同一周期内谁的累计收益更高。
+
+**读出来的结论：** 如果 AAPL 的线明显更高，说明它过去这段时间跑赢基准。但这不是免费午餐，还要看波动、回撤和估值。
+
+**不要误读：** 跑赢基准不等于现在值得买。它只能说明过去这段时间收益更高，不能证明未来还能继续跑赢。
+
+**下一步怎么查：** 对照最大回撤、夏普比率和业务质量，看收益是不是用更高风险换来的。
+
+### 回撤
+
+![AAPL 与 SPY 回撤](AAPL_vs_SPY_drawdown_chart.png)
+
+**图表看什么：** 这张图看的是从阶段高点跌下来多少。它不直接判断公司质量，只展示持有过程中的账户压力。
+
+**读出来的结论：** 如果 AAPL 的回撤比基准更深，说明它虽然可能赚得更多，但持有人要承受更大的波动和心理压力。
+
+**不要误读：** 回撤不是破产风险。回撤深不等于公司会出问题，它说明买入价格、仓位和持仓纪律很重要。
+
+**下一步怎么查：** 把回撤和资产负债表韧性、现金流、估值压力放在一起看。
 
 
-## 成长与质量
+---
 
-| Metric | Value |
+## 8. 业务质量
+
+**结论：这里看的不是公司有没有故事，而是收入能不能变成利润和现金。** 对成熟公司来说，收入不高速增长也不一定是问题；真正要看的是毛利率、经营利润率和自由现金流率能不能守住。
+
+| 指标 | 数值 |
 | --- | --- |
-| Revenue CAGR | 1.81% |
-| Revenue Growth Latest | 6.43% |
-| Gross Margin Latest | 46.91% |
-| Gross Margin Change | 3.60% |
-| Operating Margin Latest | 31.97% |
-| Operating Margin Change | 1.68% |
-| FCF Margin Latest | 23.73% |
-| FCF Margin Change | -4.53% |
-| Positive Net Income Years | 4 |
-| Positive FCF Years | 4 |
+| 收入复合增速 | 1.81% |
+| 最新收入增速 | 6.43% |
+| 最新毛利率 | 46.91% |
+| 毛利率变化 | 3.60% |
+| 最新经营利润率 | 31.97% |
+| 经营利润率变化 | 1.68% |
+| 最新自由现金流率 | 23.73% |
+| 自由现金流率变化 | -4.53% |
+| 净利润为正年份 | 4 |
+| 自由现金流为正年份 | 4 |
 
-## 资产负债表韧性
+这说明什么：如果收入增长慢，但利润率和自由现金流率很强，研究重点就不是“爆发式增长”，而是“高质量现金流能不能继续支撑估值”。
+
+---
+
+## 9. 风险与韧性
 
 ![AAPL 资产负债表韧性](AAPL_ruin_risk_snapshot.png)
 
-资产负债表韧性分数：分数越高，财务韧性越强。这个分数衡量的是资产负债表韧性，不是股价波动风险。
+**图表看什么：** 这张图看的是债务、现金流和资产负债表承压能力，不是股价短期波动。
 
-| Metric | Value | Interpretation |
-| --- | --- | --- |
-| Net Debt | 16.20B | Total debt minus cash. Negative is net cash. |
-| EBITDA | 159.98B | Provider EBITDA, when available. |
-| Net Debt / EBITDA | 0.1013 | Debt-load proxy. Higher values deserve manual stress testing. |
-| Debt / FCF | 0.8380 | Debt compared with free cash flow. Not useful when FCF is negative. |
-| Cash Runway Years | [METRIC_MISSING_RAW] | Approximate years of cash runway when FCF is negative. |
-| Balance Sheet Resilience Score | 48.78 / 100 | [METRIC_MISSING_RAW] |
+**读出来的结论：** 资产负债表韧性分数越高，说明公司越有能力承受现金流波动、债务压力或融资环境变化。
 
-## 业务线拆解
+**不要误读：** 财务韧性强不等于股价不会跌。估值太高时，即使公司基本面不脆，股价也可能因为杀估值而回撤。
+
+| 指标 | 数值 |
+| --- | --- |
+| 净债务 | 16.20B |
+| EBITDA | 159.98B |
+| 净债务 / EBITDA | 0.1013 |
+| 债务 / 自由现金流 | 0.8380 |
+| 现金可支撑年限 | 当前数据未提供 |
+| 资产负债表韧性分数 | 48.78 / 100 |
+
+这说明什么：这部分回答的是“公司抗不抗压”，不是“股票会不会跌”。两者不能混为一谈。
+
+---
+
+## 10. 估值压力测试
+
+**结论：AAPL 当前最大的风险不一定是公司突然变差，而是市场不再愿意给它高估值。**
+
+这不是目标价预测，而是估值压力测试。它回答的不是“应该值多少钱”，而是“如果市场开始杀估值，可能有多疼”。
+
+| 场景 | 对比 | 每股收益增长假设 |
+|---|---|---|
+| 市盈率压缩到 30 倍 | 与当前 37.4327 倍比较 | 每股收益增长假设：0%, 5%, 10%, 15% |
+| 市盈率压缩到 25 倍 | 与当前 37.4327 倍比较 | 每股收益增长假设：0%, 5%, 10%, 15% |
+| 市盈率压缩到 20 倍 | 与当前 37.4327 倍比较 | 每股收益增长假设：0%, 5%, 10%, 15% |
+
+下面的估值快照来自数据供应商，只能作为初筛输入。真正严肃的判断，仍要回到最新财报和公司公告。
+
+| 指标 | 数值 |
+| --- | --- |
+| 市值 | 4.54T |
+| 企业价值 | 4.55T |
+| 滚动市盈率 | 37.4327 |
+| 预期市盈率 | 32.1559 |
+| 市销率 | 10.0472 |
+| 市净率 | 42.5372 |
+| 企业价值 / 收入 | 10.0830 |
+| 企业价值 / EBITDA | 28.4540 |
+| 毛利率 | 47.86% |
+| 经营利润率 | 32.27% |
+| 净利率 | 27.15% |
+| 净资产收益率 | 141.47% |
+| 资产收益率 | 26.23% |
+| 收入增速 | 16.60% |
+| 利润增速 | 21.80% |
+| 经营现金流 | 140.22B |
+| 自由现金流 | 101.09B |
+| 现金总额 | 68.51B |
+| 债务总额 | 84.71B |
+| 总股本 | 14,687,356,000 |
+| 流通股本 | 14,662,387,495 |
+| 内部人持股比例 | 1.63% |
+| 机构持股比例 | 65.80% |
+| 52 周低点 | 195.0700 |
+| 52 周高点 | 311.4000 |
+
+这说明什么：估值倍数越高，市场对未来稳定性的要求越高。高估值不等于马上下跌，但它会降低犯错空间。
+
+---
+
+## 11. 业务线拆解：当前缺口
 
 这家公司必须拆业务线。只看总收入，会把真正的增长来源和利润结构藏起来。
 
 需要手工核查：
 
-- iPhone / Mac / iPad / Wearables / Services，或对应公司的主要业务线；
+- 主要产品线、服务业务或对应公司的核心业务线；
 - 各业务线 YoY 增长；
 - 各业务线收入占比；
 - 高毛利业务是否在提升利润质量；
 - 监管是否影响高利润业务。
 
+---
 
-## 估值快照
+## 12. 数据审计与方法说明
 
-### Market Size
+### 风险指标方法
 
-| Metric | Value |
-| --- | --- |
-| marketCap | 4.54T |
-| enterpriseValue | 4.55T |
+风险指标使用日频价格序列、252 个交易日年化和命令行传入的无风险利率。收益、回撤、波动和基准比较都依赖同一段对齐后的交易日数据。
 
-### Valuation Multiples
+### 初筛数据边界
 
-| Metric | Value |
-| --- | --- |
-| trailingPE | 37.4327 |
-| forwardPE | 32.1559 |
-| priceToSalesTrailing12Months | 10.0472 |
-| priceToBook | 42.5372 |
-| enterpriseToRevenue | 10.0830 |
-| enterpriseToEbitda | 28.4540 |
+这份报告使用公开数据供应商和自动计算结果。供应商快照可能滞后、缺字段或口径不同；重要数字必须回到原始财报、公司公告或监管文件复核。
 
-### Profitability and Growth
+---
 
-| Metric | Value |
-| --- | --- |
-| grossMargins | 47.86% |
-| operatingMargins | 32.27% |
-| profitMargins | 27.15% |
-| returnOnEquity | 141.47% |
-| returnOnAssets | 26.23% |
-| revenueGrowth | 16.60% |
-| earningsGrowth | 21.80% |
-
-### Cash Flow and Debt
-
-| Metric | Value |
-| --- | --- |
-| operatingCashflow | 140.22B |
-| freeCashflow | 101.09B |
-| totalCash | 68.51B |
-| totalDebt | 84.71B |
-
-### Ownership
-
-| Metric | Value |
-| --- | --- |
-| sharesOutstanding | 14,687,356,000 |
-| floatShares | 14,662,387,495 |
-| heldPercentInsiders | 1.63% |
-| heldPercentInstitutions | 65.80% |
-
-### Price Range
-
-| Metric | Value |
-| --- | --- |
-| fiftyTwoWeekLow | 195.0700 |
-| fiftyTwoWeekHigh | 311.4000 |
-
-## 估值压力测试
-
-这不是目标价预测，而是估值压力测试。它回答的不是“应该值多少钱”，而是“如果市场开始杀估值，可能有多疼”。
-
-| 场景 | 对比 | EPS 增长假设 |
-|---|---|---|
-| PE 压缩到 30x | 与当前 37.4327x 比较 | EPS 增长假设：0%, 5%, 10%, 15% |
-| PE 压缩到 25x | 与当前 37.4327x 比较 | EPS 增长假设：0%, 5%, 10%, 15% |
-| PE 压缩到 20x | 与当前 37.4327x 比较 | EPS 增长假设：0%, 5%, 10%, 15% |
-
-
-## Research Score
-
-| Component | Score | Weight | Profile |
-| --- | --- | --- | --- |
-| Growth Score | 40.75 / 100 | 14.00% | Mature Compounder |
-| Profitability Score | 85.94 / 100 | 28.00% | Mature Compounder |
-| Quality Trend Score | 50.75 / 100 | 18.00% | Mature Compounder |
-| Risk Control Score | 65.43 / 100 | 18.00% | Mature Compounder |
-| Benchmark Score | 58.22 / 100 | 14.00% | Mature Compounder |
-| Valuation Sanity Score | 31.37 / 100 | 8.00% | Mature Compounder |
-| Research Score | 61.34 / 100 | 100.00% | Mature Compounder |
-
-Research Score 是研究优先级分数，不是预期收益、不是安全边际、不是买卖信号。
-
-## 最优先核查的 3 件事
+## 13. 下一步研究清单
 
 1. 分业务线收入和服务业务增长。
 2. 自由现金流是否稳定，还是受一次性项目影响。
-3. 当前估值是否已经透支未来 EPS 增长。
+3. 当前估值是否已经透支未来每股收益增长。
+
+---
 
 ## 结论边界
 
-当前分数为 61.34 / 100。它只说明这家公司值得按上述路径继续核查，不代表应该买入或卖出。
+当前研究分数为 61.34 / 100。它只说明这家公司值得按上述路径继续核查，不代表应该买入或卖出，也不代表未来收益。

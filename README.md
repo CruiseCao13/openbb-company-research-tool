@@ -6,7 +6,7 @@ A Python-based company research workflow for turning public market data into str
 
 It is built for first-pass company research, not for buy/sell decisions.
 
-v4.0 turns the project into a thesis-driven, audit-ready, bilingual first-pass equity research workflow generator.
+v4.2 turns the project into a thesis-driven, audit-ready, bilingual first-pass equity research workflow generator with a stronger human-readable report experience.
 
 > Thesis-driven. Audit-ready. No fake certainty. No AI-flavored filler.
 
@@ -89,22 +89,34 @@ The generated report starts with a short "How to Read This Report" section, foll
 
 ---
 
-## v4.0 Workflow Gates
+## v4.2 Workflow Gates and Report Experience
 
-v4.0 adds three explicit gates:
+v4.2 keeps the four-gate workflow:
 
 - Data Audit Gate
 - Risk Method Gate
+- AI Analyst Review Gate
 - Language Lint Gate
 
-Report metadata exposes:
+Report metadata and logs expose:
 
 - `DATA_AUDIT_STATUS`
 - `RISK_METHOD_STATUS`
+- `AI_ANALYST_REVIEW_STATUS`
 - `LANGUAGE_LINT_STATUS`
-- `Price Label Check`
+- `OVERALL_REPORT_STATUS`
+- `price_label_sanity_check.md`
+- `ai_correction_log.md`
+- `language_lint_report.md`
 
 The report does not pretend a weak input passed. If a gate produces a warning or failure, the report exposes it.
+
+v4.2 also rewrites the reading experience:
+
+- Chinese and English reports are separated by default.
+- Chinese reports use Chinese status cards and localized metric labels.
+- Every chart includes what it shows, what the report reads from it, and how not to misread it.
+- Key questions are answered with answer, evidence, and boundary instead of being left as bare prompts.
 
 ---
 

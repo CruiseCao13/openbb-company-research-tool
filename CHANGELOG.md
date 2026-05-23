@@ -1,5 +1,23 @@
 # Changelog
 
+## v4.2.0
+
+### Added
+
+- Report Experience pass for more readable English and Chinese research memos
+- `--language {en,zh}` and `--term-style {pure,bilingual}`
+- Chinese status card with localized gate labels and research profile labels
+- Chinese metric display labels for core price, quality, valuation, and resilience tables
+- Chart walkthrough blocks for every major chart
+- Key Questions and Answers sections with answer, evidence, and boundary
+- Language quality fields in `language_lint_report.md`: mixed-language hits, translationese hits, unexplained charts, unanswered questions, raw placeholders, and table explanation checks
+
+### Changed
+
+- Chinese reports now avoid English system labels by default
+- Missing placeholders are mapped to reader-facing text in final reports
+- English report structure now starts with a reader-focused status card, core view, AI red flags, battle card, key questions, chart walkthrough, and next steps
+
 ## v4.0.0
 
 ### Added

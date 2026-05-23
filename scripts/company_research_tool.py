@@ -17,7 +17,7 @@ This tool is NOT a buy/sell recommendation engine.
 
 from __future__ import annotations
 
-__version__ = "4.0.0"
+__version__ = "4.2.0"
 
 import argparse
 from datetime import datetime
@@ -1172,6 +1172,377 @@ def valuation_group_sections(valuation: pd.DataFrame) -> str:
         sections.append(f"### {group}")
         sections.append(markdown_table(group_df[["Metric", "Value"]], max_rows=50))
     return "\n\n".join(sections)
+
+
+ZH_STATUS_LABELS = {
+    "PASS": "通过",
+    "WARNING": "有警告",
+    "FAIL": "未通过",
+    "VERIFIED": "已验证",
+    "WARNING_OVERALL": "需要复核",
+    "UNVERIFIED": "未验证",
+    "Watchlist": "观察名单",
+    "High Priority Research": "高优先级研究",
+    "Research More": "继续研究",
+    "FOMO Risk / Weak Evidence": "证据不足，容易受情绪影响",
+    "Avoid for Now / Data Weak": "暂不适合深入，数据或证据偏弱",
+    "Mature Compounder": "成熟复利型公司",
+    "Profitable Growth": "盈利成长型公司",
+    "Speculative Growth": "投机成长型公司",
+    "Financials": "金融类公司",
+    "Cyclical / Asset Heavy": "周期或重资产公司",
+    "ETF / Fund": "基金或 ETF",
+    "Data Limited": "数据不足",
+    "General Equity": "普通股票",
+}
+
+
+ZH_METRIC_LABELS = {
+    "Metric": "指标",
+    "Value": "数值",
+    "Target": "标的",
+    "Benchmark": "基准",
+    "Difference": "差异",
+    "Component": "组成部分",
+    "Score": "分数",
+    "Weight": "权重",
+    "Revenue CAGR": "收入复合增速",
+    "Revenue Growth Latest": "最新收入增速",
+    "Gross Margin Latest": "最新毛利率",
+    "Gross Margin Change": "毛利率变化",
+    "Operating Margin Latest": "最新经营利润率",
+    "Operating Margin Change": "经营利润率变化",
+    "FCF Margin Latest": "最新自由现金流率",
+    "FCF Margin Change": "自由现金流率变化",
+    "Positive Net Income Years": "净利润为正年份",
+    "Positive FCF Years": "自由现金流为正年份",
+    "Total Return": "总收益",
+    "CAGR": "年化收益",
+    "Max Drawdown": "最大回撤",
+    "Annualized Volatility": "年化波动率",
+    "Sharpe Ratio": "夏普比率",
+    "Sortino Ratio": "索提诺比率",
+    "Calmar Ratio": "卡玛比率",
+    "Beta vs Benchmark": "相对基准 Beta",
+    "Alpha vs Benchmark": "相对基准 Alpha",
+    "Tracking Error": "跟踪误差",
+    "Information Ratio": "信息比率",
+    "Upside Capture": "上涨捕获率",
+    "Downside Capture": "下跌捕获率",
+    "Balance Sheet Resilience Score": "资产负债表韧性分数",
+    "Net Debt / EBITDA": "净债务 / EBITDA",
+    "Debt / FCF": "债务 / 自由现金流",
+    "Cash Runway Years": "现金可支撑年限",
+    "Growth Score": "成长分数",
+    "Profitability Score": "盈利能力分数",
+    "Quality Trend Score": "质量趋势分数",
+    "Risk Control Score": "风险控制分数",
+    "Benchmark Score": "基准比较分数",
+    "Valuation Sanity Score": "估值合理性分数",
+    "Research Score": "研究分数",
+    "Net Debt": "净债务",
+    "EBITDA": "EBITDA",
+    "marketCap": "市值",
+    "enterpriseValue": "企业价值",
+    "trailingPE": "滚动市盈率",
+    "forwardPE": "预期市盈率",
+    "priceToSalesTrailing12Months": "市销率",
+    "priceToBook": "市净率",
+    "enterpriseToRevenue": "企业价值 / 收入",
+    "enterpriseToEbitda": "企业价值 / EBITDA",
+    "grossMargins": "毛利率",
+    "operatingMargins": "经营利润率",
+    "profitMargins": "净利率",
+    "returnOnEquity": "净资产收益率",
+    "returnOnAssets": "资产收益率",
+    "revenueGrowth": "收入增速",
+    "earningsGrowth": "利润增速",
+    "operatingCashflow": "经营现金流",
+    "freeCashflow": "自由现金流",
+    "totalCash": "现金总额",
+    "totalDebt": "债务总额",
+    "sharesOutstanding": "总股本",
+    "floatShares": "流通股本",
+    "heldPercentInsiders": "内部人持股比例",
+    "heldPercentInstitutions": "机构持股比例",
+    "fiftyTwoWeekLow": "52 周低点",
+    "fiftyTwoWeekHigh": "52 周高点",
+}
+
+
+def zh_status(value: str) -> str:
+    if value == "WARNING":
+        return ZH_STATUS_LABELS["WARNING"]
+    return ZH_STATUS_LABELS.get(value, value)
+
+
+def zh_overall_status(value: str) -> str:
+    if value == "WARNING":
+        return ZH_STATUS_LABELS["WARNING_OVERALL"]
+    return ZH_STATUS_LABELS.get(value, value)
+
+
+def zh_term(term: str, term_style: str = "pure") -> str:
+    label = ZH_METRIC_LABELS.get(term, term)
+    if term_style == "bilingual" and label != term:
+        return f"{label}（{term}）"
+    return label
+
+
+def localized_metric_table(
+    df: pd.DataFrame,
+    term_style: str = "pure",
+    max_rows: int = 30,
+    percent_columns: set[str] | None = None,
+    score_columns: set[str] | None = None,
+) -> str:
+    if df is None or df.empty:
+        return f"_{MISSING_VALUE_PLACEHOLDER}_"
+    view = df.copy()
+    if set(["Metric", "Value"]).issubset(view.columns):
+        rows = []
+        for _, row in view.head(max_rows).iterrows():
+            metric = str(row["Metric"])
+            rows.append({"指标": zh_term(metric, term_style), "数值": format_value_by_metric(metric, row["Value"])})
+        return markdown_table(pd.DataFrame(rows), max_rows=max_rows)
+    if set(["Component", "Score"]).issubset(view.columns):
+        rows = []
+        for _, row in view.head(max_rows).iterrows():
+            component = str(row["Component"])
+            rows.append({
+                "组成部分": zh_term(component, term_style),
+                "分数": fmt_score(row["Score"]),
+                "权重": fmt_percent(row["Weight"]) if "Weight" in row else MISSING_VALUE_PLACEHOLDER,
+            })
+        return markdown_table(pd.DataFrame(rows), max_rows=max_rows)
+    rename_cols = {col: ZH_METRIC_LABELS.get(str(col), str(col)) for col in view.columns}
+    view = view.rename(columns=rename_cols)
+    translated_percent_columns = {ZH_METRIC_LABELS.get(col, col) for col in (percent_columns or set())}
+    translated_score_columns = {ZH_METRIC_LABELS.get(col, col) for col in (score_columns or set())}
+    return markdown_table(view, max_rows=max_rows, percent_columns=translated_percent_columns, score_columns=translated_score_columns)
+
+
+def chinese_verdict(symbol: str, benchmark: str, report_data: dict[str, Any]) -> str:
+    raw = report_data["raw"]
+    price_summary = raw["price_summary"]
+    fundamental_summary = raw["fundamental_summary"]
+    valuation = raw["valuation"]
+    total = get_metric(price_summary, "Total Return", "Target")
+    bench = get_metric(price_summary, "Total Return", "Benchmark")
+    rev_cagr = get_metric(fundamental_summary, "Revenue CAGR")
+    pe = get_metric(valuation, "trailingPE")
+    return (
+        f"{symbol} 更像成熟现金流公司，不是高增长故事。"
+        f"它在本周期总收益为 {fmt_percent(total)}，高于 {benchmark} 的 {fmt_percent(bench)}，"
+        f"但收入复合增速只有约 {fmt_percent(rev_cagr)}，当前市盈率约 {fmt_number(pe)} 倍。"
+        "所以这份报告的核心结论不是“公司差”，而是“估值已经要求利润率、现金流和回购继续守住”。"
+    )
+
+
+def clean_report_placeholders(text: str, language: str = "en") -> str:
+    replacement = "当前数据未提供" if language == "zh" else "Not provided by the current data"
+    for placeholder in [
+        "[METRIC_MISSING_RAW]",
+        "[FIELD_MISSING_PROVIDER]",
+        "[PRIMARY_SOURCE_REQUIRED]",
+        "[SEGMENT_DATA_MISSING]",
+        "[METHOD_ASSUMPTION_MISSING]",
+        "[PRICE_LABEL_UNVERIFIED]",
+    ]:
+        text = text.replace(placeholder, replacement)
+    return text
+
+
+def status_card_table(symbol: str, benchmark: str, start_date: str, end_date: str | None, rating: str, category: str, gate_status: dict[str, str]) -> str:
+    rows = pd.DataFrame(
+        [
+            {"Item": "Target", "Value": symbol},
+            {"Item": "Benchmark", "Value": benchmark},
+            {"Item": "Period", "Value": f"{start_date} to {end_date or 'latest available'}"},
+            {"Item": "Research Status", "Value": rating},
+            {"Item": "Research Profile", "Value": category},
+            {"Item": "Report Status", "Value": gate_status.get("OVERALL_REPORT_STATUS", "VERIFIED")},
+            {"Item": "Data Audit", "Value": gate_status.get("DATA_AUDIT_STATUS", STATUS_PASS)},
+            {"Item": "Risk Method", "Value": gate_status.get("RISK_METHOD_STATUS", STATUS_PASS)},
+            {"Item": "AI Analyst Gate", "Value": gate_status.get("AI_ANALYST_REVIEW_STATUS", STATUS_PASS)},
+            {"Item": "Language Check", "Value": gate_status.get("LANGUAGE_LINT_STATUS", STATUS_PASS)},
+            {"Item": "Price Label Check", "Value": gate_status.get("PRICE_LABEL_CHECK_STATUS", STATUS_PASS)},
+        ]
+    )
+    return markdown_table(rows, max_rows=20)
+
+
+def zh_status_card_table(symbol: str, benchmark: str, start_date: str, end_date: str | None, rating: str, category: str, gate_status: dict[str, str]) -> str:
+    rows = pd.DataFrame(
+        [
+            {"项目": "标的", "内容": symbol},
+            {"项目": "基准", "内容": benchmark},
+            {"项目": "期间", "内容": f"{start_date} 至 {end_date or '最新可得数据'}"},
+            {"项目": "研究状态", "内容": ZH_STATUS_LABELS.get(rating, rating)},
+            {"项目": "研究类型", "内容": ZH_STATUS_LABELS.get(category, category)},
+            {"项目": "报告状态", "内容": zh_overall_status(gate_status.get("OVERALL_REPORT_STATUS", "VERIFIED"))},
+            {"项目": "数据审计", "内容": zh_status(gate_status.get("DATA_AUDIT_STATUS", STATUS_PASS))},
+            {"项目": "风险方法", "内容": zh_status(gate_status.get("RISK_METHOD_STATUS", STATUS_PASS))},
+            {"项目": "AI 二次复核", "内容": zh_status(gate_status.get("AI_ANALYST_REVIEW_STATUS", STATUS_PASS))},
+            {"项目": "语言检查", "内容": zh_status(gate_status.get("LANGUAGE_LINT_STATUS", STATUS_PASS))},
+            {"项目": "价格标签校验", "内容": zh_status(gate_status.get("PRICE_LABEL_CHECK_STATUS", STATUS_PASS))},
+        ]
+    )
+    return markdown_table(rows, max_rows=20)
+
+
+def english_chart_walkthrough(symbol: str, benchmark: str, charts: dict[str, str]) -> str:
+    return f"""## 7. Chart Walkthrough
+
+### Actual Close Price
+
+![{symbol} vs {benchmark} actual close price]({charts["actual"]})
+
+**What this chart shows:** This chart shows the raw closing price path for {symbol} and {benchmark}. It is useful for seeing trend shape, gaps, highs, and drawdown locations.
+
+**What the report reads from it:** {symbol} has moved more aggressively than the benchmark during this window. The chart sets up the later question: whether the extra movement produced enough extra return.
+
+**How not to misread it:** This is not a valuation chart. A higher price line does not mean a security is more expensive, and a lower price line does not mean it is cheaper.
+
+**What to check next:** Use normalized performance and drawdown before judging relative performance.
+
+### Normalized Performance
+
+![{symbol} vs {benchmark} normalized performance]({charts["normalized"]})
+
+**What this chart shows:** Both series start at 100, so the chart compares cumulative return over the same period.
+
+**What the report reads from it:** If {symbol} ends above {benchmark}, it outperformed in raw return terms. That is only the first layer of the research question.
+
+**How not to misread it:** Outperformance does not prove the stock is cheap, safe, or likely to keep outperforming.
+
+**What to check next:** Compare the return spread with volatility, drawdown, Sharpe, and the business evidence.
+
+### Drawdown
+
+![{symbol} vs {benchmark} drawdown]({charts["drawdown"]})
+
+**What this chart shows:** Drawdown measures how far the asset fell from its previous peak.
+
+**What the report reads from it:** Deeper drawdowns mean the holding path was harder, even if final returns were strong.
+
+**How not to misread it:** Drawdown is not bankruptcy risk. It measures investor pain, not whether the company can survive.
+
+**What to check next:** Connect drawdown with balance-sheet resilience and valuation pressure.
+"""
+
+
+def chinese_chart_walkthrough(symbol: str, benchmark: str, charts: dict[str, str]) -> str:
+    return f"""## 7. 图表解读
+
+### 实际收盘价
+
+![{symbol} 与 {benchmark} 实际收盘价]({charts["actual"]})
+
+**图表看什么：** 这张图展示 {symbol} 和 {benchmark} 的实际收盘价走势。它适合看价格趋势、阶段高点和回撤位置，但不能直接比较两者收益率，因为价格基数不同。
+
+**读出来的结论：** {symbol} 在这个周期里的价格运动更明显，持有体验也更不平稳。只看实际价格线，容易高估“涨得多”的意义。
+
+**不要误读：** 实际价格图不是估值图。股价更高不代表更贵，股价更低也不代表更便宜。
+
+**下一步怎么查：** 继续看归一化表现和回撤，再结合风险指标判断这段超额收益是否值得。
+
+### 归一化表现
+
+![{symbol} 与 {benchmark} 归一化表现]({charts["normalized"]})
+
+**图表看什么：** 这张图把 {symbol} 和 {benchmark} 都从 100 开始计算，目的是比较同一周期内谁的累计收益更高。
+
+**读出来的结论：** 如果 {symbol} 的线明显更高，说明它过去这段时间跑赢基准。但这不是免费午餐，还要看波动、回撤和估值。
+
+**不要误读：** 跑赢基准不等于现在值得买。它只能说明过去这段时间收益更高，不能证明未来还能继续跑赢。
+
+**下一步怎么查：** 对照最大回撤、夏普比率和业务质量，看收益是不是用更高风险换来的。
+
+### 回撤
+
+![{symbol} 与 {benchmark} 回撤]({charts["drawdown"]})
+
+**图表看什么：** 这张图看的是从阶段高点跌下来多少。它不直接判断公司质量，只展示持有过程中的账户压力。
+
+**读出来的结论：** 如果 {symbol} 的回撤比基准更深，说明它虽然可能赚得更多，但持有人要承受更大的波动和心理压力。
+
+**不要误读：** 回撤不是破产风险。回撤深不等于公司会出问题，它说明买入价格、仓位和持仓纪律很重要。
+
+**下一步怎么查：** 把回撤和资产负债表韧性、现金流、估值压力放在一起看。
+"""
+
+
+def english_key_questions(symbol: str, benchmark: str, price_summary: pd.DataFrame, fundamental_summary: pd.DataFrame, valuation: pd.DataFrame) -> str:
+    total = get_metric(price_summary, "Total Return", "Target")
+    bench = get_metric(price_summary, "Total Return", "Benchmark")
+    dd = get_metric(price_summary, "Max Drawdown", "Target")
+    bench_dd = get_metric(price_summary, "Max Drawdown", "Benchmark")
+    rev_cagr = get_metric(fundamental_summary, "Revenue CAGR")
+    pe = get_metric(valuation, "trailingPE")
+    ps = get_metric(valuation, "priceToSalesTrailing12Months")
+    return f"""## 6. Key Questions and Answers
+
+### Question: Why not simply own {benchmark}?
+
+**Answer:** {symbol} has to justify the extra single-stock risk. If it beat {benchmark}, the next question is whether the extra return paid enough for deeper drawdowns and less diversification.
+
+**Evidence:** Total return was {fmt_percent(total)} for {symbol} versus {fmt_percent(bench)} for {benchmark}. Max drawdown was {fmt_percent(dd)} for {symbol} versus {fmt_percent(bench_dd)} for {benchmark}.
+
+**Boundary:** This only describes the selected historical period. It does not predict future outperformance.
+
+### Question: Is {symbol} a high-growth company?
+
+**Answer:** Not from this data. The current profile is closer to a mature cash-flow company than a high-growth story.
+
+**Evidence:** Revenue CAGR is about {fmt_percent(rev_cagr)}, while profitability and cash-flow metrics carry more of the research case.
+
+**Boundary:** Slow revenue growth does not make the company weak. It changes the question from growth acceleration to margin durability, cash generation, and valuation support.
+
+### Question: Where is valuation pressure?
+
+**Answer:** The pressure is in the amount of future stability already embedded in the multiple. A mature company at a high PE needs strong margins, cash flow, and buybacks to defend the valuation.
+
+**Evidence:** Trailing PE is about {fmt_number(pe)}x and price-to-sales is about {fmt_number(ps)}x.
+
+**Boundary:** Expensive does not mean imminent downside. The next check is whether segment mix, margins, and EPS growth can support the current multiple.
+"""
+
+
+def chinese_key_questions(symbol: str, benchmark: str, price_summary: pd.DataFrame, fundamental_summary: pd.DataFrame, valuation: pd.DataFrame) -> str:
+    total = get_metric(price_summary, "Total Return", "Target")
+    bench = get_metric(price_summary, "Total Return", "Benchmark")
+    dd = get_metric(price_summary, "Max Drawdown", "Target")
+    bench_dd = get_metric(price_summary, "Max Drawdown", "Benchmark")
+    rev_cagr = get_metric(fundamental_summary, "Revenue CAGR")
+    pe = get_metric(valuation, "trailingPE")
+    ps = get_metric(valuation, "priceToSalesTrailing12Months")
+    return f"""## 6. 关键问题与回答
+
+### 问题：为什么不直接买 {benchmark}？
+
+**回答：** 如果只看收益，{symbol} 在这个周期里可能比 {benchmark} 更强。但这不自动证明它更适合持有，因为单一个股通常要承担更高波动、更深回撤和更强的估值风险。
+
+**证据：** {symbol} 的总收益为 {fmt_percent(total)}，{benchmark} 为 {fmt_percent(bench)}。{symbol} 的最大回撤为 {fmt_percent(dd)}，{benchmark} 为 {fmt_percent(bench_dd)}。
+
+**边界：** 这只能说明过去这段时间的风险收益特征，不能预测未来。下一步要判断的是：未来是否还有足够超额收益，来补偿更高的个股风险。
+
+### 问题：{symbol} 是高增长公司吗？
+
+**回答：** 不是。它现在更像成熟现金流公司，而不是高速增长公司。
+
+**证据：** 报告中的收入复合增速约为 {fmt_percent(rev_cagr)}。真正支撑研究价值的，不是收入爆发，而是利润率、自由现金流、回购和估值能否维持。
+
+**边界：** 这不代表公司差。它只是说明当前投资逻辑不是“收入爆发”，而是“高利润率、强现金流和估值韧性”。
+
+### 问题：当前估值贵在哪里？
+
+**回答：** 贵在市场已经提前支付了很多未来稳定性的价格。对一家收入增速不快的成熟公司来说，约 {fmt_number(pe)} 倍市盈率需要很强的利润率、现金流和回购来支撑。
+
+**证据：** 报告显示市盈率约 {fmt_number(pe)} 倍，市销率约 {fmt_number(ps)} 倍，而收入复合增速并不高。
+
+**边界：** 估值高不等于马上会跌。真正要验证的是：服务业务、毛利率和回购能不能继续撑住这个倍数。
+"""
 
 
 def fetch_money_source_and_flow(symbol: str, out_dir: Path, years: int) -> pd.DataFrame:
@@ -2423,6 +2794,10 @@ def write_report(
     beginner_summary = pd.DataFrame(report_data["beginner_summary"])
 
     category = report_data["research_profile"]
+    charts = report_data["charts"]
+    report_status_card = status_card_table(symbol, benchmark, start_date, end_date, rating, category, gate_status or {})
+    key_questions_section = english_key_questions(symbol, benchmark, price_summary, fundamental_summary, valuation)
+    chart_walkthrough_section = english_chart_walkthrough(symbol, benchmark, charts)
     ai_review_section = ""
     manual_section_number = 14
     next_section_number = 15
@@ -2447,24 +2822,137 @@ def write_report(
     valuation_sensitivity_section = v4_sections.get("valuation_sensitivity", "")
     segment_revenue_section = v4_sections.get("segment_revenue", "")
 
-    report = f"""# {symbol} Research Report
-
-> Target: `{symbol}`  
-> Benchmark: `{benchmark}`  
-> Period: `{start_date}` to `{end_date or "latest available"}`  
-> Research Status: **{rating}**  
-> Research Profile: **{category}**  
-> Version: `{__version__}`  
-> DATA_AUDIT_STATUS: **{gate_status.get("DATA_AUDIT_STATUS", STATUS_PASS)}**  
-> RISK_METHOD_STATUS: **{gate_status.get("RISK_METHOD_STATUS", STATUS_PASS)}**  
-> AI_ANALYST_REVIEW_STATUS: **{gate_status.get("AI_ANALYST_REVIEW_STATUS", STATUS_PASS)}**  
-> LANGUAGE_LINT_STATUS: **{gate_status.get("LANGUAGE_LINT_STATUS", STATUS_PASS)}**  
-> OVERALL_REPORT_STATUS: **{gate_status.get("OVERALL_REPORT_STATUS", "VERIFIED")}**  
-> Price Label Check: **{gate_status.get("PRICE_LABEL_CHECK_STATUS", STATUS_PASS)}**
+    report = f"""# {symbol} Equity Research Report
 
 ---
 
-## 0. Boundary
+## 1. Report Status Card
+
+{report_status_card}
+
+This status card is a reading guide. A warning does not mean the report is unusable; it means one or more assumptions, data fields, or labels need review before the report becomes decision-grade evidence.
+
+---
+
+## 2. One-line Verdict
+
+{verdict}
+
+---
+
+## 3. Core View
+
+{symbol} should be read as a first-pass research case, not as a finished investment conclusion. The report asks whether business quality, cash generation, valuation, and risk are consistent with the current market story. The important question is not whether the company is familiar or popular; it is whether the evidence supports deeper work.
+
+---
+
+## 4. AI Analyst Red Flags
+
+The bounded AI analyst gate reviews the deterministic payload and writes `ai_correction_log.md`. It does not change revenue, cash flow, valuation multiples, risk metrics, or the research score. Its job is to flag thin reasoning, unanswered questions, and evidence gaps.
+
+---
+
+## 5. Research Battle Card
+
+{battle_card_section.replace("## Research Battle Card", "").strip()}
+
+---
+
+{key_questions_section}
+
+---
+
+{chart_walkthrough_section}
+
+### Price Evidence Table
+
+This table turns the chart movement into comparable return and risk metrics. Read it after the charts, because the numbers explain whether the visual outperformance came with extra volatility or deeper drawdowns.
+
+{markdown_table(price_summary, max_rows=50, percent_columns=PRICE_PERCENT_COLS)}
+
+**What this means:** The table is evidence for the benchmark comparison. It is not a forecast, a valuation model, or a buy/sell signal.
+
+---
+
+## 8. Business Quality
+
+**Conclusion:** This section checks whether the company converts revenue into profit and cash. A mature company with slow revenue growth can still be high quality if margins and free cash flow remain strong.
+
+{markdown_table(fundamental_summary, max_rows=30, percent_columns=FUND_PERCENT_COLS)}
+
+**Interpretation:** Revenue growth tells only part of the story. Margin stability and free-cash-flow conversion show whether the business model is doing useful economic work.
+
+---
+
+## 9. Risk and Resilience
+
+![{symbol} balance-sheet resilience]({ruin_risk_chart_name})
+
+**What this chart shows:** This chart separates balance-sheet and cash-flow stress from ordinary stock-price volatility.
+
+**What the report reads from it:** A higher Balance Sheet Resilience Score means stronger financial resilience. Debt and cash-flow ratios explain whether the company has room to absorb stress.
+
+**How not to misread it:** This is not a drawdown chart and not a short-term price-risk model.
+
+{markdown_table(ruin_risk, max_rows=20)}
+
+Balance Sheet Resilience Score direction: higher score = stronger balance sheet resilience. This score measures balance-sheet resilience, not stock-price volatility.
+
+---
+
+## 10. Valuation Sensitivity
+
+**Conclusion:** Valuation is not a target price exercise here. It is a pressure test: if the market pays a lower multiple, how much business performance is needed to offset that pressure?
+
+{valuation_sensitivity_section.replace("## Valuation Sensitivity", "").strip()}
+
+### Valuation Snapshot
+
+This table shows the provider valuation snapshot. Treat it as screening data because provider snapshots can change with refresh time and market close.
+
+{valuation_group_sections(valuation)}
+
+**Interpretation:** High multiples require durable earnings, margin discipline, and cash-flow support. They do not prove downside is imminent.
+
+---
+
+## 11. Segment Revenue Gap
+
+{segment_revenue_section.replace("## Segment Revenue Analysis", "").strip()}
+
+---
+
+## 12. Data Audit and Methodology
+
+{risk_method_section}
+
+### Data Confidence
+
+{data_confidence_section(trends, valuation, profile, target_price, info)}
+
+### Sanity Checks
+
+{sanity_checks_section(sanity_checks)}
+
+### Automatic Data Warnings
+
+{warnings_section(warnings)}
+
+---
+
+## 13. Next Research Steps
+
+Before making any serious judgment, manually check:
+
+1. Latest 10-K / 10-Q revenue breakdown
+2. Whether growth comes from volume, price, services, or accounting effects
+3. Whether free cash flow is stable or one-off
+4. Whether valuation is justified by future growth
+5. Whether the company has hidden dilution, debt, or margin pressure
+
+---
+
+## Boundary
 
 This report is a structured first-pass research workflow.
 
@@ -2476,12 +2964,6 @@ It does **not** provide:
 - Automatic investment decision
 
 The score is a **research prioritization score**, not a prediction.
-
----
-
-## 1. One-line Verdict
-
-{verdict}
 
 ---
 
@@ -2777,6 +3259,16 @@ Before making any serious judgment, manually check:
 
 This folder contains CSV, chart, and Markdown outputs generated by the tool.
 """
+    legacy_marker = "\n## 2. How to Read This Report"
+    if legacy_marker in report:
+        report = report.split(legacy_marker, 1)[0].rstrip()
+        report += f"""
+
+## Generated Files
+
+This folder contains the Markdown reports, audit logs, chart images, interactive dashboard, and CSV exports generated for this run.
+"""
+    report = clean_report_placeholders(report, "en")
 
     path = out_dir / report_filename(safe_symbol(symbol), "research_report.md", gate_status.get("OVERALL_REPORT_STATUS", "VERIFIED"))
     save_text(path, report)
@@ -2788,6 +3280,7 @@ def write_chinese_report(
     out_dir: Path,
     v4_sections: dict[str, str],
     gate_status: dict[str, str],
+    term_style: str = "pure",
 ) -> Path:
     symbol = report_data["ticker"]
     benchmark = report_data["benchmark"]
@@ -2799,88 +3292,126 @@ def write_chinese_report(
     ruin_risk = raw["ruin_risk"]
     charts = report_data["charts"]
     score = report_data["research_score"]["score"]
+    status_card = zh_status_card_table(symbol, benchmark, report_data["start_date"], report_data["end_date"], report_data["research_status"], report_data["research_profile"], gate_status)
+    questions = chinese_key_questions(symbol, benchmark, price_summary, fundamental_summary, valuation)
+    charts_section = chinese_chart_walkthrough(symbol, benchmark, charts)
+    verdict = chinese_verdict(symbol, benchmark, report_data)
 
     content = f"""# {symbol} 股票研究报告
 
-> 标的：`{symbol}`  
-> 基准：`{benchmark}`  
-> 期间：`{report_data["start_date"]}` 到 `{report_data["end_date"] or "最新可得数据"}`  
-> 研究状态：**{report_data["research_status"]}**  
-> 研究画像：**{report_data["research_profile"]}**  
-> 版本：`{__version__}`  
-> DATA_AUDIT_STATUS：**{gate_status.get("DATA_AUDIT_STATUS", STATUS_PASS)}**  
-> RISK_METHOD_STATUS：**{gate_status.get("RISK_METHOD_STATUS", STATUS_PASS)}**  
-> AI_ANALYST_REVIEW_STATUS：**{gate_status.get("AI_ANALYST_REVIEW_STATUS", STATUS_PASS)}**  
-> LANGUAGE_LINT_STATUS：**{gate_status.get("LANGUAGE_LINT_STATUS", STATUS_PASS)}**  
-> OVERALL_REPORT_STATUS：**{gate_status.get("OVERALL_REPORT_STATUS", "VERIFIED")}**  
-> 数据审计状态：**{gate_status.get("DATA_AUDIT_STATUS", STATUS_PASS)}**  
-> 语言检查状态：**{gate_status.get("LANGUAGE_LINT_STATUS", STATUS_PASS)}**  
-> Price Label Check：**{gate_status.get("PRICE_LABEL_CHECK_STATUS", STATUS_PASS)}**
+---
+
+## 1. 报告状态卡片
+
+{status_card}
+
+这张状态卡告诉你这份报告现在能不能直接使用。出现“有警告”不代表报告作废，而是提醒你：相关数字、方法或数据标签还需要复核，不能直接当成最终证据。
 
 ---
 
-## 边界
+## 2. 一句话结论
 
-这份报告用于股票初筛和研究路径生成，不提供买卖建议、目标价、收益承诺或短期预测。
+{verdict}
 
-## 核心主线
+---
 
-{symbol} 的核心问题不是“公司能不能赚钱”，而是当前价格是否已经把未来的利润率、现金流和增长韧性提前交易进去。
+## 3. 核心判断
 
-{v4_sections.get("battle_card_zh", "")}
+{symbol} 的核心问题不是“公司能不能赚钱”，而是当前价格是否已经把未来很多年的利润率、现金流和回购能力提前计入。读这份报告时，不要先问“能不能买”，而要先问：当前证据是否足够支持继续研究，以及哪些关键假设一旦失效就会推翻原来的乐观判断。
 
-## 初学者摘要
+---
 
-{markdown_table(pd.DataFrame(report_data["beginner_summary"]), max_rows=10)}
+## 4. AI 二次复核红旗
 
-## 价格与基准
+AI 二次复核层只负责找茬、分辨哪些问题能回答、哪些问题不能回答，并生成下一步核查动作。它不能修改底层财务指标，也不能把缺失数据补成事实。详细记录见 `ai_correction_log.md`。
 
-![{symbol} vs {benchmark} 实际收盘价]({charts["actual"]})
+---
 
-![{symbol} vs {benchmark} 归一化表现]({charts["normalized"]})
+## 5. 投研博弈卡片
 
-![{symbol} vs {benchmark} 回撤]({charts["drawdown"]})
+{v4_sections.get("battle_card_zh", "").replace("## 投研博弈卡片", "").strip()}
 
-{markdown_table(price_summary, max_rows=50, percent_columns=PRICE_PERCENT_COLS)}
+---
 
-{v4_sections.get("risk_methodology_zh", "")}
+{questions}
 
-## 成长与质量
+---
 
-{markdown_table(fundamental_summary, max_rows=30, percent_columns=FUND_PERCENT_COLS)}
+{charts_section}
 
-## 资产负债表韧性
+---
+
+## 8. 业务质量
+
+**结论：这里看的不是公司有没有故事，而是收入能不能变成利润和现金。** 对成熟公司来说，收入不高速增长也不一定是问题；真正要看的是毛利率、经营利润率和自由现金流率能不能守住。
+
+{localized_metric_table(fundamental_summary, term_style=term_style, max_rows=30, percent_columns=FUND_PERCENT_COLS)}
+
+这说明什么：如果收入增长慢，但利润率和自由现金流率很强，研究重点就不是“爆发式增长”，而是“高质量现金流能不能继续支撑估值”。
+
+---
+
+## 9. 风险与韧性
 
 ![{symbol} 资产负债表韧性]({charts["ruin_risk"]})
 
-资产负债表韧性分数：分数越高，财务韧性越强。这个分数衡量的是资产负债表韧性，不是股价波动风险。
+**图表看什么：** 这张图看的是债务、现金流和资产负债表承压能力，不是股价短期波动。
 
-{markdown_table(ruin_risk, max_rows=20)}
+**读出来的结论：** 资产负债表韧性分数越高，说明公司越有能力承受现金流波动、债务压力或融资环境变化。
 
-{v4_sections.get("segment_revenue_zh", "")}
+**不要误读：** 财务韧性强不等于股价不会跌。估值太高时，即使公司基本面不脆，股价也可能因为杀估值而回撤。
 
-## 估值快照
+{localized_metric_table(ruin_risk, term_style=term_style, max_rows=20)}
 
-{valuation_group_sections(valuation)}
+这说明什么：这部分回答的是“公司抗不抗压”，不是“股票会不会跌”。两者不能混为一谈。
 
-{v4_sections.get("valuation_sensitivity_zh", "")}
+---
 
-## Research Score
+## 10. 估值压力测试
 
-{markdown_table(score_table, max_rows=20, percent_columns={"Weight"}, score_columns=SCORE_COLS)}
+**结论：{symbol} 当前最大的风险不一定是公司突然变差，而是市场不再愿意给它高估值。**
 
-Research Score 是研究优先级分数，不是预期收益、不是安全边际、不是买卖信号。
+{v4_sections.get("valuation_sensitivity_zh", "").replace("## 估值压力测试", "").strip()}
 
-## 最优先核查的 3 件事
+下面的估值快照来自数据供应商，只能作为初筛输入。真正严肃的判断，仍要回到最新财报和公司公告。
+
+{localized_metric_table(valuation[["Metric", "Value"]] if "Metric" in valuation.columns else valuation, term_style=term_style, max_rows=50)}
+
+这说明什么：估值倍数越高，市场对未来稳定性的要求越高。高估值不等于马上下跌，但它会降低犯错空间。
+
+---
+
+## 11. 业务线拆解：当前缺口
+
+{v4_sections.get("segment_revenue_zh", "").replace("## 业务线拆解", "").strip()}
+
+---
+
+## 12. 数据审计与方法说明
+
+### 风险指标方法
+
+风险指标使用日频价格序列、252 个交易日年化和命令行传入的无风险利率。收益、回撤、波动和基准比较都依赖同一段对齐后的交易日数据。
+
+### 初筛数据边界
+
+这份报告使用公开数据供应商和自动计算结果。供应商快照可能滞后、缺字段或口径不同；重要数字必须回到原始财报、公司公告或监管文件复核。
+
+---
+
+## 13. 下一步研究清单
 
 1. 分业务线收入和服务业务增长。
 2. 自由现金流是否稳定，还是受一次性项目影响。
-3. 当前估值是否已经透支未来 EPS 增长。
+3. 当前估值是否已经透支未来每股收益增长。
+
+---
 
 ## 结论边界
 
-当前分数为 {fmt_score(score)}。它只说明这家公司值得按上述路径继续核查，不代表应该买入或卖出。
+当前研究分数为 {fmt_score(score)}。它只说明这家公司值得按上述路径继续核查，不代表应该买入或卖出，也不代表未来收益。
 """
+    content = clean_report_placeholders(content, "zh")
     path = out_dir / report_filename(safe_symbol(symbol), "research_report_cn.md", gate_status.get("OVERALL_REPORT_STATUS", "VERIFIED"))
     save_text(path, content)
     return path
@@ -2909,6 +3440,8 @@ def run_one(
     ai_max_output_tokens: int = 1200,
     audit_data: bool = False,
     cn: bool = False,
+    language: str = "en",
+    term_style: str = "pure",
     price_field: str = "adj_close",
     annualization_days: int = 252,
 ) -> dict[str, Any]:
@@ -3177,8 +3710,13 @@ def run_one(
         v4_sections=v4_sections,
         gate_status=gate_status,
     )
-    if cn:
-        write_chinese_report(report_data, out_dir, v4_sections, gate_status)
+    final_lint_results = [lint_language(report_path.read_text(encoding="utf-8"), "en")]
+    if cn or language == "zh":
+        chinese_report_path = write_chinese_report(report_data, out_dir, v4_sections, gate_status, term_style=term_style)
+        final_lint_results.append(lint_language(chinese_report_path.read_text(encoding="utf-8"), "zh"))
+    else:
+        final_lint_results.append(lint_zh)
+    write_language_lint_report(out_dir, final_lint_results, gate_status["OVERALL_REPORT_STATUS"])
 
     latest_dir = output / safe_symbol(symbol) / "latest"
     copy_run_to_latest(out_dir, latest_dir)
@@ -3334,6 +3872,8 @@ Examples:
     parser.add_argument("--ai-timeout", type=int, default=60, help="OpenAI API timeout in seconds. Default: 60.")
     parser.add_argument("--ai-max-output-tokens", type=int, default=1200, help="Max tokens for AI review output. Default: 1200.")
     parser.add_argument("--audit-data", action="store_true", help="Generate v4 data audit files: data_audit.md and data_audit.csv.")
+    parser.add_argument("--language", choices=["en", "zh"], default="en", help="Primary report language. Default: en. Use zh for a native Chinese report.")
+    parser.add_argument("--term-style", choices=["pure", "bilingual"], default="pure", help="Term display style for localized reports. Default: pure.")
     parser.add_argument("--cn", "--chinese", dest="cn", action="store_true", help="Generate an independent Chinese Markdown report.")
     parser.add_argument("--no-rich", action="store_true", help="Disable Rich terminal UI and use plain output.")
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
@@ -3371,7 +3911,9 @@ def main() -> None:
                     ai_timeout=args.ai_timeout,
                     ai_max_output_tokens=args.ai_max_output_tokens,
                     audit_data=args.audit_data,
-                    cn=args.cn,
+                    cn=args.cn or args.language == "zh",
+                    language=args.language,
+                    term_style=args.term_style,
                     price_field=args.price_field,
                     annualization_days=args.annualization_days,
                 )

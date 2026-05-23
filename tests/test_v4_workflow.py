@@ -139,6 +139,10 @@ class V4WorkflowTests(unittest.TestCase):
         with patch.object(sys, "argv", ["cresearch", "AAPL", "--chinese"]):
             args = tool.parse_args()
         self.assertTrue(args.cn)
+        with patch.object(sys, "argv", ["cresearch", "AAPL", "--language", "zh", "--term-style", "bilingual"]):
+            args = tool.parse_args()
+        self.assertEqual(args.language, "zh")
+        self.assertEqual(args.term_style, "bilingual")
 
     def test_bilingual_independence(self):
         with patch.object(sys, "argv", ["cresearch", "AAPL", "--cn", "--no-rich"]):
@@ -187,6 +191,63 @@ class V4WorkflowTests(unittest.TestCase):
         suggestions = {"ai_correction_log": ["Check provider data."]}
         self.assertTrue(v4.ai_layer_can_only_suggest(payload, suggestions))
 
+    def test_v42_chinese_report_has_no_english_status_labels_by_default(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            report_data = self._full_report_data()
+            tool.write_chinese_report(
+                report_data,
+                Path(tmp_dir),
+                self._v4_sections(report_data),
+                self._gate_status(),
+                term_style="pure",
+            )
+            text = (Path(tmp_dir) / "AAPL_research_report_cn.md").read_text()
+        self.assertIn("## 1. 报告状态卡片", text)
+        self.assertNotIn("DATA_AUDIT_STATUS", text)
+        self.assertNotIn("RISK_METHOD_STATUS", text)
+        self.assertNotIn("Price Label Check", text)
+        self.assertNotIn("Mature Compounder", text)
+
+    def test_v42_english_chart_walkthrough_has_no_chinese_titles(self):
+        text = tool.english_chart_walkthrough("AAPL", "SPY", self._charts())
+        self.assertIn("What this chart shows", text)
+        self.assertIn("How not to misread it", text)
+        self.assertNotIn("图表看什么", text)
+
+    def test_v42_chinese_chart_blocks_are_complete(self):
+        text = tool.chinese_chart_walkthrough("AAPL", "SPY", self._charts())
+        self.assertEqual(text.count("图表看什么"), 3)
+        self.assertEqual(text.count("读出来的结论"), 3)
+        self.assertEqual(text.count("不要误读"), 3)
+
+    def test_v42_key_questions_have_answer_evidence_boundary(self):
+        text = tool.chinese_key_questions(
+            "AAPL",
+            "SPY",
+            self._report_data()["raw"]["price_summary"],
+            self._report_data()["raw"]["fundamental_summary"],
+            self._report_data()["raw"]["valuation"],
+        )
+        self.assertEqual(text.count("### 问题"), 3)
+        self.assertEqual(text.count("**回答：**"), 3)
+        self.assertEqual(text.count("**证据：**"), 3)
+        self.assertEqual(text.count("**边界：**"), 3)
+
+    def test_v42_status_card_and_localized_metrics(self):
+        card = tool.zh_status_card_table("AAPL", "SPY", "2023-01-01", None, "Watchlist", "Mature Compounder", self._gate_status())
+        self.assertIn("报告状态", card)
+        self.assertIn("成熟复利型公司", card)
+        table = tool.localized_metric_table(self._report_data()["raw"]["fundamental_summary"], term_style="pure")
+        self.assertIn("收入复合增速", table)
+        self.assertNotIn("Revenue CAGR", table)
+        bilingual = tool.localized_metric_table(self._report_data()["raw"]["fundamental_summary"], term_style="bilingual")
+        self.assertIn("收入复合增速（Revenue CAGR）", bilingual)
+
+    def test_v42_language_quality_counts_mixed_language(self):
+        result = v4.lint_language("DATA_AUDIT_STATUS：WARNING\n## 图表看什么", "zh")
+        self.assertIn("DATA_AUDIT_STATUS", result["mixed_language_hits"])
+        self.assertIn("language_quality_score", result)
+
     def _report_data(self):
         fundamental = pd.DataFrame(
             [
@@ -224,6 +285,46 @@ class V4WorkflowTests(unittest.TestCase):
                 "ruin_risk": ruin,
                 "info": {"currency": "USD"},
             },
+        }
+
+    def _charts(self):
+        return {
+            "actual": "AAPL_vs_SPY_actual_close_price_chart.png",
+            "normalized": "AAPL_vs_SPY_performance_chart.png",
+            "drawdown": "AAPL_vs_SPY_drawdown_chart.png",
+            "ruin_risk": "AAPL_ruin_risk_snapshot.png",
+        }
+
+    def _gate_status(self):
+        return {
+            "DATA_AUDIT_STATUS": "WARNING",
+            "RISK_METHOD_STATUS": "PASS",
+            "AI_ANALYST_REVIEW_STATUS": "PASS",
+            "LANGUAGE_LINT_STATUS": "PASS",
+            "PRICE_LABEL_CHECK_STATUS": "PASS",
+            "OVERALL_REPORT_STATUS": "WARNING",
+        }
+
+    def _full_report_data(self):
+        data = self._report_data()
+        data.update(
+            {
+                "research_score": {"score": 61.34},
+                "research_status": "Watchlist",
+                "one_line_verdict": "AAPL is a mature cash-flow company whose valuation needs margin and cash-flow support.",
+                "charts": self._charts(),
+                "beginner_summary": [
+                    {"Area": "Business Quality", "Status": "Strong", "Plain-English Meaning": "Cash generation is strong."}
+                ],
+            }
+        )
+        return data
+
+    def _v4_sections(self, report_data):
+        return {
+            "battle_card_zh": v4.render_battle_card(report_data, "zh"),
+            "valuation_sensitivity_zh": v4.render_valuation_sensitivity(report_data, "zh"),
+            "segment_revenue_zh": v4.render_segment_revenue(report_data, "zh"),
         }
 
 

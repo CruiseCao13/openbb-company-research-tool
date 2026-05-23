@@ -399,7 +399,7 @@ def render_battle_card(report_data: dict[str, Any], language: str = "en") -> str
 
 ### 买入的核心赌注
 
-{ticker} 不是纯高增长故事。核心赌注是利润率、现金流、生态粘性和回购能力能继续支撑 EPS。只要这些支柱不塌，市场就可能继续接受高估值。
+{ticker} 不是纯高增长故事。核心赌注是利润率、现金流、生态粘性和回购能力能继续支撑每股收益。只要这些支柱不塌，市场就可能继续接受高估值。
 
 ### 做空或离场的死穴
 
@@ -407,14 +407,14 @@ def render_battle_card(report_data: dict[str, Any], language: str = "en") -> str
 
 ### 市场已经交易了什么
 
-当前估值已经在交易高质量现金流和长期韧性。PE 约 {fmt_value(pe)}，PS 约 {fmt_value(ps)}，这意味着市场不只是在买当期收入增长。
+当前价格反映的不只是今年赚了多少钱，还包括市场对长期现金流和经营韧性的信任。市盈率约 {fmt_value(pe)} 倍，市销率约 {fmt_value(ps)} 倍，这意味着市场不只是在买当期收入增长。
 
 ### 什么必须守住
 
 - 毛利率不能持续下滑。
 - 自由现金流率要保持健康。
 - 核心业务不能出现结构性失速。
-- 回购对 EPS 的支撑不能失效。
+- 回购对每股收益的支撑不能失效。
 - 监管不能打穿关键利润池。
 
 ### 一票否决条件
@@ -422,14 +422,14 @@ def render_battle_card(report_data: dict[str, Any], language: str = "en") -> str
 - 服务业务增速明显放缓。
 - 毛利率连续两个季度下滑。
 - 核心收入下滑且没有服务业务接住。
-- 高估值削弱回购对 EPS 的支撑。
+- 高估值削弱回购对每股收益的支撑。
 - 监管压力伤害高利润业务。
 
 ### 最优先核查的 3 件事
 
 1. 分业务线收入和服务业务增长。
 2. 自由现金流是否稳定，还是受一次性项目影响。
-3. 当前估值是否已经透支未来 EPS 增长。
+3. 当前估值是否已经透支未来每股收益增长。
 """
 
     return f"""## Research Battle Card
@@ -476,12 +476,12 @@ def render_valuation_sensitivity(report_data: dict[str, Any], language: str = "e
     scenarios = [30, 25, 20]
     eps_growth = ["0%", "5%", "10%", "15%"]
     if language == "zh":
-        rows = "\n".join(f"| PE 压缩到 {s}x | 与当前 {fmt_value(pe)}x 比较 | EPS 增长假设：{', '.join(eps_growth)} |" for s in scenarios)
+        rows = "\n".join(f"| 市盈率压缩到 {s} 倍 | 与当前 {fmt_value(pe)} 倍比较 | 每股收益增长假设：{', '.join(eps_growth)} |" for s in scenarios)
         return f"""## 估值压力测试
 
 这不是目标价预测，而是估值压力测试。它回答的不是“应该值多少钱”，而是“如果市场开始杀估值，可能有多疼”。
 
-| 场景 | 对比 | EPS 增长假设 |
+| 场景 | 对比 | 每股收益增长假设 |
 |---|---|---|
 {rows}
 """
@@ -507,7 +507,7 @@ def render_segment_revenue(report_data: dict[str, Any], language: str = "en") ->
 
 需要手工核查：
 
-- iPhone / Mac / iPad / Wearables / Services，或对应公司的主要业务线；
+- 主要产品线、服务业务或对应公司的核心业务线；
 - 各业务线 YoY 增长；
 - 各业务线收入占比；
 - 高毛利业务是否在提升利润质量；
@@ -536,15 +536,41 @@ def lint_language(text: str, language: str = "en") -> dict[str, Any]:
     hits = [phrase for phrase in banned if (phrase in text if language == "zh" else phrase in lower)]
     sentences = [s.strip() for s in text.replace("\n", " ").split(".") if s.strip()]
     overlong = [s for s in sentences if len(s.split()) > 38] if language == "en" else [s for s in text.split("。") if len(s) > 90]
+    mixed_language_hits = []
+    if language == "zh":
+        mixed_language_hits = [hit for hit in ["DATA_AUDIT_STATUS", "RISK_METHOD_STATUS", "OVERALL_REPORT_STATUS", "Price Label Check", "Research Battle Card"] if hit in text]
+    else:
+        mixed_language_hits = [hit for hit in ["买入的核心赌注", "估值压力测试", "一票否决条件", "投研博弈卡片"] if hit in text]
+    translationese_hits = []
+    if language == "zh":
+        translationese_hits = [phrase for phrase in ["当前估值已经在交易", "具有一定", "综合来看", "需要进一步观察"] if phrase in text]
+    raw_placeholder_hits = [placeholder for placeholder in MISSING_PLACEHOLDERS if placeholder in text]
+    unexplained_chart_count = max(0, text.count("![") - text.count("图表看什么") - text.count("What this chart shows"))
+    unanswered_question_count = max(0, text.count("？") + text.count("?") - text.count("回答") - text.count("Answer"))
+    table_without_explanation_count = max(0, text.count("|---") - text.count("这说明什么") - text.count("What this means") - text.count("Interpretation"))
     if len(hits) == 0:
         status = STATUS_PASS
     elif len(hits) <= 2:
         status = STATUS_WARNING
     else:
         status = STATUS_FAIL
+    language_quality_score = 100
+    language_quality_score -= len(mixed_language_hits) * 15
+    language_quality_score -= len(translationese_hits) * 8
+    language_quality_score -= unexplained_chart_count * 10
+    language_quality_score -= unanswered_question_count * 6
+    language_quality_score -= table_without_explanation_count * 4
+    language_quality_score = max(0, language_quality_score)
     return {
         "language": language,
         "banned_phrase_hits": hits,
+        "mixed_language_hits": mixed_language_hits,
+        "translationese_hits": translationese_hits,
+        "unexplained_chart_count": unexplained_chart_count,
+        "unanswered_question_count": unanswered_question_count,
+        "raw_placeholder_hits": raw_placeholder_hits,
+        "table_without_explanation_count": table_without_explanation_count,
+        "language_quality_score": language_quality_score,
         "overlong_sentences": overlong,
         "overlong_sections": [],
         "rewritten_sections": [],
@@ -562,6 +588,13 @@ def write_language_lint_report(out_dir: Path, results: list[dict[str, Any]], ove
                 "",
                 f"language: {result['language']}",
                 f"banned_phrase_hits: {result['banned_phrase_hits']}",
+                f"mixed_language_hits: {result.get('mixed_language_hits', [])}",
+                f"translationese_hits: {result.get('translationese_hits', [])}",
+                f"unexplained_chart_count: {result.get('unexplained_chart_count', 0)}",
+                f"unanswered_question_count: {result.get('unanswered_question_count', 0)}",
+                f"raw_placeholder_hits: {result.get('raw_placeholder_hits', [])}",
+                f"table_without_explanation_count: {result.get('table_without_explanation_count', 0)}",
+                f"language_quality_score: {result.get('language_quality_score', 100)}",
                 f"overlong_sentences: {len(result['overlong_sentences'])}",
                 f"overlong_sections: {result['overlong_sections']}",
                 f"rewritten_sections: {result['rewritten_sections']}",
