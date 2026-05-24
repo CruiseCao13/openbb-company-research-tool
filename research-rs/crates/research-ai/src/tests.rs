@@ -113,7 +113,7 @@ fn local_ai_mode_does_not_call_external_api() {
 }
 
 #[test]
-fn no_ai_cache_forces_mocked_external_request() {
+fn ai_usage_json_records_external_status() {
     let _guard = ENV_LOCK.lock().unwrap();
     std::env::set_var("OPENAI_API_KEY", "sk-test-mocked");
     std::env::set_var("OPENAI_MOCK_SUCCESS", "1");
@@ -137,5 +137,38 @@ fn no_ai_cache_forces_mocked_external_request() {
     assert!(!usage.local_mock_used);
     assert!(usage.new_external_ai_calls > 0);
     assert_eq!(usage.cache_hits, 0);
+    let written = fs::read_to_string(metadata.join("ai_usage.json")).unwrap();
+    assert!(written.contains("\"external_ai_used\": true"));
+    assert!(written.contains("\"local_mock_used\": false"));
+    assert!(written.contains("\"request_success\": true"));
+    std::env::remove_var("OPENAI_MOCK_SUCCESS");
+}
+
+#[test]
+fn no_ai_cache_forces_new_external_request_when_key_exists_or_marks_external_required() {
+    let _guard = ENV_LOCK.lock().unwrap();
+    std::env::set_var("OPENAI_API_KEY", "sk-test-mocked");
+    std::env::set_var("OPENAI_MOCK_SUCCESS", "1");
+    let payload = ProviderPayload {
+        ticker: "AAPL".into(),
+        ..Default::default()
+    };
+    let (metadata, ai) = temp_ai_dirs("no_cache_named");
+    let usage = run_ai_usage_gate(
+        &payload,
+        &AiRunOptions {
+            ai_mode: "compact".into(),
+            require_external_ai: true,
+            no_ai_cache: true,
+        },
+        &metadata,
+        &ai,
+    )
+    .unwrap();
+    assert!(usage.require_external_ai);
+    assert!(usage.no_ai_cache);
+    assert_eq!(usage.cache_hits, 0);
+    assert!(usage.new_external_ai_calls > 0);
+    assert!(usage.tasks.iter().all(|task| task.request_attempted));
     std::env::remove_var("OPENAI_MOCK_SUCCESS");
 }

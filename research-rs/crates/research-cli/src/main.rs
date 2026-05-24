@@ -388,14 +388,10 @@ fn run_one(args: &RunArgs, render: bool) -> Result<()> {
         println!("Company Frame: {}", understanding.correct_research_frame);
         println!("AI Confidence: {:?}", blueprint.confidence);
         println!("Human Review: {}", status.human_review_required);
-        println!("External AI Used: {}", ai_usage.external_ai_used);
-        println!("Local Mock Used: {}", ai_usage.local_mock_used);
-        println!("AI Calls: {}", ai_usage.new_external_ai_calls);
-        println!("AI Cache Hits: {}", ai_usage.cache_hits);
-        println!("Model: {}", ai_usage.model);
-        if !ai_usage.external_ai_used {
-            println!("Warning: External OpenAI API was not used.");
-        }
+        print!(
+            "{}",
+            ai_terminal_summary(&args.ai, args.require_external_ai, &ai_usage)
+        );
         println!(
             "Report: {}",
             folder
@@ -434,6 +430,21 @@ fn run_one(args: &RunArgs, render: bool) -> Result<()> {
         ),
     )?;
     Ok(())
+}
+
+fn ai_terminal_summary(ai_mode: &str, require_external_ai: bool, usage: &AiUsage) -> String {
+    let mut text = format!(
+        "AI Mode: {ai_mode}\nRequire External AI: {require_external_ai}\nExternal AI Used: {}\nLocal Mock Used: {}\nAI Calls: {}\nCache Hits: {}\nModel: {}\n",
+        usage.external_ai_used,
+        usage.local_mock_used,
+        usage.new_external_ai_calls,
+        usage.cache_hits,
+        usage.model
+    );
+    if !usage.external_ai_used {
+        text.push_str("Warning: External OpenAI API was not used.\n");
+    }
+    text
 }
 
 fn main() -> Result<()> {
@@ -593,4 +604,31 @@ fn write_sample_gallery() -> Result<()> {
     )?;
     println!("Sample gallery: {}", samples.join("index.html").display());
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn terminal_summary_displays_ai_usage() {
+        let usage = AiUsage {
+            ai_mode: "compact".into(),
+            require_external_ai: true,
+            no_ai_cache: true,
+            external_ai_used: true,
+            local_mock_used: false,
+            new_external_ai_calls: 4,
+            cache_hits: 0,
+            model: "gpt-4.1-mini".into(),
+            ..Default::default()
+        };
+        let summary = ai_terminal_summary("compact", true, &usage);
+        assert!(summary.contains("AI Mode: compact"));
+        assert!(summary.contains("Require External AI: true"));
+        assert!(summary.contains("External AI Used: true"));
+        assert!(summary.contains("Local Mock Used: false"));
+        assert!(summary.contains("AI Calls: 4"));
+        assert!(summary.contains("Cache Hits: 0"));
+    }
 }
