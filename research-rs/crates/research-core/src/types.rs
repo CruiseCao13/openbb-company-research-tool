@@ -322,9 +322,48 @@ pub struct RunContext {
     pub pack: bool,
     pub lang: String,
     pub mode: String,
+    pub require_external_ai: bool,
+    pub no_ai_cache: bool,
     pub max_attempts: usize,
     pub auto_fix: bool,
     pub fail_fast: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct AiTaskUsage {
+    pub task: String,
+    pub prompt_version: String,
+    pub external_ai_used: bool,
+    pub external_ai_attempted: bool,
+    pub external_ai_used_from_cache: bool,
+    pub local_mock_used: bool,
+    pub cache_hit: bool,
+    pub request_attempted: bool,
+    pub request_success: bool,
+    pub request_id: String,
+    pub model: String,
+    pub input_tokens_estimate: usize,
+    pub output_tokens_estimate: usize,
+    pub error: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct AiUsage {
+    #[serde(default = "default_schema_version")]
+    pub schema_version: String,
+    pub ai_mode: String,
+    pub require_external_ai: bool,
+    pub no_ai_cache: bool,
+    pub external_ai_used: bool,
+    pub external_ai_attempted: bool,
+    pub external_ai_used_from_cache: bool,
+    pub local_mock_used: bool,
+    pub ai_calls: usize,
+    pub new_external_ai_calls: usize,
+    pub cache_hits: usize,
+    pub model: String,
+    pub provider: String,
+    pub tasks: Vec<AiTaskUsage>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -3,7 +3,7 @@ use crate::lint::lint_status;
 use crate::training_case::TrainingCase;
 use anyhow::Result;
 use chrono::Local;
-use research_ai::run_local_compact_analyst;
+use research_ai::{run_ai_usage_gate, run_local_compact_analyst, AiRunOptions};
 use research_core::config::EngineConfig;
 use research_core::io::{ensure_dir, write_if_changed};
 use research_core::normalizer::write_normalized_outputs;
@@ -25,6 +25,8 @@ pub struct BatchRunOptions {
     pub workers: usize,
     pub ai_mode: String,
     pub mode: String,
+    pub require_external_ai: bool,
+    pub no_ai_cache: bool,
     pub run_id: String,
     pub limit: Option<usize>,
     pub offset: usize,
@@ -40,6 +42,9 @@ struct Row {
     run_folder: String,
     failed_checks: Vec<String>,
     duration_ms: u128,
+    external_ai_calls: usize,
+    ai_cache_hits: usize,
+    local_mock_used: bool,
 }
 
 pub fn run_batch(options: &BatchRunOptions) -> Result<PathBuf> {
@@ -73,6 +78,8 @@ pub fn run_batch(options: &BatchRunOptions) -> Result<PathBuf> {
             pack: options.pack,
             lang: "en".to_string(),
             mode: options.mode.clone(),
+            require_external_ai: options.require_external_ai,
+            no_ai_cache: options.no_ai_cache,
             max_attempts: 2,
             auto_fix: false,
             fail_fast: false,
@@ -90,7 +97,17 @@ pub fn run_batch(options: &BatchRunOptions) -> Result<PathBuf> {
             );
         }
         let provider_failures = validate_provider_payload(&payload);
-        let (understanding, interpretation, blueprint, review, ai_calls, cache_hits) =
+        let ai_usage = run_ai_usage_gate(
+            &payload,
+            &AiRunOptions {
+                ai_mode: options.ai_mode.clone(),
+                require_external_ai: options.require_external_ai,
+                no_ai_cache: options.no_ai_cache,
+            },
+            &folder.metadata,
+            &folder.ai,
+        )?;
+        let (understanding, interpretation, blueprint, review, _local_ai_calls, cache_hits) =
             run_local_compact_analyst(&payload);
         write_schema_validation_report(
             &folder,
@@ -109,7 +126,7 @@ pub fn run_batch(options: &BatchRunOptions) -> Result<PathBuf> {
             ],
         )?;
         let ai_failures = validate_ai_json(&understanding, &interpretation, &blueprint, &review);
-        let status = report_status(
+        let mut status = report_status(
             &provider_failures,
             &ai_failures,
             &review,
@@ -119,9 +136,13 @@ pub fn run_batch(options: &BatchRunOptions) -> Result<PathBuf> {
                 "PASS".into()
             },
             options.ai_mode.clone(),
-            ai_calls,
-            cache_hits,
+            ai_usage.new_external_ai_calls,
+            ai_usage.cache_hits,
         );
+        if ai_usage.local_mock_used && matches!(options.ai_mode.as_str(), "compact" | "full") {
+            status.overall_status = "WARNING".into();
+            status.human_review_required = true;
+        }
         render_run(RenderRunInput {
             folder: &folder,
             payload: &payload,
@@ -144,15 +165,15 @@ pub fn run_batch(options: &BatchRunOptions) -> Result<PathBuf> {
             total_ms: ticker_duration,
             provider_used: ctx.provider.clone(),
             ai_mode: ctx.ai_mode.clone(),
-            ai_calls,
-            cache_hits,
+            ai_calls: ai_usage.new_external_ai_calls,
+            cache_hits: ai_usage.cache_hits,
             stages: vec![StageTrace {
                 stage: "batch_ticker_pipeline".into(),
                 status: status.overall_status.clone(),
                 duration_ms: ticker_duration,
-                cache_hit: cache_hits > 0,
+                cache_hit: ai_usage.cache_hits > 0 || cache_hits > 0,
                 provider_used: Some(ctx.provider.clone()),
-                ai_calls,
+                ai_calls: ai_usage.new_external_ai_calls,
                 errors: vec![],
                 warnings: provider_failures
                     .iter()
@@ -244,6 +265,9 @@ pub fn run_batch(options: &BatchRunOptions) -> Result<PathBuf> {
             run_folder: folder.root.to_string_lossy().to_string(),
             failed_checks: lint.failed_checks,
             duration_ms: ticker_duration,
+            external_ai_calls: ai_usage.new_external_ai_calls,
+            ai_cache_hits: ai_usage.cache_hits,
+            local_mock_used: ai_usage.local_mock_used,
         });
     }
 
@@ -272,6 +296,9 @@ fn write_batch_outputs(
     let pass = rows.iter().filter(|r| r.status == "PASS").count();
     let fail = rows.iter().filter(|r| r.status == "FAIL").count();
     let warning = rows.iter().filter(|r| r.status == "WARNING").count();
+    let external_ai_calls: usize = rows.iter().map(|r| r.external_ai_calls).sum();
+    let ai_cache_hits: usize = rows.iter().map(|r| r.ai_cache_hits).sum();
+    let local_fallback_count = rows.iter().filter(|r| r.local_mock_used).count();
     let avg_ms = if total == 0 {
         0
     } else {
@@ -284,7 +311,7 @@ fn write_batch_outputs(
         .unwrap_or_else(|| "n/a".into());
     let generated = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
     let mut summary = format!(
-        "# v5 Batch Evaluation Report\n\n> Eval Set: {name}  \n> Generated: {generated}  \n> AI Mode: compact/local fallback  \n> External AI Calls: 0\n\n## 1. Executive Summary\n\nThis batch validates the v5 AI-led Rust research pipeline. Provider failures are isolated per ticker, and local compact analyst fallback is used when no external AI is called.\n\n## 2. Status Dashboard\n\n| Metric | Value |\n|---|---:|\n| Total tickers | {total} |\n| PASS | {pass} |\n| WARNING | {warning} |\n| FAIL | {fail} |\n| Training cases generated | {training_count} |\n| External AI calls | 0 |\n| Workers requested | {workers} |\n| Avg runtime per ticker | {avg_ms} ms |\n| Slowest ticker | {slowest} |\n\n## 3. Company Matrix\n\n| Ticker | Status | Research Frame | Runtime | Failed Checks |\n|---|---|---|---:|---|\n"
+        "# v5 Batch Evaluation Report\n\n> Eval Set: {name}  \n> Generated: {generated}  \n> AI Mode: compact/local fallback  \n> External AI Calls: {external_ai_calls}\n\n## 1. Executive Summary\n\nThis batch validates the v5 AI-led Rust research pipeline. Provider failures are isolated per ticker, and local compact analyst fallback is explicitly tracked when no external AI is called.\n\n## 2. Status Dashboard\n\n| Metric | Value |\n|---|---:|\n| Total tickers | {total} |\n| PASS | {pass} |\n| WARNING | {warning} |\n| FAIL | {fail} |\n| Training cases generated | {training_count} |\n| External AI calls | {external_ai_calls} |\n| Local fallback count | {local_fallback_count} |\n| AI cache hits | {ai_cache_hits} |\n| Workers requested | {workers} |\n| Avg runtime per ticker | {avg_ms} ms |\n| Slowest ticker | {slowest} |\n\n## 3. Company Matrix\n\n| Ticker | Status | Research Frame | Runtime | Failed Checks |\n|---|---|---|---:|---|\n"
     );
     for r in rows {
         summary.push_str(&format!(
@@ -340,7 +367,12 @@ fn write_batch_outputs(
             profiles
         ),
     )?;
-    write_if_changed(&root.join("credit_usage_estimate.md"), "# Credit Usage Estimate\n\n- External AI calls: 0\n- Local compact analyst reviews: enabled\n- Full reports sent to AI: No\n- CSV / charts sent to AI: No\n")?;
+    write_if_changed(
+        &root.join("credit_usage_estimate.md"),
+        &format!(
+            "# Credit Usage Estimate\n\n- External API calls: {external_ai_calls}\n- Local fallback count: {local_fallback_count}\n- AI cache hits: {ai_cache_hits}\n- Full reports sent to AI: No\n- CSV / charts sent to AI: No\n- Broad 200/500 live run: No\n"
+        ),
+    )?;
     write_if_changed(&root.join("executive_dashboard.md"), &summary)?;
     let summary_json = serde_json::json!({
         "schema_version": SCHEMA_VERSION,
@@ -351,7 +383,9 @@ fn write_batch_outputs(
         "warning": warning,
         "fail": fail,
         "training_cases_generated": training_count,
-        "external_ai_calls": 0,
+        "external_ai_calls": external_ai_calls,
+        "local_fallback_count": local_fallback_count,
+        "ai_cache_hits": ai_cache_hits,
         "workers_requested": workers,
         "avg_runtime_per_ticker_ms": avg_ms,
         "slowest_ticker": slowest,
@@ -399,7 +433,7 @@ fn write_batch_outputs(
         "avg_runtime_per_ticker_ms": avg_ms,
         "slowest_ticker": slowest,
         "provider_failure_count": rows.iter().filter(|r| r.status == "FETCH_FAILED").count(),
-        "ai_call_count": 0,
+        "ai_call_count": external_ai_calls,
         "cache_hit_impact": "Provider cache hits are recorded per run in metadata/provider_status.json.",
         "tickers": rows.iter().map(|r| serde_json::json!({
             "ticker": r.ticker,

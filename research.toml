@@ -6,8 +6,10 @@ timeout_seconds = 30
 
 [ai]
 mode = "compact"
-model = "local-compact-analyst-fallback"
+model = "gpt-4.1-mini"
+require_external_ai = false
 cache = true
+timeout_seconds = 60
 max_retries = 2
 
 [batch]

@@ -1,7 +1,7 @@
 use anyhow::Result;
 use chrono::Local;
 use clap::{Parser, Subcommand};
-use research_ai::run_local_compact_analyst;
+use research_ai::{run_ai_usage_gate, run_local_compact_analyst, AiRunOptions};
 use research_batch::quality::{run_quality, QualityRunOptions};
 use research_batch::runner::{run_batch, BatchRunOptions};
 use research_core::config::EngineConfig;
@@ -53,6 +53,10 @@ struct RunArgs {
     provider: String,
     #[arg(long, default_value = "compact")]
     ai: String,
+    #[arg(long)]
+    require_external_ai: bool,
+    #[arg(long)]
+    no_ai_cache: bool,
     #[arg(long, default_value = "standard")]
     mode: String,
     #[arg(long, default_value = "en")]
@@ -78,6 +82,10 @@ struct BatchArgs {
     workers: usize,
     #[arg(long, default_value = "compact")]
     ai: String,
+    #[arg(long)]
+    require_external_ai: bool,
+    #[arg(long)]
+    no_ai_cache: bool,
     #[arg(long, default_value = "batch")]
     mode: String,
     #[arg(long)]
@@ -131,6 +139,8 @@ fn run_one(args: &RunArgs, render: bool) -> Result<()> {
     println!("Market: {}", args.market.to_uppercase());
     println!("Provider: {}", args.provider);
     println!("AI Mode: {}", args.ai);
+    println!("Require External AI: {}", args.require_external_ai);
+    println!("No AI Cache: {}", args.no_ai_cache);
     println!("Run Mode: {}", args.mode);
     println!("Run ID: {}\n", run_id);
 
@@ -145,6 +155,8 @@ fn run_one(args: &RunArgs, render: bool) -> Result<()> {
         pack: args.pack,
         lang: args.lang.clone(),
         mode: args.mode.clone(),
+        require_external_ai: args.require_external_ai,
+        no_ai_cache: args.no_ai_cache,
         max_attempts: args.max_attempts,
         auto_fix: args.auto_fix,
         fail_fast: args.fail_fast,
@@ -220,7 +232,17 @@ fn run_one(args: &RunArgs, render: bool) -> Result<()> {
 
     let stage_timer = Instant::now();
     println!("[3/9] AI company understanding            done  local");
-    let (understanding, interpretation, blueprint, review, ai_calls, cache_hits) =
+    let ai_usage = run_ai_usage_gate(
+        &payload,
+        &AiRunOptions {
+            ai_mode: args.ai.clone(),
+            require_external_ai: args.require_external_ai,
+            no_ai_cache: args.no_ai_cache,
+        },
+        &folder.metadata,
+        &folder.ai,
+    )?;
+    let (understanding, interpretation, blueprint, review, _local_ai_calls, cache_hits) =
         run_local_compact_analyst(&payload);
     write_schema_validation_report(
         &folder,
@@ -250,9 +272,9 @@ fn run_one(args: &RunArgs, render: bool) -> Result<()> {
         }
         .into(),
         duration_ms: stage_timer.elapsed().as_millis(),
-        cache_hit: cache_hits > 0,
+        cache_hit: ai_usage.cache_hits > 0 || cache_hits > 0,
         provider_used: None,
-        ai_calls,
+        ai_calls: ai_usage.new_external_ai_calls,
         errors: vec![],
         warnings: ai_failures.clone(),
         output_files: vec![
@@ -262,7 +284,7 @@ fn run_one(args: &RunArgs, render: bool) -> Result<()> {
             "self_review/ai_self_review.json".into(),
         ],
     });
-    let status = report_status(
+    let mut status = report_status(
         &payload_failures,
         &ai_failures,
         &review,
@@ -272,9 +294,13 @@ fn run_one(args: &RunArgs, render: bool) -> Result<()> {
             "PASS".into()
         },
         args.ai.clone(),
-        ai_calls,
-        cache_hits,
+        ai_usage.new_external_ai_calls,
+        ai_usage.cache_hits,
     );
+    if ai_usage.local_mock_used && matches!(args.ai.as_str(), "compact" | "full") {
+        status.overall_status = "WARNING".into();
+        status.human_review_required = true;
+    }
 
     if render {
         let stage_timer = Instant::now();
@@ -362,8 +388,14 @@ fn run_one(args: &RunArgs, render: bool) -> Result<()> {
         println!("Company Frame: {}", understanding.correct_research_frame);
         println!("AI Confidence: {:?}", blueprint.confidence);
         println!("Human Review: {}", status.human_review_required);
-        println!("AI Calls: {}", ai_calls);
-        println!("Cache Hits: {}", cache_hits);
+        println!("External AI Used: {}", ai_usage.external_ai_used);
+        println!("Local Mock Used: {}", ai_usage.local_mock_used);
+        println!("AI Calls: {}", ai_usage.new_external_ai_calls);
+        println!("AI Cache Hits: {}", ai_usage.cache_hits);
+        println!("Model: {}", ai_usage.model);
+        if !ai_usage.external_ai_used {
+            println!("Warning: External OpenAI API was not used.");
+        }
         println!(
             "Report: {}",
             folder
@@ -383,8 +415,8 @@ fn run_one(args: &RunArgs, render: bool) -> Result<()> {
         total_ms: total_timer.elapsed().as_millis(),
         provider_used: ctx.provider.clone(),
         ai_mode: ctx.ai_mode.clone(),
-        ai_calls,
-        cache_hits,
+        ai_calls: ai_usage.new_external_ai_calls,
+        cache_hits: ai_usage.cache_hits,
         stages,
     };
     write_json(&folder.metadata.join("run_trace.json"), &trace)?;
@@ -419,6 +451,8 @@ fn main() -> Result<()> {
                 workers: args.workers,
                 ai_mode: args.ai,
                 mode: args.mode,
+                require_external_ai: args.require_external_ai,
+                no_ai_cache: args.no_ai_cache,
                 run_id,
                 limit: args.limit,
                 offset: args.offset,

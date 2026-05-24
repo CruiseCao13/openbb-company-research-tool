@@ -1,5 +1,10 @@
-use crate::run_local_compact_analyst;
+use crate::{run_ai_usage_gate, run_local_compact_analyst, AiRunOptions};
 use research_core::types::{CompanyProfile, ProviderPayload};
+use std::fs;
+use std::sync::Mutex;
+use std::time::{SystemTime, UNIX_EPOCH};
+
+static ENV_LOCK: Mutex<()> = Mutex::new(());
 
 #[test]
 fn google_like_payload_is_not_financials() {
@@ -41,4 +46,96 @@ fn zim_like_payload_is_transport_not_biotech() {
         .must_not_analyze_as_core
         .iter()
         .any(|x| x.contains("biotech")));
+}
+
+fn temp_ai_dirs(name: &str) -> (std::path::PathBuf, std::path::PathBuf) {
+    let stamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let root = std::env::temp_dir().join(format!("research_ai_test_{name}_{stamp}"));
+    let metadata = root.join("metadata");
+    let ai = root.join("ai");
+    fs::create_dir_all(&metadata).unwrap();
+    fs::create_dir_all(&ai).unwrap();
+    (metadata, ai)
+}
+
+#[test]
+fn require_external_ai_without_key_fails() {
+    let _guard = ENV_LOCK.lock().unwrap();
+    std::env::remove_var("OPENAI_API_KEY");
+    std::env::remove_var("OPENAI_MOCK_SUCCESS");
+    let payload = ProviderPayload {
+        ticker: "AAPL".into(),
+        ..Default::default()
+    };
+    let (metadata, ai) = temp_ai_dirs("missing_key");
+    let result = run_ai_usage_gate(
+        &payload,
+        &AiRunOptions {
+            ai_mode: "compact".into(),
+            require_external_ai: true,
+            no_ai_cache: true,
+        },
+        &metadata,
+        &ai,
+    );
+    assert!(result.is_err());
+    let usage = fs::read_to_string(metadata.join("ai_usage.json")).unwrap();
+    assert!(usage.contains("\"external_ai_used\": false"));
+    assert!(usage.contains("OPENAI_API_KEY missing"));
+}
+
+#[test]
+fn local_ai_mode_does_not_call_external_api() {
+    let _guard = ENV_LOCK.lock().unwrap();
+    std::env::set_var("OPENAI_API_KEY", "sk-test-not-used");
+    let payload = ProviderPayload {
+        ticker: "AAPL".into(),
+        ..Default::default()
+    };
+    let (metadata, ai) = temp_ai_dirs("local");
+    let usage = run_ai_usage_gate(
+        &payload,
+        &AiRunOptions {
+            ai_mode: "local".into(),
+            require_external_ai: false,
+            no_ai_cache: false,
+        },
+        &metadata,
+        &ai,
+    )
+    .unwrap();
+    assert!(!usage.external_ai_used);
+    assert!(usage.local_mock_used);
+    assert_eq!(usage.ai_calls, 0);
+}
+
+#[test]
+fn no_ai_cache_forces_mocked_external_request() {
+    let _guard = ENV_LOCK.lock().unwrap();
+    std::env::set_var("OPENAI_API_KEY", "sk-test-mocked");
+    std::env::set_var("OPENAI_MOCK_SUCCESS", "1");
+    let payload = ProviderPayload {
+        ticker: "AAPL".into(),
+        ..Default::default()
+    };
+    let (metadata, ai) = temp_ai_dirs("external_mock");
+    let usage = run_ai_usage_gate(
+        &payload,
+        &AiRunOptions {
+            ai_mode: "compact".into(),
+            require_external_ai: true,
+            no_ai_cache: true,
+        },
+        &metadata,
+        &ai,
+    )
+    .unwrap();
+    assert!(usage.external_ai_used);
+    assert!(!usage.local_mock_used);
+    assert!(usage.new_external_ai_calls > 0);
+    assert_eq!(usage.cache_hits, 0);
+    std::env::remove_var("OPENAI_MOCK_SUCCESS");
 }

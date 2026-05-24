@@ -160,6 +160,20 @@ Run one company:
 research-rs/target/debug/research-rs run AAPL --mode standard --market us --provider auto --ai compact --lang both --run-id v5_aapl_validation --pack --force
 ```
 
+AI API usage is explicit. `--ai local` never calls OpenAI. `--ai compact` or
+`--ai full` can call OpenAI when `OPENAI_API_KEY` is set. Add
+`--require-external-ai --no-ai-cache` when you need a fresh, real OpenAI API
+call and want the run to fail instead of falling back:
+
+```bash
+export OPENAI_API_KEY="sk-..."
+research-rs/target/debug/research-rs run AAPL --ai compact --require-external-ai --no-ai-cache --run-id api_test_aapl
+cat reports/AAPL/runs/api_test_aapl/metadata/ai_usage.json
+```
+
+The key is read only from the environment. It is never written to reports,
+dashboards, logs, packs, or committed files.
+
 Run an A-share ticker. If the local A-share provider is unavailable, the run
 will produce a clear provider fallback instead of pretending full coverage:
 

@@ -60,6 +60,23 @@ External paid AI calls: 0.
 The current engine uses local compact analyst fallback. Full reports, CSVs, and
 charts were not sent to any external AI service.
 
+## AI API Usage Review
+
+- OPENAI_API_KEY present in this shell: No.
+- External OpenAI API used in committed validation artifacts: false.
+- Local fallback used in committed validation artifacts: true.
+- AI calls: 0 external paid calls in committed validation artifacts.
+- Tasks capable of external AI calls: company_understanding, financial_interpretation, research_blueprint, self_review.
+- Cache hits: recorded per run in `metadata/ai_usage.json`.
+- `--require-external-ai`: implemented. Missing `OPENAI_API_KEY` fails instead of falling back.
+- `--no-ai-cache`: implemented. With `--require-external-ai`, it forces fresh requests.
+- Manual gate checks run:
+  - missing key + `--require-external-ai --no-ai-cache`: failed before fallback and wrote `ai_usage.json`.
+  - `--ai local`: external_ai_used=false, local_mock_used=true, ai_calls=0.
+  - mocked external success with `OPENAI_MOCK_SUCCESS=1`: external_ai_used=true, local_mock_used=false, ai_calls=4, cache_hits=0.
+- API usage visible in OpenAI Platform: only when a real `OPENAI_API_KEY` is set and `OPENAI_MOCK_SUCCESS` is not used. This environment had no key, so no paid usage should appear.
+- Important boundary: when `external_ai_used=false`, the system must not claim a real external AI analyst ran.
+
 ## Content Quality Review
 
 Latest quality runs:

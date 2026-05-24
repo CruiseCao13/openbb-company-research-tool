@@ -333,6 +333,8 @@ pub fn run_quality(options: &QualityRunOptions) -> Result<PathBuf> {
         workers: options.workers,
         ai_mode: options.ai_mode.clone(),
         mode: "batch".to_string(),
+        require_external_ai: false,
+        no_ai_cache: false,
         run_id: batch_run_id,
         limit: options.limit,
         offset: options.offset,
