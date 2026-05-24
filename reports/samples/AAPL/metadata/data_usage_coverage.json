@@ -1,0 +1,120 @@
+{
+  "critical_unused_fields": [],
+  "fetched_data_fields": [
+    {
+      "fetched": true,
+      "field": "price history",
+      "source": "price_history",
+      "unused_reason": "",
+      "used_in_appendix": true,
+      "used_in_chart": true,
+      "used_in_report": true,
+      "used_in_table": false
+    },
+    {
+      "fetched": true,
+      "field": "revenue",
+      "source": "income_statement",
+      "unused_reason": "",
+      "used_in_appendix": true,
+      "used_in_chart": true,
+      "used_in_report": true,
+      "used_in_table": true
+    },
+    {
+      "fetched": true,
+      "field": "operating income",
+      "source": "income_statement",
+      "unused_reason": "",
+      "used_in_appendix": true,
+      "used_in_chart": true,
+      "used_in_report": true,
+      "used_in_table": true
+    },
+    {
+      "fetched": true,
+      "field": "net income",
+      "source": "income_statement",
+      "unused_reason": "",
+      "used_in_appendix": true,
+      "used_in_chart": false,
+      "used_in_report": true,
+      "used_in_table": true
+    },
+    {
+      "fetched": true,
+      "field": "operating cash flow",
+      "source": "cash_flow",
+      "unused_reason": "",
+      "used_in_appendix": true,
+      "used_in_chart": true,
+      "used_in_report": true,
+      "used_in_table": true
+    },
+    {
+      "fetched": true,
+      "field": "capex",
+      "source": "cash_flow",
+      "unused_reason": "",
+      "used_in_appendix": true,
+      "used_in_chart": true,
+      "used_in_report": true,
+      "used_in_table": true
+    },
+    {
+      "fetched": true,
+      "field": "free cash flow",
+      "source": "cash_flow",
+      "unused_reason": "",
+      "used_in_appendix": true,
+      "used_in_chart": true,
+      "used_in_report": true,
+      "used_in_table": true
+    },
+    {
+      "fetched": false,
+      "field": "cash",
+      "source": "balance_sheet",
+      "unused_reason": "Cash missing; runway and liquidity checks are limited.",
+      "used_in_appendix": true,
+      "used_in_chart": false,
+      "used_in_report": false,
+      "used_in_table": false
+    },
+    {
+      "fetched": true,
+      "field": "debt",
+      "source": "balance_sheet",
+      "unused_reason": "",
+      "used_in_appendix": true,
+      "used_in_chart": false,
+      "used_in_report": true,
+      "used_in_table": true
+    },
+    {
+      "fetched": true,
+      "field": "shares",
+      "source": "statements",
+      "unused_reason": "",
+      "used_in_appendix": true,
+      "used_in_chart": false,
+      "used_in_report": true,
+      "used_in_table": false
+    },
+    {
+      "fetched": true,
+      "field": "valuation multiples",
+      "source": "valuation_snapshot",
+      "unused_reason": "",
+      "used_in_appendix": true,
+      "used_in_chart": true,
+      "used_in_report": true,
+      "used_in_table": true
+    }
+  ],
+  "industry_critical_fields": [],
+  "missing_critical_fields": [
+    "cash"
+  ],
+  "validator_impact": "PASS"
+}

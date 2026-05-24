@@ -33,6 +33,7 @@
 | Overall status | PASS |
 | Provider status | PASS |
 | Visual lint | PASS |
+| PDF export | PASS |
 | AI mode | compact |
 | AI calls | 0 |
 | Cache hits | 0 |

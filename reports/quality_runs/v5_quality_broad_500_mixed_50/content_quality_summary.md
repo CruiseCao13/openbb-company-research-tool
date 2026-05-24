@@ -1,6 +1,6 @@
 # Content Quality Summary
 
-> Generated: 2026-05-25 05:03:10  
+> Generated: 2026-05-25 05:13:53  
 > Batch source: reports/batch_runs/v5_quality_broad_500_mixed_50_batch  
 > External AI Judge Calls: 0  
 > Judge mode: local deterministic compact review

@@ -105,6 +105,7 @@ pub fn report_status(
         cache_hits,
         provider_status,
         visual_lint_status: "PASS".to_string(),
+        pdf_export_status: "PASS".to_string(),
     }
 }
 
@@ -112,6 +113,9 @@ pub fn visual_lint(
     report: &str,
     dashboard_exists: bool,
     chart_manifest_exists: bool,
+    data_coverage_exists: bool,
+    chart_table_quality_exists: bool,
+    pdf_export_report_exists: bool,
 ) -> (String, Vec<String>) {
     let mut failures = Vec::new();
     if !report.starts_with('#') || !(report.contains("> Status:") || report.contains("> 状态："))
@@ -133,6 +137,15 @@ pub fn visual_lint(
     }
     if !chart_manifest_exists {
         failures.push("chart_manifest_exists".to_string());
+    }
+    if !data_coverage_exists {
+        failures.push("data_usage_coverage_report_exists".to_string());
+    }
+    if !chart_table_quality_exists {
+        failures.push("chart_table_quality_report_exists".to_string());
+    }
+    if !pdf_export_report_exists {
+        failures.push("pdf_export_report_exists".to_string());
     }
     if detect_forbidden_advice(report) {
         failures.push("no_forbidden_advice".to_string());

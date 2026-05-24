@@ -147,6 +147,7 @@ pub fn render_report(
 | Overall status | {status_value} |
 | Provider status | {provider_status} |
 | Visual lint | {visual_lint_status} |
+| PDF export | {pdf_export_status} |
 | AI mode | {ai_mode} |
 | AI calls | {ai_calls} |
 | Cache hits | {cache_hits} |
@@ -299,6 +300,7 @@ How to read this table: it tells you which locked data exists before relying on 
         status_value = status.overall_status,
         provider_status = status.provider_status,
         visual_lint_status = status.visual_lint_status,
+        pdf_export_status = status.pdf_export_status,
         ai_mode = status.ai_mode,
         ai_calls = status.ai_calls,
         cache_hits = status.cache_hits,
@@ -395,6 +397,7 @@ How to read this table：先看是否需要人工复核，再看研究框架是�
 | 总体状态 | {status_value} |
 | 数据源状态 | {provider_status} |
 | 视觉检查 | {visual_lint_status} |
+| PDF 导出 | {pdf_export_status} |
 | AI 模式 | {ai_mode} |
 
 ## 2. 公司身份
@@ -550,6 +553,7 @@ How to read this table：先看数据覆盖，再决定解释可信度。
         status_value = status.overall_status,
         provider_status = status.provider_status,
         visual_lint_status = status.visual_lint_status,
+        pdf_export_status = status.pdf_export_status,
         ai_mode = status.ai_mode,
         human_review = if status.human_review_required {
             "是"

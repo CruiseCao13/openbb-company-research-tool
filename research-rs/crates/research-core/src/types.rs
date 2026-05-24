@@ -153,6 +153,7 @@ pub struct ReportStatus {
     pub cache_hits: usize,
     pub provider_status: String,
     pub visual_lint_status: String,
+    pub pdf_export_status: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

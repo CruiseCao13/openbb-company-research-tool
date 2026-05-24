@@ -63,7 +63,7 @@ a {{ color: #8fd3ff; }}
 <div class="grid">
 <div class="card"><div class="label">Key Claim</div><p>{thesis}</p></div>
 <div class="card"><div class="label">Confidence</div><p>{confidence:?}</p></div>
-<div class="card"><div class="label">Source Links</div><p><a href="metadata/evidence_map.json">evidence_map.json</a> · <a href="metadata/data_inventory.json">data_inventory.json</a> · <a href="metadata/chart_plan.json">chart_plan.json</a></p></div>
+<div class="card"><div class="label">Source Links</div><p><a href="metadata/evidence_map.json">evidence_map.json</a> · <a href="metadata/data_inventory.json">data_inventory.json</a> · <a href="metadata/data_usage_coverage.json">data_usage_coverage.json</a> · <a href="metadata/chart_plan.json">chart_plan.json</a> · <a href="metadata/chart_table_quality.json">chart_table_quality.json</a></p></div>
 </div>
 <h2>Files</h2>
 <ul>
@@ -74,6 +74,9 @@ a {{ color: #8fd3ff; }}
 <li><a href="metadata/evidence_map.json">Evidence map</a></li>
 <li><a href="self_review/ai_self_review.md">AI self review</a></li>
 <li><a href="audit/validator_report.md">Validator report</a></li>
+<li><a href="audit/data_usage_coverage_report.md">Data usage coverage report</a></li>
+<li><a href="audit/chart_table_quality_report.md">Chart/table quality report</a></li>
+<li><a href="audit/pdf_export_report.md">PDF export report</a></li>
 </ul>
 </main></body></html>
 "#,

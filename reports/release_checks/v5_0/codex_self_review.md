@@ -7,6 +7,7 @@
 - JSON schemas for provider payload, company understanding, financial interpretation, research blueprint, AI self-review, report status, and batch summary.
 - v5 single-company command that creates report, raw, metadata, audit, self-review, pack, and dashboard artifacts.
 - v5 batch command that runs `broad_30_probe`, isolates ticker-level failures, writes matrix outputs, and generates local training cases.
+- Per-run data inventory, data usage coverage, chart plan, evidence map, chart/table quality report, and PDF export audit artifacts.
 
 ## What Was Not Built
 
@@ -20,6 +21,7 @@
 - `cargo test`
 - `cargo clippy --all-targets --all-features -- -D warnings`
 - Python provider syntax checks
+- `.venv/bin/python -m pytest -q`
 - AAPL v5 run
 - 600519.SH v5 run
 - broad_30 v5 batch
@@ -78,6 +80,9 @@ See `reports/release_checks/v5_0/display_review.md`.
 - Units: `metadata/unit_policy.json` is generated for each run.
 - Dashboard openable: Yes, static HTML is generated for single runs and batch.
 - PDF export: Yes, a dependency-free text-first PDF is generated for Markdown reports. It preserves chart explanations and source notes but does not embed PNG chart images.
+- Data usage coverage: Yes, `metadata/data_usage_coverage.json` and `audit/data_usage_coverage_report.md` map fetched critical fields to report/chart/table/appendix destinations or data gaps.
+- Chart/table judge: Yes, `metadata/chart_table_quality.json` and `audit/chart_table_quality_report.md` score relevance, readability, explanation, units, source trace, and visual polish.
+- Evidence map: Yes, key claims are mapped to provider sections, chart references, table references, confidence, and unsupported-claim status.
 - Folder structure: Clear v5 run folders with report/raw/metadata/audit/self_review/data/charts/pack/dashboard.
 - Template flavor: Reduced but not eliminated; local compact analyst remains less natural than future external AI.
 - Unsupported claims: Flagged in AI self-review instead of silently presented.

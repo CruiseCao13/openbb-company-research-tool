@@ -84,6 +84,17 @@ Validator 保护事实边界。
 Batch evaluation 负责持续验收。
 ```
 
+Responsibility map / 责任分工：
+
+```text
+Rust      -> CLI, run folders, cache, validation, rendering, pack, batch, visual lint
+Python    -> provider adapters, chart/PDF helper scripts, fallback data normalization
+AI layer  -> company understanding, money-flow interpretation, blueprint, self-review
+Templates -> Markdown/HTML/PDF structure only; never decide the investment thesis
+Validator -> locked-data boundaries, forbidden advice, visual/data coverage, quality gates
+Batch     -> cross-industry regression, training cases, quality trends
+```
+
 ### What It Does Not Do / 它不做什么
 
 - It does not give buy/sell/hold recommendations.
@@ -165,6 +176,32 @@ reports/TICKER/runs/RUN_ID/
   dashboard.html
 ```
 
+Expanded run folder / 完整输出包：
+
+```text
+reports/AAPL/runs/v5_aapl_p0_final/
+  report/AAPL_research_report.md
+  report/AAPL_research_report_cn.md
+  report/AAPL_research_report.pdf
+  dashboard.html
+  raw/provider_payload.json
+  metadata/company_understanding.json
+  metadata/financial_interpretation.json
+  metadata/research_blueprint.json
+  metadata/data_inventory.json
+  metadata/data_usage_coverage.json
+  metadata/chart_plan.json
+  metadata/evidence_map.json
+  metadata/chart_table_quality.json
+  audit/data_usage_coverage_report.md
+  audit/chart_table_quality_report.md
+  audit/pdf_export_report.md
+  audit/visual_lint_report.md
+  self_review/ai_self_review.md
+  charts/Figure_01_price_vs_benchmark.png
+  pack/AAPL_research_pack.zip
+```
+
 Start with `report/TICKER_research_report.md`, then inspect
 `dashboard.html`, `metadata/research_blueprint.json`,
 `self_review/ai_self_review.md`, and `audit/validator_report.md`.
@@ -201,6 +238,12 @@ Sample v5 report packs are checked in under `reports/samples/`:
 - `reports/samples/ISRG/`
 - `reports/samples/AMD/`
 - `reports/samples/600519.SH/`
+
+Sample dashboard path / 示例 dashboard：
+
+```text
+reports/samples/AAPL/dashboard.html
+```
 
 Each sample includes a Markdown report, dashboard, core chart files, company
 understanding JSON, research blueprint JSON, AI self-review, validator report,

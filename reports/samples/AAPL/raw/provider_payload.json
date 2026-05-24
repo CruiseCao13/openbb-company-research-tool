@@ -2,7 +2,7 @@
   "ticker": "AAPL",
   "market": "US",
   "provider": "yfinance",
-  "fetched_at": "2026-05-24T20:58:55.843238+00:00",
+  "fetched_at": "2026-05-24T21:09:46.634318+00:00",
   "company_profile": {
     "name": "Apple Inc.",
     "sector": "Technology",

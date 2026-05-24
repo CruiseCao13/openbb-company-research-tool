@@ -11,5 +11,6 @@
   "ai_calls": 0,
   "cache_hits": 0,
   "provider_status": "PASS",
-  "visual_lint_status": "PASS"
+  "visual_lint_status": "PASS",
+  "pdf_export_status": "PASS"
 }

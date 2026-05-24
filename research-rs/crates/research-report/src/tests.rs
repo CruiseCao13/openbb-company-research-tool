@@ -1,5 +1,6 @@
 use crate::markdown::render_report;
 use research_core::types::*;
+use research_core::validation::visual_lint;
 
 #[test]
 fn report_renderer_has_required_sections() {
@@ -81,6 +82,7 @@ fn report_renderer_has_required_sections() {
         cache_hits: 0,
         provider_status: "PASS".into(),
         visual_lint_status: "PASS".into(),
+        pdf_export_status: "PASS".into(),
     };
     let report = render_report(
         &payload,
@@ -92,4 +94,29 @@ fn report_renderer_has_required_sections() {
     );
     assert!(report.contains("## 4. Money Flow"));
     assert!(report.contains("## 13. Appendix: Locked Data"));
+}
+
+#[test]
+fn readme_is_bilingual() {
+    let readme = include_str!("../../../../README.md");
+    assert!(readme.contains("What It Does"));
+    assert!(readme.contains("它做什么"));
+    assert!(readme.contains("免责声明"));
+}
+
+#[test]
+fn readme_has_mermaid_pipeline() {
+    let readme = include_str!("../../../../README.md");
+    assert!(readme.contains("```mermaid"));
+    assert!(readme.contains("Provider Data"));
+    assert!(readme.contains("Responsibility map"));
+    assert!(readme.contains("reports/samples/AAPL/dashboard.html"));
+}
+
+#[test]
+fn visual_lint_checks_data_coverage() {
+    let report = "# AAPL Company Research Report\n\n> Status: PASS\n\n## Table of Contents\n\n## 1. Report Status\n\nWhat to look at:\nWhat to look at:\nWhat to look at:\nWhat to look at:\nWhat to look at:\n";
+    let (status, failures) = visual_lint(report, true, true, false, true, true);
+    assert_eq!(status, "FAIL");
+    assert!(failures.contains(&"data_usage_coverage_report_exists".to_string()));
 }
