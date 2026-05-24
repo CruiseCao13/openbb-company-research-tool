@@ -27,6 +27,15 @@ FIGURES = [
     ("Figure_05_valuation_frame.png", "Valuation Frame", "valuation"),
 ]
 
+THEME = {
+    "target": "#2563eb",
+    "risk": "#dc2626",
+    "money": "#059669",
+    "valuation": "#7c3aed",
+    "grid": "#94a3b8",
+    "text": "#0f172a",
+}
+
 
 def _rows(payload: dict[str, Any], section: str, needles: list[str]) -> list[tuple[str, float]]:
     out: list[tuple[str, float]] = []
@@ -58,14 +67,14 @@ def _write_gap(path: Path, figure_no: int, title: str, reason: str) -> dict[str,
     }
 
 
-def _save_line_chart(path: Path, title: str, subtitle: str, x: list[str], y: list[float], ylabel: str) -> None:
-    fig, ax = plt.subplots(figsize=(8.75, 5), dpi=160)
-    ax.plot(x, y, color="#2563eb", linewidth=2.2, marker="o", label=title)
-    ax.set_title(title, fontsize=13, weight="bold")
-    ax.text(0, 1.02, subtitle, transform=ax.transAxes, fontsize=9, color="#475569")
+def _save_line_chart(path: Path, title: str, subtitle: str, x: list[str], y: list[float], ylabel: str, color: str = THEME["target"]) -> None:
+    fig, ax = plt.subplots(figsize=(10, 5.625), dpi=160)
+    ax.plot(x, y, color=color, linewidth=2.4, marker="o", markersize=3.8, label=title)
+    ax.set_title(title, fontsize=15, weight="bold", color=THEME["text"])
+    ax.text(0, 1.025, subtitle, transform=ax.transAxes, fontsize=10, color="#475569")
     ax.set_xlabel("Period")
     ax.set_ylabel(ylabel)
-    ax.grid(True, alpha=0.25)
+    ax.grid(True, alpha=0.22, color=THEME["grid"])
     ax.legend(loc="best")
     fig.tight_layout()
     fig.savefig(path)
@@ -95,7 +104,7 @@ def generate(payload_path: Path, chart_dir: Path) -> list[dict[str, Any]]:
                 y,
                 f"Price ({currency})",
             )
-            manifest.append({"figure": 1, "title": "Price / Benchmark Performance", "file": price_file.name, "status": "PASS", "source": "provider_payload.json"})
+            manifest.append({"figure": 1, "title": "Price / Benchmark Performance", "file": price_file.name, "status": "PASS", "source": "provider_payload.json", "data_used": ["price_history.close"], "research_question": "How did the stock's price path behave over the available period?", "why_selected": "Price path is the starting evidence for opportunity cost and volatility context."})
         else:
             manifest.append(_write_gap(price_file, 1, "Price / Benchmark Performance", "price history has missing close values"))
     else:
@@ -110,8 +119,8 @@ def generate(payload_path: Path, chart_dir: Path) -> list[dict[str, Any]]:
         for c in closes:
             peak = max(peak, c)
             dd.append((c / peak - 1.0) * 100.0)
-        _save_line_chart(drawdown_file, f"Figure 2. {ticker} drawdown path", f"{ticker} | provider: {provider} | unit: %", dates, dd, "Drawdown (%)")
-        manifest.append({"figure": 2, "title": "Drawdown / Risk Path", "file": drawdown_file.name, "status": "PASS", "source": "provider_payload.json"})
+        _save_line_chart(drawdown_file, f"Figure 2. {ticker} drawdown path", f"{ticker} | provider: {provider} | unit: %", dates, dd, "Drawdown (%)", THEME["risk"])
+        manifest.append({"figure": 2, "title": "Drawdown / Risk Path", "file": drawdown_file.name, "status": "PASS", "source": "provider_payload.json", "data_used": ["price_history.close"], "research_question": "How large were the peak-to-trough losses?", "why_selected": "Drawdown makes the risk path visible instead of hiding it behind return numbers."})
     else:
         manifest.append(_write_gap(drawdown_file, 2, "Drawdown / Risk Path", "not enough valid price history"))
 
@@ -120,7 +129,7 @@ def generate(payload_path: Path, chart_dir: Path) -> list[dict[str, Any]]:
     if revenue:
         x, y = zip(*revenue[:5])
         _save_line_chart(fin_file, f"Figure 3. {ticker} revenue trend", f"{ticker} | source: provider_payload.json | unit: {currency}", list(x), list(y), f"Revenue ({currency})")
-        manifest.append({"figure": 3, "title": "Financial Trend", "file": fin_file.name, "status": "PASS", "source": "provider_payload.json"})
+        manifest.append({"figure": 3, "title": "Financial Trend", "file": fin_file.name, "status": "PASS", "source": "provider_payload.json", "data_used": ["income_statement.revenue"], "research_question": "Is the company showing financial progression?", "why_selected": "Revenue trend is a first-pass anchor before interpreting margins and cash flow."})
     else:
         manifest.append(_write_gap(fin_file, 3, "Financial Trend", "revenue trend not available"))
 
@@ -128,8 +137,8 @@ def generate(payload_path: Path, chart_dir: Path) -> list[dict[str, Any]]:
     cash = _rows(payload, "cash_flow", ["operating cash flow", "cash from operations", "capital expenditure", "capex"])
     if cash:
         x, y = zip(*cash[:6])
-        _save_line_chart(money_file, f"Figure 4. {ticker} money-flow signals", f"{ticker} | source: provider_payload.json | unit: {currency}", list(x), list(y), f"Cash flow ({currency})")
-        manifest.append({"figure": 4, "title": "Money Flow / Cash Flow Bridge", "file": money_file.name, "status": "PASS", "source": "provider_payload.json"})
+        _save_line_chart(money_file, f"Figure 4. {ticker} money-flow signals", f"{ticker} | source: provider_payload.json | unit: {currency}", list(x), list(y), f"Cash flow ({currency})", THEME["money"])
+        manifest.append({"figure": 4, "title": "Money Flow / Cash Flow Bridge", "file": money_file.name, "status": "PASS", "source": "provider_payload.json", "data_used": ["cash_flow.operating_cash_flow", "cash_flow.capex"], "research_question": "Where does cash come from and where is it consumed?", "why_selected": "Money flow is central to judging whether the business funds itself or consumes external capital."})
     else:
         manifest.append(_write_gap(money_file, 4, "Money Flow / Cash Flow Bridge", "cash-flow bridge data not available"))
 
@@ -137,8 +146,8 @@ def generate(payload_path: Path, chart_dir: Path) -> list[dict[str, Any]]:
     valuation = payload.get("valuation_snapshot", {})
     vals = [(k, v) for k, v in valuation.items() if isinstance(v, (int, float)) and v and v > 0][:5]
     if vals:
-        fig, ax = plt.subplots(figsize=(8.75, 5), dpi=160)
-        ax.bar([k for k, _ in vals], [float(v) for _, v in vals], color="#7c3aed", label="valuation")
+        fig, ax = plt.subplots(figsize=(10, 5.625), dpi=160)
+        ax.bar([k for k, _ in vals], [float(v) for _, v in vals], color=THEME["valuation"], label="valuation")
         ax.set_title(f"Figure 5. {ticker} valuation frame", fontsize=13, weight="bold")
         ax.text(0, 1.02, f"{ticker} | source: provider_payload.json | unit: x or currency as reported", transform=ax.transAxes, fontsize=9, color="#475569")
         ax.set_ylabel("Reported value")
@@ -146,7 +155,7 @@ def generate(payload_path: Path, chart_dir: Path) -> list[dict[str, Any]]:
         fig.tight_layout()
         fig.savefig(val_file)
         plt.close(fig)
-        manifest.append({"figure": 5, "title": "Valuation Frame", "file": val_file.name, "status": "PASS", "source": "provider_payload.json"})
+        manifest.append({"figure": 5, "title": "Valuation Frame", "file": val_file.name, "status": "PASS", "source": "provider_payload.json", "data_used": ["valuation_snapshot"], "research_question": "Which valuation lens is available and meaningful?", "why_selected": "Valuation charts should frame expectations, not imply a target price."})
     else:
         manifest.append(_write_gap(val_file, 5, "Valuation Frame", "valuation multiples are not available or not meaningful"))
 
@@ -164,4 +173,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

@@ -1,0 +1,84 @@
+{
+  "available_data": {
+    "balance_sheet": true,
+    "buybacks": false,
+    "cash_flow": true,
+    "company_profile": true,
+    "debt_schedule": false,
+    "dividends": false,
+    "income_statement": true,
+    "industry_kpis": false,
+    "price_history": true,
+    "segments": false,
+    "shares": false,
+    "valuation_snapshot": true
+  },
+  "critical_unused_data": [],
+  "data_fields": [
+    {
+      "field": "company_profile",
+      "periods_available": 1,
+      "reason_if_unused": "Text field; used in company identity and dashboard cards.",
+      "source": "company_profile",
+      "used_in_chart": false,
+      "used_in_report": true,
+      "used_in_table": true
+    },
+    {
+      "field": "price_history.close",
+      "periods_available": 260,
+      "reason_if_unused": "",
+      "source": "price_history",
+      "used_in_chart": true,
+      "used_in_report": true,
+      "used_in_table": false
+    },
+    {
+      "field": "revenue",
+      "periods_available": 20,
+      "reason_if_unused": "",
+      "source": "income_statement",
+      "used_in_chart": true,
+      "used_in_report": true,
+      "used_in_table": true
+    },
+    {
+      "field": "operating_cash_flow_or_capex",
+      "periods_available": 200,
+      "reason_if_unused": "",
+      "source": "cash_flow",
+      "used_in_chart": true,
+      "used_in_report": true,
+      "used_in_table": true
+    },
+    {
+      "field": "valuation_snapshot",
+      "periods_available": 1,
+      "reason_if_unused": "",
+      "source": "valuation_snapshot",
+      "used_in_chart": true,
+      "used_in_report": true,
+      "used_in_table": true
+    },
+    {
+      "field": "segments",
+      "periods_available": 0,
+      "reason_if_unused": "Segment data not available; shown as data gap/manual check.",
+      "source": "segments",
+      "used_in_chart": false,
+      "used_in_report": false,
+      "used_in_table": false
+    }
+  ],
+  "missing_critical_data": [],
+  "non_visualized_but_explained": [
+    {
+      "data": "company_profile.description",
+      "reason": "Text field; explained in company identity/business model instead of charted."
+    },
+    {
+      "data": "AI research blueprint",
+      "reason": "Interpretive artifact; summarized in tables/dashboard rather than plotted."
+    }
+  ]
+}

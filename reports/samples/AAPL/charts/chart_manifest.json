@@ -4,34 +4,60 @@
     "title": "Price / Benchmark Performance",
     "file": "Figure_01_price_vs_benchmark.png",
     "status": "PASS",
-    "source": "provider_payload.json"
+    "source": "provider_payload.json",
+    "data_used": [
+      "price_history.close"
+    ],
+    "research_question": "How did the stock's price path behave over the available period?",
+    "why_selected": "Price path is the starting evidence for opportunity cost and volatility context."
   },
   {
     "figure": 2,
     "title": "Drawdown / Risk Path",
     "file": "Figure_02_drawdown.png",
     "status": "PASS",
-    "source": "provider_payload.json"
+    "source": "provider_payload.json",
+    "data_used": [
+      "price_history.close"
+    ],
+    "research_question": "How large were the peak-to-trough losses?",
+    "why_selected": "Drawdown makes the risk path visible instead of hiding it behind return numbers."
   },
   {
     "figure": 3,
     "title": "Financial Trend",
     "file": "Figure_03_financial_trend.png",
     "status": "PASS",
-    "source": "provider_payload.json"
+    "source": "provider_payload.json",
+    "data_used": [
+      "income_statement.revenue"
+    ],
+    "research_question": "Is the company showing financial progression?",
+    "why_selected": "Revenue trend is a first-pass anchor before interpreting margins and cash flow."
   },
   {
     "figure": 4,
     "title": "Money Flow / Cash Flow Bridge",
     "file": "Figure_04_money_flow.png",
     "status": "PASS",
-    "source": "provider_payload.json"
+    "source": "provider_payload.json",
+    "data_used": [
+      "cash_flow.operating_cash_flow",
+      "cash_flow.capex"
+    ],
+    "research_question": "Where does cash come from and where is it consumed?",
+    "why_selected": "Money flow is central to judging whether the business funds itself or consumes external capital."
   },
   {
     "figure": 5,
     "title": "Valuation Frame",
     "file": "Figure_05_valuation_frame.png",
     "status": "PASS",
-    "source": "provider_payload.json"
+    "source": "provider_payload.json",
+    "data_used": [
+      "valuation_snapshot"
+    ],
+    "research_question": "Which valuation lens is available and meaningful?",
+    "why_selected": "Valuation charts should frame expectations, not imply a target price."
   }
 ]

@@ -1,0 +1,60 @@
+{
+  "ai_interpretation": [
+    {
+      "chart_refs": [],
+      "claim": "Apple Inc. is best treated as Mature Consumer Technology Compounder based on the locked provider profile and financial context.",
+      "confidence": "MEDIUM",
+      "data_refs": [
+        "company_profile"
+      ],
+      "evidence_type": "AI_interpretation",
+      "section": "Company Identity",
+      "table_refs": [
+        "Table_1_status_summary"
+      ],
+      "unsupported": false
+    },
+    {
+      "chart_refs": [
+        "Figure_04_money_flow"
+      ],
+      "claim": "Money comes from operating revenue when available, operating cash flow if positive, and financing when operating cash is insufficient.",
+      "confidence": "MEDIUM",
+      "data_refs": [
+        "income_statement",
+        "cash_flow",
+        "balance_sheet"
+      ],
+      "evidence_type": "AI_interpretation",
+      "section": "Money Flow",
+      "table_refs": [
+        "Table_3_money_flow_summary"
+      ],
+      "unsupported": false
+    },
+    {
+      "chart_refs": [
+        "Figure_03_financial_trend",
+        "Figure_04_money_flow",
+        "Figure_05_valuation_frame"
+      ],
+      "claim": "The central research question is whether the Mature Consumer Technology Compounder frame is supported by locked data and company-specific evidence.",
+      "confidence": "MEDIUM",
+      "data_refs": [
+        "provider_payload",
+        "company_understanding",
+        "financial_interpretation"
+      ],
+      "evidence_type": "AI_interpretation",
+      "section": "AI Research Blueprint",
+      "table_refs": [
+        "Table_4_research_blueprint"
+      ],
+      "unsupported": false
+    }
+  ],
+  "assumption": [],
+  "data_gap": [],
+  "locked_data_supported": [],
+  "unsupported": []
+}

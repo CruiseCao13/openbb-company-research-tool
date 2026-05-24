@@ -1,7 +1,7 @@
 {
   "ticker": "AAPL",
   "run_id": "v5_aapl_p0_final",
-  "generated_at": "2026-05-25T04:38:24.406667+08:00",
+  "generated_at": "2026-05-25T04:58:57.555202+08:00",
   "files": [
     "charts/Figure_03_financial_trend.png",
     "charts/Figure_04_money_flow.png",
@@ -12,8 +12,11 @@
     "dashboard.html",
     "README.md",
     "audit/lint_report.md",
+    "audit/data_inventory_report.md",
     "audit/visual_lint_report.md",
     "audit/data_quality.md",
+    "audit/chart_selection_report.md",
+    "audit/evidence_map.md",
     "audit/provider_validation.md",
     "audit/validator_report.md",
     "self_review/ai_self_review.json",
@@ -27,6 +30,10 @@
     "metadata/report_status.json",
     "metadata/company_understanding.json",
     "metadata/research_blueprint.json",
+    "metadata/evidence_map.json",
+    "metadata/data_inventory.json",
+    "metadata/chart_plan.json",
+    "metadata/prompt_versions.json",
     "raw/provider_payload.json"
   ],
   "report_status": "PASS",
