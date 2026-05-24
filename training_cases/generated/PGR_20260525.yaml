@@ -1,7 +1,10 @@
 ticker: PGR
 company_name: PGR
 detected_profile: Insurance-like Screening
-expected_profile: Insurance-like Screening / Financials
+expected_profile: Insurance-like Screening
+expected_profile_family: Insurance-like Screening
+profile_conflict: False
+human_review_required: False
 report_status: {"DATA_AUDIT_STATUS": "WARNING", "RISK_METHOD_STATUS": "PASS", "AI_ANALYST_REVIEW_STATUS": "PASS", "LANGUAGE_LINT_STATUS": "PASS", "PRICE_LABEL_CHECK_STATUS": "PASS", "LIFECYCLE_LOGIC_STATUS": "PASS", "COMPANY_SPECIFICITY_STATUS": "WARNING", "PATCH_STATUS": "APPLIED", "PATCH_MATERIALITY_STATUS": "FALLBACK_PATCH_APPLIED", "FALLBACK_STATUS": "USED", "FALLBACK_USED_COUNT": 2, "FRAMEWORK_COVERAGE_LEVEL": "SCREENING_ONLY", "ASSET_PROFILE": "Insurance-like Screening", "DATA_VERIFICATION_STATUS": "WARNING", "THESIS_VERIFICATION_STATUS": "UNVERIFIED", "OVERALL_REPORT_STATUS": "UNVERIFIED", "PRESENTATION_STATUS": "PASS"}
 failed_checks:
 wrong_output: 
@@ -14,7 +17,6 @@ expected_output_features:
   - investment income
   - float
   - catastrophe exposure
-  - premium growth quality
 must_contain:
   - combined ratio
   - underwriting margin
@@ -23,9 +25,7 @@ must_contain:
   - float
   - catastrophe exposure
 must_not_contain:
-  - generic monitoring
-  - full report rewrite
-reason: Deterministic linter found weak or missing company-specific interpretation.
+reason: Deterministic linter generated this case.
 data_refs_used:
   - metadata/asset_profile.json
   - metadata/report_status.json

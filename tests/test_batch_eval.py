@@ -11,19 +11,20 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import batch_eval  # noqa: E402
 
 
-def _write_run_folder(base: Path, ticker: str, run_id: str, *, outcome: str = "pass", patch: bool = True) -> Path:
+def _write_run_folder(base: Path, ticker: str, run_id: str, *, outcome: str = "pass", patch: bool = True, profile_override: dict | None = None) -> Path:
     run_dir = base / ticker / "runs" / run_id
     for folder in ["report", "charts", "data", "audit", "ai", "dashboard", "metadata", "self_review"]:
         (run_dir / folder).mkdir(parents=True, exist_ok=True)
     (run_dir / "README.md").write_text("readme", encoding="utf-8")
     (run_dir / "charts" / "Figure_01_price_actual.png").write_bytes(b"png")
-    profile = {
+    profile = profile_override or {
         "primary_profile": "Mature Compounder" if outcome == "pass" else "Unknown / Data-Limited Screening",
         "secondary_profile": "Biotech-like Screening" if outcome != "pass" else "",
         "framework_coverage_level": "FULL" if outcome == "pass" else "SCREENING_ONLY",
         "dominant_metric_set": ["pipeline", "clinical trial", "cash runway", "dilution"] if outcome != "pass" else ["free cash flow", "margin durability"],
         "data_deficit_flags": ["pipeline stage"] if outcome != "pass" else [],
         "business_model_clues": ["biotech platform"] if outcome != "pass" else [],
+        "suggested_framework_extension": "Biotech Research Profile" if outcome != "pass" else "",
     }
     status = {
         "DATA_VERIFICATION_STATUS": "PASS",
@@ -232,7 +233,9 @@ def test_batch_summary_md_has_dashboard_sections(tmp_path, monkeypatch):
         "Executive Summary",
         "Status Dashboard",
         "What Worked",
-        "What Failed",
+        "Actual Failures",
+        "Reports Requiring Review",
+        "Expected Unverified",
         "Failure Type Distribution",
         "Profile Distribution",
         "Generated Training Cases",
@@ -240,6 +243,28 @@ def test_batch_summary_md_has_dashboard_sections(tmp_path, monkeypatch):
         "Known Limitations",
     ]:
         assert heading in text
+
+
+def test_batch_profile_matches_single_run_profile_for_intc(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    eval_set = tmp_path / "mini.yaml"
+    eval_set.write_text("name: mini\ngroups:\n  semiconductor_turnaround:\n    - INTC\n", encoding="utf-8")
+    intc_profile = {
+        "primary_profile": "Capital-Intensive Semiconductor Turnaround",
+        "secondary_profile": "Hybrid / Technology Manufacturing",
+        "framework_coverage_level": "PARTIAL",
+        "dominant_metric_set": ["foundry execution", "capex intensity", "gross margin recovery"],
+        "data_deficit_flags": ["foundry revenue / margin", "capex roadmap"],
+        "business_model_clues": ["Semiconductor / manufacturing turnaround"],
+        "suggested_framework_extension": "Semiconductor / Manufacturing Turnaround Research Profile",
+    }
+
+    def fake_runner(**kwargs):
+        run_dir = _write_run_folder(tmp_path / "reports", "INTC", kwargs["run_id"], profile_override=intc_profile)
+        return {"symbol": "INTC", "folder": str(run_dir), "score": 50.0}
+
+    result = batch_eval.run_batch(str(eval_set), runner=fake_runner)
+    assert result.results[0].asset_profile["primary_profile"] == "Capital-Intensive Semiconductor Turnaround"
 
 
 def test_failures_md_has_failure_detail_sections(tmp_path, monkeypatch):
@@ -270,8 +295,46 @@ def test_profile_distribution_md_lists_profiles(tmp_path, monkeypatch):
     result = batch_eval.run_batch(str(eval_set), runner=_fake_runner_factory(tmp_path / "reports"))
     text = (Path(result.out_dir) / "profile_distribution.md").read_text()
     assert "Why this matters" in text
-    assert "Mature Compounder" in text
-    assert "Unknown / Data-Limited Screening" in text
+    assert "Primary Profile" in text
+    assert "Secondary Profile" in text
+    assert "Framework Coverage" in text
+    assert "Suggested Extension" in text
+
+
+def test_batch_summary_does_not_label_expected_unverified_as_failed(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    eval_set = tmp_path / "mini.yaml"
+    eval_set.write_text("name: mini\ngroups:\n  biotech_like:\n    - RXRX\n", encoding="utf-8")
+    result = batch_eval.run_batch(str(eval_set), runner=_fake_runner_factory(tmp_path / "reports"))
+    text = (Path(result.out_dir) / "batch_summary.md").read_text()
+    actual_failures = text.split("## 4. Actual Failures", 1)[1].split("## 5. Reports Requiring Review", 1)[0]
+    assert "RXRX" not in actual_failures
+    assert "RXRX" in text.split("## 5. Reports Requiring Review", 1)[1]
+
+
+def test_training_case_does_not_use_low_confidence_detected_profile_as_expected():
+    ticker_result = batch_eval.TickerRunResult(
+        ticker="MYST",
+        status="COMPLETED_WITH_WARNINGS",
+        asset_profile={
+            "primary_profile": "Unknown / Data-Limited Screening",
+            "secondary_profile": "Biotech-like Screening",
+            "sector_confidence": "LOW",
+            "framework_coverage_level": "SCREENING_ONLY",
+            "dominant_metric_set": ["pipeline stage"],
+        },
+        report_status={"OVERALL_REPORT_STATUS": "UNVERIFIED"},
+    )
+    lint = batch_eval.LintResult(ticker="MYST", status="WARNING")
+    case = batch_eval.generate_training_case(ticker_result, lint, None)
+    assert case["expected_profile"] == "HUMAN_REVIEW_REQUIRED"
+    assert case["human_review_required"] is True
+
+    ticker_result.expected_profile_family = "Shipping / Airlines / Transport"
+    conflict_case = batch_eval.generate_training_case(ticker_result, lint, None)
+    assert conflict_case["profile_conflict"] is True
+    assert "freight rate / yield" in conflict_case["must_contain"]
+    assert "pipeline" in conflict_case["must_not_contain"]
 
 
 def test_training_cases_are_linked_in_summary(tmp_path, monkeypatch):

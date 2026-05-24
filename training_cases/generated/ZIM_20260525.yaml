@@ -1,25 +1,37 @@
 ticker: ZIM
 company_name: ZIM
-detected_profile: Unknown / Data-Limited Screening
-expected_profile: Unknown / Data-Limited Screening
-report_status: {"DATA_AUDIT_STATUS": "WARNING", "RISK_METHOD_STATUS": "PASS", "AI_ANALYST_REVIEW_STATUS": "PASS", "LANGUAGE_LINT_STATUS": "PASS", "PRICE_LABEL_CHECK_STATUS": "PASS", "LIFECYCLE_LOGIC_STATUS": "PASS", "COMPANY_SPECIFICITY_STATUS": "WARNING", "PATCH_STATUS": "APPLIED", "PATCH_MATERIALITY_STATUS": "FALLBACK_PATCH_APPLIED", "FALLBACK_STATUS": "USED", "FALLBACK_USED_COUNT": 2, "FRAMEWORK_COVERAGE_LEVEL": "SCREENING_ONLY", "ASSET_PROFILE": "Unknown / Data-Limited Screening", "DATA_VERIFICATION_STATUS": "WARNING", "THESIS_VERIFICATION_STATUS": "UNVERIFIED", "OVERALL_REPORT_STATUS": "UNVERIFIED", "PRESENTATION_STATUS": "PASS"}
+detected_profile: Shipping / Airlines / Transport
+expected_profile: Shipping / Airlines / Transport
+expected_profile_family: Shipping / Airlines / Transport
+profile_conflict: False
+human_review_required: False
+report_status: {"DATA_AUDIT_STATUS": "WARNING", "RISK_METHOD_STATUS": "PASS", "AI_ANALYST_REVIEW_STATUS": "PASS", "LANGUAGE_LINT_STATUS": "PASS", "PRICE_LABEL_CHECK_STATUS": "PASS", "LIFECYCLE_LOGIC_STATUS": "PASS", "COMPANY_SPECIFICITY_STATUS": "PASS", "PATCH_STATUS": "APPLIED", "PATCH_MATERIALITY_STATUS": "MATERIAL_PATCH_APPLIED", "FALLBACK_STATUS": "USED", "FALLBACK_USED_COUNT": 1, "FRAMEWORK_COVERAGE_LEVEL": "PARTIAL", "ASSET_PROFILE": "Shipping / Airlines / Transport", "DATA_VERIFICATION_STATUS": "WARNING", "THESIS_VERIFICATION_STATUS": "WARNING", "OVERALL_REPORT_STATUS": "WARNING", "PRESENTATION_STATUS": "PASS"}
 failed_checks:
 wrong_output: 
 failure_reason: Deterministic linter generated this case.
 suggested_fix: Inspect failed checks and convert repeated issues into deterministic tests.
 expected_output_features:
-  - cash runway
-  - R&D burn
-  - pipeline stage
-  - trial milestones
-  - dilution
+  - freight rate / yield
+  - fleet utilization
+  - fuel cost
+  - fleet age
+  - orderbook
+  - leverage
+  - cycle sensitivity
 must_contain:
-  - cash runway
-  - R&D burn
-  - pipeline stage
-  - trial milestones
-  - dilution
+  - freight rate / yield
+  - fleet utilization
+  - fuel cost
+  - fleet age
+  - orderbook
+  - leverage
+  - cycle sensitivity
 must_not_contain:
+  - pipeline
+  - clinical trial
+  - FDA
+  - regulatory milestones
+  - drug candidate
 reason: Deterministic linter generated this case.
 data_refs_used:
   - metadata/asset_profile.json

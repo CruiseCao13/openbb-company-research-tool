@@ -1,26 +1,34 @@
 ticker: INTC
 company_name: INTC
-detected_profile: Unknown / Data-Limited Screening
-expected_profile: Unknown / Data-Limited Screening
-report_status: {"DATA_AUDIT_STATUS": "WARNING", "RISK_METHOD_STATUS": "PASS", "AI_ANALYST_REVIEW_STATUS": "PASS", "LANGUAGE_LINT_STATUS": "PASS", "PRICE_LABEL_CHECK_STATUS": "PASS", "LIFECYCLE_LOGIC_STATUS": "PASS", "COMPANY_SPECIFICITY_STATUS": "WARNING", "PATCH_STATUS": "APPLIED", "PATCH_MATERIALITY_STATUS": "FALLBACK_PATCH_APPLIED", "FALLBACK_STATUS": "USED", "FALLBACK_USED_COUNT": 2, "FRAMEWORK_COVERAGE_LEVEL": "SCREENING_ONLY", "ASSET_PROFILE": "Unknown / Data-Limited Screening", "DATA_VERIFICATION_STATUS": "WARNING", "THESIS_VERIFICATION_STATUS": "UNVERIFIED", "OVERALL_REPORT_STATUS": "UNVERIFIED", "PRESENTATION_STATUS": "PASS"}
+detected_profile: Capital-Intensive Semiconductor Turnaround
+expected_profile: Capital-Intensive Semiconductor Turnaround
+expected_profile_family: Capital-Intensive Semiconductor Turnaround
+profile_conflict: False
+human_review_required: False
+report_status: {"DATA_AUDIT_STATUS": "WARNING", "RISK_METHOD_STATUS": "PASS", "AI_ANALYST_REVIEW_STATUS": "PASS", "LANGUAGE_LINT_STATUS": "PASS", "PRICE_LABEL_CHECK_STATUS": "PASS", "LIFECYCLE_LOGIC_STATUS": "PASS", "COMPANY_SPECIFICITY_STATUS": "PASS", "PATCH_STATUS": "APPLIED", "PATCH_MATERIALITY_STATUS": "MATERIAL_PATCH_APPLIED", "FALLBACK_STATUS": "USED", "FALLBACK_USED_COUNT": 1, "FRAMEWORK_COVERAGE_LEVEL": "PARTIAL", "ASSET_PROFILE": "Capital-Intensive Semiconductor Turnaround", "DATA_VERIFICATION_STATUS": "WARNING", "THESIS_VERIFICATION_STATUS": "WARNING", "OVERALL_REPORT_STATUS": "WARNING", "PRESENTATION_STATUS": "PASS"}
 failed_checks:
 wrong_output: 
 failure_reason: Deterministic linter generated this case.
 suggested_fix: Inspect failed checks and convert repeated issues into deterministic tests.
 expected_output_features:
-  - basic financials
-  - benchmark return
-  - valuation snapshot
-  - manual business model review
+  - foundry revenue / margin
+  - capex roadmap
+  - gross margin bridge
+  - process node progress
+  - data center competitiveness
+  - free cash flow bridge
 must_contain:
-  - basic financials
-  - benchmark return
-  - valuation snapshot
-  - manual business model review
+  - foundry revenue / margin
+  - capex roadmap
+  - gross margin bridge
+  - process node progress
+  - data center competitiveness
+  - free cash flow bridge
 must_not_contain:
-  - generic monitoring
-  - full report rewrite
-reason: Deterministic linter found weak or missing company-specific interpretation.
+  - low PE means cheap
+  - ordinary mature compounder thesis
+  - software margin thesis
+reason: Deterministic linter generated this case.
 data_refs_used:
   - metadata/asset_profile.json
   - metadata/report_status.json

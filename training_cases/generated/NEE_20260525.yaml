@@ -1,24 +1,29 @@
 ticker: NEE
 company_name: NEE
-detected_profile: Mature Compounder
-expected_profile: Mature Compounder
-report_status: {"DATA_AUDIT_STATUS": "WARNING", "RISK_METHOD_STATUS": "PASS", "AI_ANALYST_REVIEW_STATUS": "PASS", "LANGUAGE_LINT_STATUS": "PASS", "PRICE_LABEL_CHECK_STATUS": "PASS", "LIFECYCLE_LOGIC_STATUS": "PASS", "COMPANY_SPECIFICITY_STATUS": "PASS", "PATCH_STATUS": "NOT_NEEDED", "PATCH_MATERIALITY_STATUS": "NO_MATERIAL_CHANGE", "FALLBACK_STATUS": "USED", "FALLBACK_USED_COUNT": 1, "FRAMEWORK_COVERAGE_LEVEL": "FULL", "ASSET_PROFILE": "Mature Compounder", "DATA_VERIFICATION_STATUS": "WARNING", "THESIS_VERIFICATION_STATUS": "PASS", "OVERALL_REPORT_STATUS": "WARNING", "PRESENTATION_STATUS": "PASS"}
+detected_profile: Utilities / Infrastructure
+expected_profile: Utilities / Infrastructure
+expected_profile_family: Utilities / Infrastructure
+profile_conflict: False
+human_review_required: False
+report_status: {"DATA_AUDIT_STATUS": "WARNING", "RISK_METHOD_STATUS": "PASS", "AI_ANALYST_REVIEW_STATUS": "PASS", "LANGUAGE_LINT_STATUS": "PASS", "PRICE_LABEL_CHECK_STATUS": "PASS", "LIFECYCLE_LOGIC_STATUS": "PASS", "COMPANY_SPECIFICITY_STATUS": "PASS", "PATCH_STATUS": "APPLIED", "PATCH_MATERIALITY_STATUS": "MATERIAL_PATCH_APPLIED", "FALLBACK_STATUS": "USED", "FALLBACK_USED_COUNT": 1, "FRAMEWORK_COVERAGE_LEVEL": "PARTIAL", "ASSET_PROFILE": "Utilities / Infrastructure", "DATA_VERIFICATION_STATUS": "WARNING", "THESIS_VERIFICATION_STATUS": "WARNING", "OVERALL_REPORT_STATUS": "WARNING", "PRESENTATION_STATUS": "PASS"}
 failed_checks:
 wrong_output: 
 failure_reason: Deterministic linter generated this case.
 suggested_fix: Inspect failed checks and convert repeated issues into deterministic tests.
 expected_output_features:
-  - margin durability
-  - FCF stability
-  - business mix
-  - buybacks
-  - PE / FCF sensitivity
+  - regulated asset base
+  - allowed ROE
+  - rate case
+  - capex plan
+  - debt cost
+  - dividend coverage
 must_contain:
-  - margin durability
-  - FCF stability
-  - business mix
-  - buybacks
-  - PE / FCF sensitivity
+  - regulated asset base
+  - allowed ROE
+  - rate case
+  - capex plan
+  - debt cost
+  - dividend coverage
 must_not_contain:
 reason: Deterministic linter generated this case.
 data_refs_used:

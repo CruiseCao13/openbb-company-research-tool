@@ -95,6 +95,7 @@ class TickerRunResult:
     pack_zip: str | None = None
     ai_review: dict[str, Any] | None = None
     training_case_generated: bool = False
+    expected_profile_family: str | None = None
 
 
 @dataclass
@@ -147,6 +148,61 @@ def load_eval_set(path: str) -> list[str]:
             seen.add(ticker)
             deduped.append(ticker)
     return deduped
+
+
+GROUP_PROFILE_FAMILIES = {
+    "mature_compounder": "Mature Compounder",
+    "mega_cap_tech": "Hybrid Growth Compounder",
+    "semiconductor_ai": "Hybrid AI Semiconductor Compounder",
+    "semiconductor_turnaround": "Capital-Intensive Semiconductor Turnaround",
+    "speculative_growth": "Speculative Growth",
+    "biotech_like": "Biotech-like Screening",
+    "pharma": "Pharma / Biotech-like Screening",
+    "medical_devices": "Medical Devices Screening",
+    "banks": "Financials",
+    "brokers_exchanges": "Financials",
+    "insurance": "Insurance-like Screening",
+    "reit": "REIT-like Screening",
+    "energy": "Cyclical",
+    "materials_mining": "Cyclical",
+    "industrials": "Cyclical / Industrial",
+    "aerospace_defense": "Aerospace / Defense",
+    "airlines_transport": "Shipping / Airlines / Transport",
+    "shipping_logistics": "Shipping / Airlines / Transport",
+    "consumer_retail": "Consumer / Retail",
+    "restaurants": "Consumer / Retail",
+    "utilities": "Utilities / Infrastructure",
+    "telecom_media": "Telecom / Media Screening",
+    "small_unknown": "Unknown / Data-Limited Screening",
+}
+
+
+def load_eval_expectations(path: str) -> dict[str, str]:
+    """Load expected profile families from YAML groups or per-ticker metadata."""
+    expectations: dict[str, str] = {}
+    current_group: str | None = None
+    pending_ticker: str | None = None
+    for raw in Path(path).read_text(encoding="utf-8").splitlines():
+        line = _strip_comment(raw)
+        if not line.strip():
+            continue
+        stripped = line.strip()
+        if stripped == "groups:":
+            current_group = None
+            pending_ticker = None
+            continue
+        if raw.startswith("  ") and not raw.startswith("    ") and stripped.endswith(":"):
+            current_group = stripped[:-1]
+            pending_ticker = None
+            continue
+        if stripped.startswith("- "):
+            pending_ticker = stripped[2:].strip().upper()
+            if pending_ticker and current_group:
+                expectations[pending_ticker] = GROUP_PROFILE_FAMILIES.get(current_group, current_group.replace("_", " ").title())
+            continue
+        if pending_ticker and stripped.startswith("expected_profile_family:"):
+            expectations[pending_ticker] = stripped.split(":", 1)[1].strip()
+    return expectations
 
 
 def _batch_name(eval_set_path: str) -> str:
@@ -472,28 +528,102 @@ def compact_ai_review(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+PROFILE_EXPECTED_FEATURES = {
+    "Mature Compounder": ["margin durability", "FCF stability", "business mix", "buybacks", "PE / FCF sensitivity"],
+    "Speculative Growth": ["revenue growth quality", "gross margin improvement", "cash burn", "cash runway", "dilution risk", "path to profitability"],
+    "Capital-Intensive Semiconductor Turnaround": ["foundry revenue / margin", "capex roadmap", "gross margin bridge", "process node progress", "data center competitiveness", "free cash flow bridge"],
+    "Hybrid AI Semiconductor Compounder": ["AI data center revenue", "gross margin sustainability", "supply / capacity constraint", "customer concentration", "hyperscaler capex cycle", "export control risk", "valuation premium risk"],
+    "Biotech-like Screening": ["pipeline stage", "clinical trial milestones", "FDA / EMA regulatory path", "R&D burn", "cash runway", "dilution risk"],
+    "Financials": ["NIM", "ROE", "ROA", "credit losses", "provision coverage", "deposit cost", "capital adequacy", "asset quality"],
+    "Insurance-like Screening": ["combined ratio", "underwriting margin", "reserve adequacy", "investment income", "float", "catastrophe exposure"],
+    "REIT-like Screening": ["FFO", "AFFO", "occupancy", "rent spread", "same-store NOI", "debt maturity", "cap rate"],
+    "Cyclical": ["cycle position", "normalized earnings", "mean reversion", "commodity / demand sensitivity", "margin peak risk"],
+    "Shipping / Airlines / Transport": ["freight rate / yield", "fleet utilization", "fuel cost", "fleet age", "orderbook", "leverage", "cycle sensitivity"],
+    "Utilities / Infrastructure": ["regulated asset base", "allowed ROE", "rate case", "capex plan", "debt cost", "dividend coverage"],
+    "Consumer / Retail": ["same-store sales", "traffic", "ticket", "inventory", "gross margin", "store count"],
+    "Unknown / Data-Limited Screening": ["business model verification", "industry-specific metric discovery", "manual framework selection"],
+}
+
+PROFILE_MUST_NOT_CONTAIN = {
+    "Shipping / Airlines / Transport": ["pipeline", "clinical trial", "FDA", "regulatory milestones", "drug candidate"],
+    "Financials": ["ordinary FCF margin as core", "net debt / EBITDA as core", "cash runway framing"],
+    "Biotech-like Screening": ["ordinary mature compounder thesis", "ordinary PE conclusion", "buyback-supported EPS"],
+    "Capital-Intensive Semiconductor Turnaround": ["low PE means cheap", "ordinary mature compounder thesis", "software margin thesis"],
+}
+
+
+def _profile_family_compatible(expected: str | None, detected: str | None, secondary: str | None = "") -> bool:
+    if not expected:
+        return True
+    detected_text = f"{detected or ''} {secondary or ''}".lower()
+    expected_lower = expected.lower()
+    aliases = {
+        "financials": ["financial", "bank"],
+        "shipping / airlines / transport": ["shipping", "transport", "airline", "cyclical"],
+        "capital-intensive semiconductor turnaround": ["semiconductor", "turnaround"],
+        "hybrid ai semiconductor compounder": ["ai semiconductor", "semiconductor", "data center"],
+        "biotech-like screening": ["biotech", "clinical"],
+        "reit-like screening": ["reit", "real estate"],
+        "insurance-like screening": ["insurance"],
+        "utilities / infrastructure": ["utilities", "infrastructure"],
+        "cyclical": ["cyclical", "commodity", "energy", "industrial"],
+        "speculative growth": ["speculative", "unprofitable", "growth"],
+        "mature compounder": ["mature compounder"],
+    }
+    return any(alias in detected_text for alias in aliases.get(expected_lower, [expected_lower]))
+
+
+def _expected_features_for_family(expected: str | None, asset: dict[str, Any]) -> list[str]:
+    if expected:
+        for key, features in PROFILE_EXPECTED_FEATURES.items():
+            if key.lower() in expected.lower() or expected.lower() in key.lower():
+                return features
+    return asset.get("dominant_metric_set", []) or asset.get("data_deficit_flags", [])
+
+
 def generate_training_case(
     ticker_result: TickerRunResult,
     lint_result: LintResult,
     ai_review: dict[str, Any] | None,
 ) -> dict[str, Any]:
     asset = ticker_result.asset_profile
-    expected_features = asset.get("dominant_metric_set", []) or asset.get("data_deficit_flags", [])
+    expected_family = ticker_result.expected_profile_family
+    detected = asset.get("primary_profile")
+    secondary = asset.get("secondary_profile")
+    confidence = asset.get("sector_confidence") or asset.get("thesis_spine_confidence")
+    compatible = _profile_family_compatible(expected_family, detected, secondary)
+    profile_conflict = bool(expected_family and not compatible)
+    if not expected_family and (confidence == "LOW" or asset.get("framework_coverage_level") in {"UNKNOWN", "SCREENING_ONLY"}):
+        expected_profile = "HUMAN_REVIEW_REQUIRED"
+        human_review_required = True
+    else:
+        expected_profile = expected_family or (ai_review.get("suggested_profile") if ai_review else detected)
+        human_review_required = profile_conflict or expected_profile == "HUMAN_REVIEW_REQUIRED"
+    expected_features = _expected_features_for_family(expected_profile if expected_profile != "HUMAN_REVIEW_REQUIRED" else expected_family, asset)
     failure_reason = ticker_result.reason or ticker_result.error_message or "Deterministic linter generated this case."
     suggested_fix = ticker_result.suggested_next_action or "Inspect failed checks and convert repeated issues into deterministic tests."
+    must_not = []
+    if expected_profile and expected_profile != "HUMAN_REVIEW_REQUIRED":
+        for key, terms in PROFILE_MUST_NOT_CONTAIN.items():
+            if key.lower() in expected_profile.lower() or expected_profile.lower() in key.lower():
+                must_not = terms
+                break
     return {
         "ticker": ticker_result.ticker,
         "company_name": asset.get("company_name", ticker_result.ticker),
         "detected_profile": asset.get("primary_profile"),
-        "expected_profile": ai_review.get("suggested_profile") if ai_review else asset.get("primary_profile"),
+        "expected_profile": expected_profile,
+        "expected_profile_family": expected_family,
+        "profile_conflict": profile_conflict,
+        "human_review_required": human_review_required,
         "report_status": ticker_result.report_status,
         "failed_checks": lint_result.failed_checks,
         "wrong_output": "; ".join(lint_result.failed_checks),
         "failure_reason": failure_reason,
         "suggested_fix": suggested_fix,
         "expected_output_features": expected_features,
-        "must_contain": ai_review.get("must_contain", expected_features[:5]) if ai_review else expected_features[:5],
-        "must_not_contain": ai_review.get("must_not_contain", []) if ai_review else [],
+        "must_contain": expected_features[:8],
+        "must_not_contain": must_not,
         "reason": ai_review.get("reason", failure_reason) if ai_review else failure_reason,
         "data_refs_used": ["metadata/asset_profile.json", "metadata/report_status.json", "self_review/framework_gap_analysis.md"],
         "fixed_by": "pending",
@@ -579,6 +709,7 @@ def run_one_ticker_safely(
     batch_out_dir: Path,
     runner: Callable[..., dict[str, Any]] | None = None,
     packer: Callable[[Path], Path] | None = None,
+    expected_profile_family: str | None = None,
 ) -> TickerRunResult:
     from company_research_tool import pack_report_folder, run_one
 
@@ -605,6 +736,7 @@ def run_one_ticker_safely(
             term_style="pure",
             price_field="adj_close",
             annualization_days=252,
+            profile_hint=expected_profile_family,
         )
 
     try:
@@ -699,6 +831,7 @@ def load_existing_ticker_result(
             asset_profile=asset_profile,
             lint=lint,
             pack_zip=pack_zip,
+            expected_profile_family=None,
         )
     if error_path.exists():
         data = _read_json(error_path)
@@ -744,6 +877,7 @@ def run_batch(
     resume: bool = False,
     only_failed: bool = False,
     force: bool = False,
+    batch_id: str | None = None,
     runner: Callable[..., dict[str, Any]] | None = None,
     packer: Callable[[Path], Path] | None = None,
 ) -> BatchResult:
@@ -759,14 +893,16 @@ def run_batch(
         resume=resume,
         only_failed=only_failed,
         force=force,
+        batch_id=batch_id,
     )
     tickers = load_eval_set(eval_set_path)
+    expectations = load_eval_expectations(eval_set_path)
     root = Path("reports") / "batch_runs"
     root.mkdir(parents=True, exist_ok=True)
     prefix = _batch_name(eval_set_path)
     out_dir = _latest_batch_dir(root, prefix) if resume else None
     if out_dir is None:
-        out_dir = root / f"{prefix}_{_now_id()}"
+        out_dir = root / (batch_id or f"{prefix}_{_now_id()}")
     out_dir.mkdir(parents=True, exist_ok=True)
     for sub in ["cache", "runs"]:
         (out_dir / sub).mkdir(exist_ok=True)
@@ -788,6 +924,7 @@ def run_batch(
     review_existing_only = resume and not force
 
     def process_result(ticker_result: TickerRunResult) -> None:
+        ticker_result.expected_profile_family = expectations.get(ticker_result.ticker)
         if ai_review_failures and not no_ai and ticker_result.run_folder and ticker_result.lint and _result_needs_ai_review(ticker_result):
             payload = build_compact_ai_review_payload(Path(ticker_result.run_folder), ticker_result.lint)
             failure_hash = _hash_obj({"ticker": ticker_result.ticker, "failed": ticker_result.lint.failed_checks, "payload": payload})
@@ -811,12 +948,12 @@ def run_batch(
         for ticker in selected_tickers:
             ticker_result = load_existing_ticker_result(ticker, out_dir, pack_expected=pack, packer=packer) if review_existing_only else None
             if ticker_result is None:
-                ticker_result = run_one_ticker_safely(ticker, options, out_dir, runner=runner, packer=packer)
+                ticker_result = run_one_ticker_safely(ticker, options, out_dir, runner=runner, packer=packer, expected_profile_family=expectations.get(ticker))
             process_result(ticker_result)
     else:
         with ThreadPoolExecutor(max_workers=max(1, max_workers)) as executor:
             futures = {
-                executor.submit(run_one_ticker_safely, ticker, options, out_dir, runner, packer): ticker
+                executor.submit(run_one_ticker_safely, ticker, options, out_dir, runner, packer, expectations.get(ticker)): ticker
                 for ticker in selected_tickers
             }
             for future in as_completed(futures):
@@ -957,10 +1094,11 @@ def write_batch_outputs(batch_result: BatchResult, out_dir: Path) -> None:
                 for key in csv_fields
             })
 
-    worst = [r for r in results if r.outcome not in {"PASS", "WARNING"}][:20]
+    actual_failures = [r for r in results if r.outcome in {"FAIL", "UNVERIFIED_UNEXPECTED", "FETCH_FAILED", "REPORT_FAILED"}]
+    review_needed = [r for r in results if r.outcome in {"WARNING", "UNVERIFIED_EXPECTED"}]
     warnings = [r for r in results if r.outcome == "WARNING"]
     unverifiable = [r for r in results if r.outcome == "UNVERIFIED_EXPECTED"]
-    failures = [r for r in results if r.outcome in {"FAIL", "UNVERIFIED_UNEXPECTED", "FETCH_FAILED", "REPORT_FAILED"}]
+    failures = actual_failures
     generated = datetime.now().strftime("%Y-%m-%d %H:%M Asia/Singapore")
     status_rows = [
         ["Total tickers", len(results)],
@@ -974,7 +1112,8 @@ def write_batch_outputs(batch_result: BatchResult, out_dir: Path) -> None:
         ["AI reviews used", batch_result.ai_reviews_used],
         ["Training cases generated", batch_result.training_cases_generated],
     ]
-    failure_rows = [[r.ticker, ", ".join(_checks_or_outcome(r)), _reason_for_result(r), _suggested_fix_for_result(r)] for r in worst]
+    failure_rows = [[r.ticker, ", ".join(_checks_or_outcome(r)), _reason_for_result(r), _suggested_fix_for_result(r)] for r in actual_failures[:20]]
+    review_rows = [[r.ticker, r.outcome, r.asset_profile.get("primary_profile", "Unknown"), r.asset_profile.get("framework_coverage_level", "UNKNOWN"), _suggested_fix_for_result(r)] for r in review_needed[:30]]
     warning_rows = [[r.ticker, r.asset_profile.get("primary_profile", "Unknown"), ", ".join(r.lint.warnings if r.lint else []), "Yes" if r.outcome != "PASS" else "No"] for r in warnings[:20]]
     case_rows = [[r.ticker, ", ".join(_checks_or_outcome(r)), _training_case_file(r.ticker)] for r in results if r.training_case_generated]
     md = f"""# Batch Evaluation Report
@@ -1003,25 +1142,33 @@ The batch runner isolated ticker-level failures, generated report packs where po
 - Compact review did not send full reports, CSV files, or charts.
 - Pack outputs were checked during deterministic lint.
 
-## 4. What Failed
+## 4. Actual Failures
 
 {_md_table(["Ticker", "Failure", "Reason", "Suggested Fix"], failure_rows)}
 
-Longer failure detail is available in `failures.md`.
+Actual failures are limited to `REPORT_FAILED`, `FETCH_FAILED`, `FAIL`, and `UNVERIFIED_UNEXPECTED`. Longer failure detail is available in `failures.md`.
 
-## 5. Failure Type Distribution
+## 5. Reports Requiring Review
+
+{_md_table(["Ticker", "Outcome", "Primary Profile", "Framework Coverage", "Suggested Action"], review_rows)}
+
+## 6. Expected Unverified / Framework-Limited Reports
+
+{_md_table(["Ticker", "Primary Profile", "Secondary Profile", "Suggested Extension"], [[r.ticker, r.asset_profile.get("primary_profile", "Unknown"), r.asset_profile.get("secondary_profile", ""), r.asset_profile.get("suggested_framework_extension", "")] for r in unverifiable])}
+
+## 7. Failure Type Distribution
 
 {_md_table(["Failure Type", "Count"], [[key, value] for key, value in failure_dist.items()])}
 
-## 6. Profile Distribution
+## 8. Profile Distribution
 
 {_md_table(["Profile", "Count"], [[key, value] for key, value in profile_dist.items()])}
 
-## 7. Generated Training Cases
+## 9. Generated Training Cases
 
 {_md_table(["Ticker", "Case Type", "File"], case_rows)}
 
-## 8. Credit / AI Usage
+## 10. Credit / AI Usage
 
 - External paid AI calls: 0
 - Compact local failure reviews: {batch_result.ai_reviews_used}
@@ -1030,14 +1177,14 @@ Longer failure detail is available in `failures.md`.
 - Review mode: local deterministic/compact review only; no external AI API call.
 - `broad_200` was not run live.
 
-## 9. Next Recommended Fixes
+## 11. Next Recommended Fixes
 
 1. Review any `REPORT_FAILED` ticker and classify whether it is provider/data or renderer logic.
 2. Improve repeated `framework_gap_too_generic` cases with profile-specific framework text.
 3. Rerun `smoke_12` after fixes.
 4. Only after smoke is stable, run `broad_200` deterministic-only.
 
-## 10. Known Limitations
+## 12. Known Limitations
 
 - This is not a live `broad_200` result.
 - Compact AI review is local and conservative in this foundation pass.
@@ -1095,10 +1242,19 @@ Longer failure detail is available in `failures.md`.
     write_failure_listing(out_dir / "unverifiable_expected.md", unverifiable)
 
     profile_lines = ["# Profile Distribution", "", "## Why this matters", "", "This file checks whether the smoke/broad set covers multiple asset types instead of only testing mega-cap technology stocks.", ""]
-    grouped: dict[str, list[str]] = {}
-    for r in results:
-        grouped.setdefault(r.asset_profile.get("primary_profile") or "Unknown", []).append(r.ticker)
-    profile_lines.append(_md_table(["Profile", "Tickers", "Count", "Coverage Note"], [[profile, ", ".join(sorted(tickers)), len(tickers), "Covered in this smoke run"] for profile, tickers in sorted(grouped.items())]))
+    profile_lines.append(_md_table(
+        ["Ticker", "Primary Profile", "Secondary Profile", "Framework Coverage", "Suggested Extension"],
+        [
+            [
+                r.ticker,
+                r.asset_profile.get("primary_profile", "Unknown"),
+                r.asset_profile.get("secondary_profile", ""),
+                r.asset_profile.get("framework_coverage_level", "UNKNOWN"),
+                r.asset_profile.get("suggested_framework_extension", ""),
+            ]
+            for r in sorted(results, key=lambda item: item.ticker)
+        ],
+    ))
     (out_dir / "profile_distribution.md").write_text("\n".join(profile_lines) + "\n", encoding="utf-8")
     (out_dir / "failure_type_distribution.md").write_text(
         "# Failure Type Distribution\n\n" + "\n".join(f"- {key}: {value}" for key, value in failure_dist.items()) + "\n",
@@ -1156,6 +1312,7 @@ def parse_batch_args(argv: list[str]) -> argparse.Namespace:
     examples = """
 Examples:
   openbb-research batch eval_sets/smoke_12.yaml
+  python scripts/batch_eval.py --set smoke_12 --run-id smoke_12_after_profile_fix
   openbb-research batch eval_sets/broad_200.yaml --both --full --pack
   openbb-research batch eval_sets/broad_200.yaml --no-ai
   openbb-research batch eval_sets/broad_200.yaml --ai-review-failures --max-ai-reviews 40 --resume
@@ -1168,7 +1325,9 @@ Examples:
         epilog=examples,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("eval_set", help="YAML eval set, e.g. eval_sets/smoke_12.yaml")
+    parser.add_argument("eval_set", nargs="?", help="YAML eval set, e.g. eval_sets/smoke_12.yaml")
+    parser.add_argument("--set", dest="eval_set_name", help="Eval set shorthand, e.g. smoke_12 or broad_200.")
+    parser.add_argument("--run-id", dest="run_id", help="Explicit batch run folder name under reports/batch_runs/.")
     parser.add_argument("--both", action="store_true", help="Generate English and Chinese reports.")
     parser.add_argument("--full", action="store_true", help="Use full report mode.")
     parser.add_argument("--pack", action="store_true", help="Zip each completed ticker report pack.")
@@ -1184,8 +1343,14 @@ Examples:
 
 def main(argv: list[str] | None = None) -> BatchResult:
     args = parse_batch_args(argv or [])
+    eval_set = args.eval_set
+    if args.eval_set_name:
+        name = args.eval_set_name
+        eval_set = name if name.endswith(".yaml") else f"eval_sets/{name}.yaml"
+    if not eval_set:
+        raise SystemExit("eval set is required; pass eval_sets/smoke_12.yaml or --set smoke_12")
     result = run_batch(
-        args.eval_set,
+        eval_set,
         both=args.both,
         full=args.full,
         pack=args.pack,
@@ -1196,8 +1361,15 @@ def main(argv: list[str] | None = None) -> BatchResult:
         resume=args.resume,
         only_failed=args.only_failed,
         force=args.force,
+        batch_id=args.run_id,
     )
     print(f"Batch folder: {result.out_dir}")
     print(f"AI Reviews Used: {result.ai_reviews_used}")
     print(f"Training Cases Generated: {result.training_cases_generated}")
     return result
+
+
+if __name__ == "__main__":
+    import sys
+
+    main(sys.argv[1:])

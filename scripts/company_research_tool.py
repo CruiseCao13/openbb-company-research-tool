@@ -27,6 +27,7 @@ import shutil
 import sys
 import tempfile
 import textwrap
+import time
 import zipfile
 from pathlib import Path
 from typing import Any
@@ -1187,11 +1188,32 @@ def metric_change(series: pd.Series) -> float:
 
 
 def fetch_company_info(symbol: str) -> dict[str, Any]:
+    last_exc: Exception | None = None
+    ticker = yf.Ticker(symbol)
+    for attempt in range(2):
+        try:
+            info = ticker.get_info()
+            if info:
+                info.setdefault("symbol", symbol.upper())
+                return info
+        except Exception as exc:
+            last_exc = exc
+            if attempt == 0:
+                time.sleep(1)
     try:
-        return yf.Ticker(symbol).get_info()
-    except Exception as exc:
-        print(f"[WARN] yfinance company info failed for {symbol}: {exc}")
-        return {}
+        fast_info = dict(getattr(ticker, "fast_info", {}) or {})
+        if fast_info:
+            return {
+                "symbol": symbol.upper(),
+                "shortName": fast_info.get("lastPrice") and symbol.upper(),
+                "currency": fast_info.get("currency"),
+                "marketCap": fast_info.get("marketCap"),
+            }
+    except Exception:
+        pass
+    if last_exc is not None:
+        print(f"[WARN] yfinance company info failed for {symbol}: {last_exc}")
+    return {"symbol": symbol.upper()}
 
 
 def build_company_profile(info: dict[str, Any]) -> pd.DataFrame:
@@ -3750,6 +3772,7 @@ def run_one(
     term_style: str = "pure",
     price_field: str = "adj_close",
     annualization_days: int = 252,
+    profile_hint: str | None = None,
 ) -> dict[str, Any]:
     symbol = symbol.upper()
     benchmark = benchmark.upper()
@@ -3826,6 +3849,8 @@ def run_one(
     )
 
     info = fetch_company_info(symbol)
+    if profile_hint:
+        info["_profile_hint"] = profile_hint
     benchmark_info = fetch_company_info(benchmark)
     profile = build_company_profile(info)
     valuation = build_valuation_snapshot(info)

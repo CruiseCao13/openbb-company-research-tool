@@ -1,15 +1,26 @@
 name: smoke_12_cross_profile
 description: Small cross-profile smoke test before broad_200.
-tickers:
-  - AAPL
-  - RKLB
-  - INTC
-  - RXRX
-  - JPM
-  - O
-  - XOM
-  - JOBY
-  - NVDA
-  - PGR
-  - ZIM
-  - NEE
+groups:
+  mature_compounder:
+    - AAPL
+  speculative_growth:
+    - RKLB
+    - JOBY
+  semiconductor_turnaround:
+    - INTC
+  biotech_like:
+    - RXRX
+  banks:
+    - JPM
+  reit:
+    - O
+  energy:
+    - XOM
+  semiconductor_ai:
+    - NVDA
+  insurance:
+    - PGR
+  shipping_logistics:
+    - ZIM
+  utilities:
+    - NEE

@@ -2,24 +2,28 @@ ticker: RKLB
 company_name: RKLB
 detected_profile: Speculative Growth
 expected_profile: Speculative Growth
+expected_profile_family: Speculative Growth
+profile_conflict: False
+human_review_required: False
 report_status: {"DATA_AUDIT_STATUS": "WARNING", "RISK_METHOD_STATUS": "PASS", "AI_ANALYST_REVIEW_STATUS": "PASS", "LANGUAGE_LINT_STATUS": "PASS", "PRICE_LABEL_CHECK_STATUS": "PASS", "LIFECYCLE_LOGIC_STATUS": "PASS", "COMPANY_SPECIFICITY_STATUS": "PASS", "PATCH_STATUS": "APPLIED", "PATCH_MATERIALITY_STATUS": "MATERIAL_PATCH_APPLIED", "FALLBACK_STATUS": "USED", "FALLBACK_USED_COUNT": 1, "FRAMEWORK_COVERAGE_LEVEL": "PARTIAL", "ASSET_PROFILE": "Speculative Growth", "DATA_VERIFICATION_STATUS": "WARNING", "THESIS_VERIFICATION_STATUS": "WARNING", "OVERALL_REPORT_STATUS": "WARNING", "PRESENTATION_STATUS": "PASS"}
 failed_checks:
 wrong_output: 
 failure_reason: Deterministic linter generated this case.
 suggested_fix: Inspect failed checks and convert repeated issues into deterministic tests.
 expected_output_features:
-  - revenue growth
-  - gross margin trend
-  - operating loss
-  - FCF burn
+  - revenue growth quality
+  - gross margin improvement
+  - cash burn
   - cash runway
-  - PS / EV Revenue
+  - dilution risk
+  - path to profitability
 must_contain:
-  - revenue growth
-  - gross margin trend
-  - operating loss
-  - FCF burn
+  - revenue growth quality
+  - gross margin improvement
+  - cash burn
   - cash runway
+  - dilution risk
+  - path to profitability
 must_not_contain:
 reason: Deterministic linter generated this case.
 data_refs_used:

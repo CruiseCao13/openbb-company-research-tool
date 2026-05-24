@@ -107,8 +107,9 @@ def build_asset_profile(
     summary = str(info.get("longBusinessSummary") or "").lower()
     short_name = str(info.get("shortName") or "").lower()
     long_name = str(info.get("longName") or "").lower()
+    profile_hint = str(info.get("_profile_hint") or "").lower()
     quote_type = str(info.get("quoteType") or "").upper()
-    clues_text = " ".join([sector, industry, summary, short_name, long_name])
+    clues_text = " ".join([sector, industry, summary, short_name, long_name, profile_hint])
 
     revenue_cagr = _metric(fundamental_summary, "Revenue CAGR")
     latest_growth = _metric(fundamental_summary, "Revenue Growth Latest")
@@ -128,10 +129,27 @@ def build_asset_profile(
     insurance_like = any(word in clues_text for word in ["insurance", "reinsurance", "underwriting", "premiums", "claims", "catastrophe"])
     reit_like = "reit" in clues_text or "real estate investment trust" in clues_text
     utility_like = any(word in clues_text for word in ["utility", "utilities", "electric utility", "regulated utility", "rate base", "power generation", "water utility"])
-    transport_like = any(word in clues_text for word in ["shipping", "airline", "freight", "logistics", "transport", "fleet", "load factor", "cruise"])
+    transport_like = any(word in clues_text for word in ["shipping", "marine shipping", "container", "vessel", "airline", "freight", "logistics", "fleet", "load factor", "cruise"]) or " transport " in f" {clues_text} "
     consumer_retail_terms = ["retail", "restaurant", "same-store", "same store", "store", "apparel", "coffee", "quick service", "home improvement"]
     consumer_retail_like = any(word in clues_text for word in consumer_retail_terms)
-    financial = any(word in sector for word in ["financial"]) or any(word in industry for word in ["bank", "broker", "asset management"]) or (insurance_like and "financial" in sector)
+    financial_name_like = any(
+        word in clues_text
+        for word in [
+            "bank",
+            "bancorp",
+            "financial",
+            "broker",
+            "asset management",
+            "capital markets",
+            "jpmorgan",
+            "chase",
+            "goldman",
+            "morgan stanley",
+            "wells fargo",
+            "citigroup",
+        ]
+    )
+    financial = any(word in sector for word in ["financial"]) or any(word in industry for word in ["bank", "broker", "asset management"]) or financial_name_like or (insurance_like and "financial" in sector)
     fund_like = quote_type in {"ETF", "FUND", "MUTUALFUND", "INDEX"}
     speculative_signal = (
         (not math.isnan(revenue_cagr) and revenue_cagr >= 0.15)
@@ -156,25 +174,25 @@ def build_asset_profile(
         and not math.isnan(fcf_margin)
         and fcf_margin > 0.05
     )
-    cyclical_signal = any(word in clues_text for word in ["oil", "gas", "mining", "steel", "commodity", "metals", "agriculture", "construction equipment"])
+    cyclical_signal = any(word in clues_text for word in ["oil", "gas", "mining", "steel", "commodity", "metals", "agriculture", "construction equipment"]) and not utility_like and not transport_like
     biotech_like = any(word in clues_text for word in ["biotechnology", "clinical", "therapeutic", "drug candidate", "pharmaceutical"])
+    if transport_like and not any(word in clues_text for word in ["biotechnology", "clinical trial", "drug candidate", "therapeutic platform"]):
+        biotech_like = False
     aerospace_like = any(word in clues_text for word in ["space", "launch", "aerospace", "satellite", "defense"])
     semiconductor_core = any(word in industry for word in ["semiconductor", "chip"]) or any(word in sector for word in ["semiconductor"])
-    semiconductor_clues = [
+    semiconductor_specific_clues = [
         "semiconductor",
-        "chip",
-        "processor",
         "foundry",
-        "manufacturing",
         "wafer",
-        "data center",
         "client computing",
-        "accelerator",
         "integrated device",
+        "gpu",
+        "accelerated computing",
+        "cuda",
         "nvidia",
+        "intel",
     ]
-    semiconductor_hit_count = sum(1 for word in semiconductor_clues if word in clues_text)
-    semiconductor_like = semiconductor_core or semiconductor_hit_count >= 3 or "nvidia" in clues_text
+    semiconductor_like = semiconductor_core or any(word in clues_text for word in semiconductor_specific_clues)
     ai_semiconductor_terms = [
         "artificial intelligence",
         " ai ",
@@ -190,7 +208,7 @@ def build_asset_profile(
         "nvidia",
     ]
     ai_semiconductor_like = semiconductor_like and any(term in f" {clues_text} " for term in ai_semiconductor_terms)
-    semiconductor_turnaround_signal = semiconductor_like and (
+    semiconductor_turnaround_signal = semiconductor_like and not mature_signal and (
         (not math.isnan(capex_intensity) and capex_intensity >= 0.12)
         or (not math.isnan(fcf_margin) and fcf_margin < 0.08)
         or (not math.isnan(operating_margin) and operating_margin < 0.15)
@@ -223,7 +241,7 @@ def build_asset_profile(
         business_model_clues.append("Utilities / regulated infrastructure")
     if transport_like:
         business_model_clues.append("Transport / shipping cycle")
-    if consumer_retail_like and not semiconductor_like:
+    if consumer_retail_like and not semiconductor_like and not financial:
         business_model_clues.append("Consumer / retail operating model")
     if financial and not insurance_like:
         business_model_clues.append("Financial services")
@@ -443,7 +461,17 @@ def build_asset_profile(
         fallback_sections.append("data_deficit_narrative")
 
     extension = ""
-    if biotech_like:
+    if primary == "Financials":
+        extension = "Financials / Bank Research Profile"
+    elif primary == "Cyclical":
+        extension = "Cyclical / Normalized Earnings Research Profile"
+    elif primary == "Shipping / Airlines / Transport":
+        extension = "Transport / Shipping / Airlines Research Profile"
+    elif primary == "Utilities / Infrastructure":
+        extension = "Utilities / Infrastructure Research Profile"
+    elif primary == "Consumer / Retail":
+        extension = "Consumer / Retail Research Profile"
+    elif biotech_like:
         extension = "Biotech Research Profile"
     elif insurance_like:
         extension = "Insurance Research Profile"
@@ -455,14 +483,11 @@ def build_asset_profile(
         extension = "AI Semiconductor / Data Center Growth Compounder Research Profile"
     elif reit_like:
         extension = "REIT Research Profile"
-    elif utility_like:
-        extension = "Utilities / Infrastructure Research Profile"
-    elif transport_like:
-        extension = "Transport / Shipping / Airlines Research Profile"
-    elif consumer_retail_like:
-        extension = "Consumer / Retail Research Profile"
     elif coverage in {"SCREENING_ONLY", "UNKNOWN"}:
         extension = "Company-specific industry framework"
+
+    if primary not in {"Capital-Intensive Semiconductor Turnaround", "Hybrid AI Semiconductor Compounder"}:
+        business_model_clues = [clue for clue in business_model_clues if not clue.startswith("Semiconductor") and not clue.startswith("AI semiconductor")]
 
     return AssetProfile(
         lifecycle_profile=primary,

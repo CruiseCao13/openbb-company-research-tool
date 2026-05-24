@@ -162,6 +162,44 @@ class AssetAwareRoutingTests(unittest.TestCase):
         self.assertIn("export-control", text)
         self.assertIn("CUDA", text)
 
+    def test_zim_routes_to_shipping_or_cyclical_not_biotech(self):
+        profile = asset_aware.build_asset_profile(
+            self._info(
+                "Industrials",
+                "Marine Shipping",
+                "container shipping vessel fleet freight logistics transport pharmaceutical cargo customers",
+            ),
+            self._fundamentals(revenue_cagr=-0.05, latest_growth=0.04, operating_margin=0.10, fcf_margin=0.08, positive_ni=3, positive_fcf=3),
+            self._valuation(pe=4.0, ps=0.8, ev_revenue=1.2),
+            pd.DataFrame(),
+            self._ruin(cash_runway=3.0),
+        )
+        self.assertIn(profile.primary_profile, {"Shipping / Airlines / Transport", "Cyclical"})
+        self.assertNotEqual(profile.secondary_profile, "Biotech-like Screening")
+        self.assertNotIn("pipeline stage", profile.data_deficit_flags)
+        self.assertIn("Transport / shipping cycle", profile.business_model_clues)
+
+    def test_jpm_routes_to_financial_bank_like_not_unknown(self):
+        profile = asset_aware.build_asset_profile(
+            {
+                "sector": "",
+                "industry": "",
+                "longBusinessSummary": "",
+                "longName": "JPMorgan Chase & Co.",
+                "shortName": "JPMorgan Chase",
+                "quoteType": "EQUITY",
+            },
+            self._fundamentals(revenue_cagr=0.03, latest_growth=0.02, operating_margin=float("nan"), fcf_margin=float("nan"), positive_ni=4, positive_fcf=0),
+            self._valuation(pe=12.0, ps=float("nan"), ev_revenue=float("nan")),
+            pd.DataFrame(),
+            self._ruin(cash_runway=float("nan")),
+        )
+        self.assertEqual(profile.primary_profile, "Financials")
+        self.assertTrue(profile.financial_company_flag)
+        deficits = " ".join(profile.data_deficit_flags)
+        for term in ["NIM", "credit losses", "capital ratio"]:
+            self.assertIn(term, deficits)
+
     def test_semiconductor_turnaround_generates_sector_data_deficits(self):
         profile = asset_aware.build_asset_profile(
             self._info("Technology", "Semiconductors", "semiconductor foundry manufacturing data center processor"),
