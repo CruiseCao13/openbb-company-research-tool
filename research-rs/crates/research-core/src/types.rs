@@ -105,7 +105,7 @@ pub struct ProviderError {
     pub stage: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct CompanyUnderstanding {
     #[serde(default = "default_schema_version")]
     pub schema_version: String,
@@ -124,7 +124,7 @@ pub struct CompanyUnderstanding {
     pub human_review_required: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct FinancialInterpretation {
     #[serde(default = "default_schema_version")]
     pub schema_version: String,
@@ -142,7 +142,7 @@ pub struct FinancialInterpretation {
     pub unsupported_due_to_missing_data: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ResearchBlueprint {
     #[serde(default = "default_schema_version")]
     pub schema_version: String,
@@ -163,7 +163,7 @@ pub struct ResearchBlueprint {
     pub human_review_required: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct AiSelfReview {
     #[serde(default = "default_schema_version")]
     pub schema_version: String,
@@ -180,16 +180,18 @@ pub struct AiSelfReview {
     pub human_review_required: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub enum Confidence {
     HIGH,
     MEDIUM,
+    #[default]
     LOW,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub enum CheckStatus {
     PASS,
+    #[default]
     WARNING,
     FAIL,
 }

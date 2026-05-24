@@ -125,6 +125,8 @@ pub fn render_report(
 > Local Mock Used: {local_mock_used}
 > AI Calls: {new_external_ai_calls}
 > Cache Hits: {ai_cache_hits}
+> Model: {ai_model}
+> Prompt Versions: {prompt_version}
 > Research Frame: {asset_profile}  
 > Human Review Required: {human_review}  
 > Note: This report is for first-pass research only. It is not investment advice.
@@ -160,6 +162,8 @@ pub fn render_report(
 | New external AI calls | {new_external_ai_calls} |
 | AI calls | {ai_calls} |
 | Cache hits | {cache_hits} |
+| Model | {ai_model} |
+| Prompt versions | {prompt_version} |
 | Human review required | {human_review} |
 
 The status separates locked data availability from interpretation confidence. A warning means the report can be useful as a screening memo, but the unsupported sections need human review.
@@ -324,6 +328,8 @@ How to read this table: it tells you which locked data exists before relying on 
         } else {
             0
         },
+        ai_model = understanding.ai_provenance.model,
+        prompt_version = understanding.ai_provenance.prompt_version,
         ai_calls = status.ai_calls,
         cache_hits = status.cache_hits,
         human_review = status.human_review_required,
@@ -391,6 +397,8 @@ pub fn render_report_zh(
 > 是否使用本地 fallback：{local_mock_used}
 > 新外部 AI 调用：{new_external_ai_calls}
 > AI 缓存命中：{ai_cache_hits}
+> 模型：{ai_model}
+> Prompt 版本：{prompt_version}
 > 研究框架：{asset_profile}  
 > 是否需要人工复核：{human_review}  
 > 生成说明：本报告不是投资建议。
@@ -431,6 +439,8 @@ How to read this table：先看是否需要人工复核，再看研究框架是�
 | 使用本地 fallback | {local_mock_used} |
 | 新外部 AI 调用 | {new_external_ai_calls} |
 | AI 缓存命中 | {ai_cache_hits} |
+| 模型 | {ai_model} |
+| Prompt 版本 | {prompt_version} |
 
 ## 2. 公司身份
 
@@ -606,6 +616,8 @@ How to read this table：先看数据覆盖，再决定解释可信度。
         } else {
             0
         },
+        ai_model = understanding.ai_provenance.model,
+        prompt_version = understanding.ai_provenance.prompt_version,
         asset_profile = blueprint.asset_profile,
         identity = understanding.company_identity,
         not_this = bullet(&understanding.not_this),

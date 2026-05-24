@@ -62,6 +62,7 @@ pub fn render_run(input: RenderRunInput<'_>) -> Result<()> {
     write_data_usage_coverage(folder, payload, blueprint)?;
     write_chart_plan(folder, payload)?;
     write_table_plan(folder)?;
+    write_section_source_map(folder, payload)?;
     write_evidence_map(folder, understanding, interpretation, blueprint)?;
     write_if_changed(
         &folder.self_review.join("ai_self_review.md"),
@@ -161,7 +162,7 @@ pub fn render_run(input: RenderRunInput<'_>) -> Result<()> {
     if visual_status == "FAIL" {
         anyhow::bail!("visual lint failed: {}", visual_failures.join(", "));
     }
-    write_iteration_log(folder, &visual_status, &pdf_status)?;
+    write_iteration_log(folder, review, &visual_status, &pdf_status)?;
     let report_entry = if lang == "zh" {
         format!("report/{}_research_report_cn.md", payload.ticker)
     } else {
@@ -739,6 +740,63 @@ fn write_evidence_map(
     Ok(())
 }
 
+fn write_section_source_map(folder: &RunFolder, payload: &ProviderPayload) -> Result<()> {
+    let map = json!({
+        "schema_version": SCHEMA_VERSION,
+        "ticker": payload.ticker,
+        "section_1_report_status": ["metadata/report_status.json", "metadata/ai_usage.json"],
+        "section_2_company_identity": [
+            "metadata/company_understanding.json:company_identity",
+            "metadata/company_understanding.json:correct_research_frame",
+            "metadata/company_understanding.json:not_this"
+        ],
+        "section_3_business_model": [
+            "metadata/company_understanding.json:business_model",
+            "metadata/company_understanding.json:revenue_engines",
+            "metadata/company_understanding.json:profit_pool"
+        ],
+        "section_4_money_flow": [
+            "metadata/financial_interpretation.json:where_money_comes_from",
+            "metadata/financial_interpretation.json:where_money_goes"
+        ],
+        "section_5_financial_statement_interpretation": [
+            "metadata/financial_interpretation.json:revenue_explanation",
+            "metadata/financial_interpretation.json:margin_explanation",
+            "metadata/financial_interpretation.json:cash_flow_explanation",
+            "metadata/financial_interpretation.json:capex_or_rnd_pressure",
+            "metadata/financial_interpretation.json:debt_and_financing",
+            "metadata/financial_interpretation.json:shareholder_return_quality"
+        ],
+        "section_6_ai_research_blueprint": [
+            "metadata/research_blueprint.json:core_thesis",
+            "metadata/research_blueprint.json:must_analyze",
+            "metadata/research_blueprint.json:must_not_analyze_as_core",
+            "metadata/research_blueprint.json:key_questions"
+        ],
+        "section_7_valuation_frame": ["metadata/research_blueprint.json:valuation_frame"],
+        "section_8_risks_and_red_flags": ["metadata/research_blueprint.json:red_flags"],
+        "section_9_data_gaps": [
+            "metadata/research_blueprint.json:data_gaps",
+            "metadata/financial_interpretation.json:unsupported_due_to_missing_data"
+        ],
+        "section_10_ai_self_review": ["self_review/ai_self_review.json"],
+        "section_11_next_checks": ["metadata/research_blueprint.json:next_checks"],
+        "section_12_charts_and_evidence": [
+            "metadata/chart_plan.json",
+            "metadata/evidence_map.json",
+            "metadata/chart_table_quality.json"
+        ],
+        "section_13_locked_data_appendix": ["raw/provider_payload.json"],
+        "renderer_policy": "Renderer may format and arrange sections but must not invent thesis, valuation, risks, business model, money-flow interpretation, or next checks."
+    });
+    write_json(&folder.metadata.join("section_source_map.json"), &map)?;
+    write_if_changed(
+        &folder.audit.join("section_source_map.md"),
+        "# Section Source Map\n\nEvery report section is mapped to locked data or AI JSON artifacts. The renderer is allowed to format content, but it must not invent thesis, valuation, risks, business model, money-flow interpretation, or next checks.\n\nSee `metadata/section_source_map.json` for the machine-readable map.\n",
+    )?;
+    Ok(())
+}
+
 fn write_chart_table_quality(folder: &RunFolder, report: &str) -> Result<()> {
     let manifest_exists = folder.charts.join("chart_manifest.json").exists();
     let chart_explanations_present =
@@ -1000,6 +1058,27 @@ fn write_validator_report(
             blocking: true,
         },
         ValidationPassResult {
+            pass_name: "SectionSourceMapPass".into(),
+            status: if folder.metadata.join("section_source_map.json").exists() {
+                "PASS"
+            } else {
+                "FAIL"
+            }
+            .into(),
+            errors: if folder.metadata.join("section_source_map.json").exists() {
+                vec![]
+            } else {
+                vec!["section_source_map_missing".into()]
+            },
+            warnings: vec![],
+            evidence: vec![
+                "metadata/section_source_map.json".into(),
+                "audit/section_source_map.md".into(),
+            ],
+            suggested_fix: "Map every report section to AI artifacts or locked data; renderer must not invent thesis, valuation, risks, or next checks.".into(),
+            blocking: true,
+        },
+        ValidationPassResult {
             pass_name: "ChartTablePass".into(),
             status: "PASS".into(),
             errors: vec![],
@@ -1073,16 +1152,32 @@ fn write_validator_report(
     Ok(())
 }
 
-fn write_iteration_log(folder: &RunFolder, visual_status: &str, pdf_status: &str) -> Result<()> {
+fn write_iteration_log(
+    folder: &RunFolder,
+    review: &AiSelfReview,
+    visual_status: &str,
+    pdf_status: &str,
+) -> Result<()> {
+    let rewrite_required = !review.required_rewrite_sections.is_empty();
+    let rewrite_status = if rewrite_required {
+        "REWRITE_REQUIRED_HUMAN_REVIEW"
+    } else {
+        "NOT_NEEDED"
+    };
     write_json(
         &folder.metadata.join("rewrite_status.json"),
         &json!({
-            "status": "NOT_NEEDED",
+            "status": rewrite_status,
             "max_rounds": 2,
             "rounds_used": 0,
             "sections_rewritten": [],
+            "rewrite_required_sections": review.required_rewrite_sections,
             "locked_data_modified": false,
-            "reason": "Local compact self-review did not request operational rewrite sections."
+            "reason": if rewrite_required {
+                "AI self-review requested interpretation rewrites. This foundation path marks human review instead of pretending the rewrite was applied."
+            } else {
+                "AI self-review did not request operational rewrite sections."
+            }
         }),
     )?;
     write_if_changed(
@@ -1095,7 +1190,18 @@ fn write_iteration_log(folder: &RunFolder, visual_status: &str, pdf_status: &str
     )?;
     write_if_changed(
         &folder.audit.join("rewrite_trace.md"),
-        "# Rewrite Trace\n\nStatus: NOT_NEEDED\n\nNo interpretation block rewrite was required by the current AI self-review. Locked data was not modified. Future external AI polish may rewrite only sections listed in `rewrite_required_sections`, with a maximum of two bounded rounds.\n",
+        &format!(
+            "# Rewrite Trace\n\nStatus: {rewrite_status}\n\n{}\n\nLocked data was not modified. Future external AI polish may rewrite only sections listed in `rewrite_required_sections`, with a maximum of two bounded rounds.\n",
+            if rewrite_required {
+                format!(
+                    "AI self-review requested rewrites for: {}. The current run is marked for human review rather than silently publishing un-applied changes.",
+                    review.required_rewrite_sections.join(", ")
+                )
+            } else {
+                "No interpretation block rewrite was required by the current AI self-review."
+                    .to_string()
+            }
+        ),
     )?;
     Ok(())
 }

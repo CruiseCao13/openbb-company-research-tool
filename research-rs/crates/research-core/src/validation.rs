@@ -21,6 +21,9 @@ pub fn validate_ai_json(
     if understanding.company_identity.trim().is_empty() {
         failures.push("missing_company_understanding".to_string());
     }
+    if understanding.not_this.is_empty() {
+        failures.push("missing_not_this_boundary".to_string());
+    }
     if interpretation.where_money_comes_from.trim().is_empty()
         || interpretation.where_money_goes.trim().is_empty()
     {
@@ -28,6 +31,15 @@ pub fn validate_ai_json(
     }
     if blueprint.core_thesis.trim().len() < 40 {
         failures.push("blueprint_too_generic".to_string());
+    }
+    if blueprint.asset_profile.trim().is_empty() || blueprint.must_analyze.is_empty() {
+        failures.push("missing_research_blueprint".to_string());
+    }
+    if understanding.ai_provenance.source.is_empty()
+        || interpretation.ai_provenance.source.is_empty()
+        || blueprint.ai_provenance.source.is_empty()
+    {
+        failures.push("missing_ai_provenance".to_string());
     }
     failures
 }
@@ -70,7 +82,9 @@ pub fn report_status(
     let human_review_required = review.human_review_required
         || !payload_failures.is_empty()
         || !ai_failures.is_empty()
-        || provider_status != "PASS";
+        || provider_status != "PASS"
+        || review.final_confidence == Confidence::LOW
+        || !review.required_rewrite_sections.is_empty();
     let overall_status = if ai_failures
         .iter()
         .any(|f| f.contains("wrong_framework") || f.contains("unsupported"))

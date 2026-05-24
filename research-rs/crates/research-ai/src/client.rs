@@ -19,6 +19,7 @@ const TASKS: [(&str, &str); 4] = [
     ("research_blueprint", "research_blueprint_v1"),
     ("self_review", "self_review_v1"),
 ];
+const MAX_CALLS_PER_TICKER: usize = 6;
 
 pub fn external_ai_available() -> bool {
     std::env::var("OPENAI_API_KEY")
@@ -300,6 +301,12 @@ pub fn run_ai_usage_gate(
         };
         write_json(&metadata_dir.join("ai_usage.json"), &usage)?;
         return Err(anyhow!("OPENAI_API_KEY missing; --require-external-ai forbids local fallback. See docs/error_handbook.md#ai-json-invalid"));
+    }
+    if options.require_external_ai && options.no_ai_cache && TASKS.len() > MAX_CALLS_PER_TICKER {
+        return Err(anyhow!(
+            "AI budget exceeded before request: {} planned tasks exceeds max_calls_per_ticker={MAX_CALLS_PER_TICKER}",
+            TASKS.len()
+        ));
     }
 
     let mut tasks = Vec::new();

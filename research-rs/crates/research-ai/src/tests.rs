@@ -238,3 +238,12 @@ fn cannot_claim_external_ai_without_ai_usage_proof() {
     assert!(usage.local_mock_used);
     assert_ne!(usage.ai_provenance.source, "external_openai");
 }
+
+#[test]
+fn ai_budget_defaults_are_explicit() {
+    assert!(crate::client::compact_payload_size(&ProviderPayload::default()) < usize::MAX);
+    let config = research_core::config::EngineConfig::default();
+    assert_eq!(config.ai_budget.max_calls_per_single_run, 8);
+    assert_eq!(config.ai_budget.max_calls_per_ticker, 6);
+    assert_eq!(config.ai_budget.fail_after_calls, 200);
+}

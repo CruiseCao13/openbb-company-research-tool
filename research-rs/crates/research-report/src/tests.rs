@@ -104,6 +104,8 @@ fn report_renderer_has_required_sections() {
     assert!(report.contains("AI Source:"));
     assert!(report.contains("External AI Used:"));
     assert!(report.contains("Local Mock Used:"));
+    assert!(report.contains("Model:"));
+    assert!(report.contains("Prompt Versions:"));
     assert!(report.contains("## 4. Money Flow"));
     assert!(report.contains("## 13. Appendix: Locked Data"));
 }
@@ -119,6 +121,23 @@ fn dashboard_displays_ai_source() {
     assert!(dashboard_source.contains("AI Source"));
     assert!(dashboard_source.contains("External OpenAI API"));
     assert!(dashboard_source.contains("local fallback analysis"));
+}
+
+#[test]
+fn section_source_map_is_generated_by_renderer() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("section_source_map.json"));
+    assert!(source.contains("section_2_company_identity"));
+    assert!(source.contains("section_4_money_flow"));
+    assert!(source.contains("Renderer may format and arrange sections but must not invent thesis"));
+}
+
+#[test]
+fn ai_self_review_rewrite_requests_are_not_silently_ignored() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("REWRITE_REQUIRED_HUMAN_REVIEW"));
+    assert!(source.contains("rewrite_required_sections"));
+    assert!(source.contains("marks human review instead of pretending the rewrite was applied"));
 }
 
 #[test]
