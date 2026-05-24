@@ -91,6 +91,28 @@ charts were not sent to any external AI service.
 - If API usage is 0, why? The Codex shell did not have `OPENAI_API_KEY`; local fallback and mocked test calls were used. Reports with `source=local_mock` are local fallback analysis, not real external OpenAI analysis.
 - Provenance rule: every AI JSON artifact must include `ai_provenance`; `metadata/ai_usage.json` is the final authority for external/local/cache status.
 
+## Artifact-Backed Completion Checklist
+
+- Rust workspace exists: `research-rs/`
+- Cargo test result: `cargo test` passed in the latest v5 validation run.
+- Provider payload exists: `reports/AAPL/runs/ai_vulnerability_audit_local/raw/provider_payload.json`
+- AI usage exists: `reports/AAPL/runs/ai_vulnerability_audit_local/metadata/ai_usage.json`
+- External AI used in latest local audit run: false, proven by `reports/AAPL/runs/ai_vulnerability_audit_local/metadata/ai_usage.json`
+- Company understanding exists: `reports/AAPL/runs/ai_vulnerability_audit_local/metadata/company_understanding.json`
+- Financial interpretation exists: `reports/AAPL/runs/ai_vulnerability_audit_local/metadata/financial_interpretation.json`
+- Research blueprint exists: `reports/AAPL/runs/ai_vulnerability_audit_local/metadata/research_blueprint.json`
+- Section source map exists: `reports/AAPL/runs/ai_vulnerability_audit_local/metadata/section_source_map.json`
+- Evidence map exists: `reports/AAPL/runs/ai_vulnerability_audit_local/metadata/evidence_map.json`
+- Money flow map exists: `reports/AAPL/runs/ai_vulnerability_audit_local/metadata/money_flow_map.json`
+- Output consistency exists: `reports/AAPL/runs/ai_vulnerability_audit_local/metadata/output_consistency.json`
+- Report exists: `reports/AAPL/runs/ai_vulnerability_audit_local/report/AAPL_research_report.md`
+- Dashboard exists: `reports/AAPL/runs/ai_vulnerability_audit_local/dashboard.html`
+- PDF status exists: `reports/AAPL/runs/ai_vulnerability_audit_local/metadata/pdf_status.json`
+- Rewrite trace exists: `reports/AAPL/runs/ai_vulnerability_audit_local/audit/rewrite_trace.md`
+- Display review exists: `reports/release_checks/v5_0/display_review.md`
+- Content quality summary exists: `reports/quality_runs/v5_quality_productized_final3/content_quality_summary.md`
+- Training cases output exists when batch/quality finds non-pass cases: `reports/batch_runs/*/training_cases_generated.jsonl`
+
 ## Content Quality Review
 
 Latest quality runs:

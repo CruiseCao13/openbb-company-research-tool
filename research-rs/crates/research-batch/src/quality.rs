@@ -65,6 +65,7 @@ pub struct QualityTrainingCase {
     pub data_refs: Vec<String>,
     pub fix_target: String,
     pub regression_status: String,
+    pub quality_judge_provenance: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -323,6 +324,7 @@ fn quality_training_case(review: &QualityReview, frame: &str) -> QualityTraining
         data_refs: vec!["provider_payload.json".into(), "company_understanding.json".into(), "research_blueprint.json".into()],
         fix_target: if review.hard_failures.iter().any(|h| h.contains("chart") || h.contains("table")) { "chart".into() } else if review.hard_failures.iter().any(|h| h.contains("provider")) { "provider".into() } else { "prompt".into() },
         regression_status: "new".into(),
+        quality_judge_provenance: "local_deterministic_compact_review".into(),
     }
 }
 
@@ -417,6 +419,17 @@ fn write_quality_outputs(
         if failure_counts.is_empty() { "No hard failures.".to_string() } else { failure_counts.iter().map(|(f, c)| format!("- {}: {}", f, c)).collect::<Vec<_>>().join("\n") }
     );
     write_if_changed(&root.join("content_quality_summary.md"), &summary)?;
+    write_json(
+        &root.join("quality_judge_provenance.json"),
+        &serde_json::json!({
+            "source": "local_mock",
+            "external_ai_used": false,
+            "model": "local-deterministic-quality-judge",
+            "prompt_version": "content_quality_judge_v1",
+            "cache_hit": false,
+            "note": "Quality score is from local fallback judge, not external AI judge."
+        }),
+    )?;
     write_json(&root.join("content_quality_matrix.json"), &reviews)?;
     let mut wtr = csv::Writer::from_path(root.join("content_quality_matrix.csv"))?;
     wtr.write_record([

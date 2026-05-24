@@ -141,6 +141,24 @@ fn ai_self_review_rewrite_requests_are_not_silently_ignored() {
 }
 
 #[test]
+fn money_flow_map_and_output_consistency_are_generated() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("money_flow_map.json"));
+    assert!(source.contains("money_flow_quality_report.md"));
+    assert!(source.contains("output_consistency.json"));
+    assert!(source.contains("same_ai_source"));
+    assert!(source.contains("Figure_04_money_flow"));
+}
+
+#[test]
+fn product_quality_score_includes_ai_money_flow_and_evidence_dimensions() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("ai_provenance_score"));
+    assert!(source.contains("money_flow_score"));
+    assert!(source.contains("evidence_score"));
+}
+
+#[test]
 fn cannot_claim_external_ai_without_ai_usage_proof() {
     let report_source = include_str!("markdown.rs");
     assert!(report_source.contains("External AI Used"));

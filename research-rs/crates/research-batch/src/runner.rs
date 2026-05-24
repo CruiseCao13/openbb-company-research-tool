@@ -256,6 +256,15 @@ pub fn run_batch(options: &BatchRunOptions) -> Result<PathBuf> {
                     .first()
                     .cloned()
                     .unwrap_or_else(|| "warning".into()),
+                training_case_type: if understanding.ai_provenance.source == "external_openai" {
+                    lint.failed_checks
+                        .first()
+                        .cloned()
+                        .unwrap_or_else(|| "external_ai_review_case".into())
+                } else {
+                    "local_mock_case".into()
+                },
+                ai_source: understanding.ai_provenance.source.clone(),
                 wrong_output: understanding.correct_research_frame.clone(),
                 expected_output_features: blueprint.must_analyze.clone(),
                 must_contain: blueprint.must_analyze.clone(),

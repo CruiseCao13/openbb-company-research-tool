@@ -300,6 +300,7 @@ pub fn run_ai_usage_gate(
                 .collect(),
         };
         write_json(&metadata_dir.join("ai_usage.json"), &usage)?;
+        write_ai_cache_trace(metadata_dir, &usage)?;
         return Err(anyhow!("OPENAI_API_KEY missing; --require-external-ai forbids local fallback. See docs/error_handbook.md#ai-json-invalid"));
     }
     if options.require_external_ai && options.no_ai_cache && TASKS.len() > MAX_CALLS_PER_TICKER {
@@ -457,6 +458,7 @@ pub fn run_ai_usage_gate(
                         tasks,
                     };
                     write_json(&metadata_dir.join("ai_usage.json"), &usage)?;
+                    write_ai_cache_trace(metadata_dir, &usage)?;
                     return Err(anyhow!("External OpenAI API request failed and --require-external-ai forbids fallback: {err_text}"));
                 }
                 local_mock_used = true;
@@ -529,6 +531,7 @@ pub fn run_ai_usage_gate(
         ));
     }
     write_json(&metadata_dir.join("ai_usage.json"), &usage)?;
+    write_ai_cache_trace(metadata_dir, &usage)?;
     write_if_changed(
         &ai_dir.join("cache_info.json"),
         &format!(
@@ -542,4 +545,35 @@ pub fn run_ai_usage_gate(
         ),
     )?;
     Ok(usage)
+}
+
+fn write_ai_cache_trace(metadata_dir: &Path, usage: &AiUsage) -> Result<()> {
+    let entries = usage
+        .tasks
+        .iter()
+        .map(|task| {
+            json!({
+                "task": task.task,
+                "cache_key": digest_str(&format!("{}:{}:{}:{}", usage.ai_mode, task.task, task.prompt_version, task.model)),
+                "cache_hit": task.cache_hit,
+                "cache_source": if task.cache_hit { task.source.as_str() } else { "none" },
+                "input_digest": digest_str(&format!("{}:{}:{}", task.task, task.prompt_version, task.model)),
+                "output_digest": digest_str(&format!("{}:{}:{}", task.task, task.request_success, task.error)),
+                "prompt_version": task.prompt_version,
+                "model": task.model,
+                "schema_version": SCHEMA_VERSION,
+                "invalidation_reason": if task.cache_hit { "" } else { "cache not used or disabled by --no-ai-cache" }
+            })
+        })
+        .collect::<Vec<_>>();
+    let trace = json!({
+        "schema_version": SCHEMA_VERSION,
+        "ai_mode": usage.ai_mode,
+        "no_ai_cache": usage.no_ai_cache,
+        "cache_used": usage.cache_used,
+        "cache_hits": usage.cache_hits,
+        "entries": entries
+    });
+    write_json(&metadata_dir.join("ai_cache_trace.json"), &trace)?;
+    Ok(())
 }

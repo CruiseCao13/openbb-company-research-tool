@@ -10,6 +10,8 @@ pub struct TrainingCase {
     pub final_profile: String,
     pub expected_family: String,
     pub issue_type: String,
+    pub training_case_type: String,
+    pub ai_source: String,
     pub wrong_output: String,
     pub expected_output_features: Vec<String>,
     pub must_contain: Vec<String>,

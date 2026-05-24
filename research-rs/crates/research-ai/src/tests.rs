@@ -247,3 +247,32 @@ fn ai_budget_defaults_are_explicit() {
     assert_eq!(config.ai_budget.max_calls_per_ticker, 6);
     assert_eq!(config.ai_budget.fail_after_calls, 200);
 }
+
+#[test]
+fn ai_cache_trace_records_task_cache_inputs() {
+    let _guard = ENV_LOCK.lock().unwrap();
+    std::env::set_var("OPENAI_API_KEY", "sk-test-mocked");
+    std::env::set_var("OPENAI_MOCK_SUCCESS", "1");
+    let payload = ProviderPayload {
+        ticker: "AAPL".into(),
+        ..Default::default()
+    };
+    let (metadata, ai) = temp_ai_dirs("cache_trace");
+    let usage = run_ai_usage_gate(
+        &payload,
+        &AiRunOptions {
+            ai_mode: "compact".into(),
+            require_external_ai: true,
+            no_ai_cache: true,
+        },
+        &metadata,
+        &ai,
+    )
+    .unwrap();
+    assert!(usage.new_external_ai_calls > 0);
+    let trace = fs::read_to_string(metadata.join("ai_cache_trace.json")).unwrap();
+    assert!(trace.contains("\"cache_key\""));
+    assert!(trace.contains("\"prompt_version\""));
+    assert!(trace.contains("\"invalidation_reason\""));
+    std::env::remove_var("OPENAI_MOCK_SUCCESS");
+}

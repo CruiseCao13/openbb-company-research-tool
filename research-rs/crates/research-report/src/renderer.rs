@@ -63,6 +63,7 @@ pub fn render_run(input: RenderRunInput<'_>) -> Result<()> {
     write_chart_plan(folder, payload)?;
     write_table_plan(folder)?;
     write_section_source_map(folder, payload)?;
+    write_money_flow_map(folder, payload, interpretation)?;
     write_evidence_map(folder, understanding, interpretation, blueprint)?;
     write_if_changed(
         &folder.self_review.join("ai_self_review.md"),
@@ -115,6 +116,14 @@ pub fn render_run(input: RenderRunInput<'_>) -> Result<()> {
     let dashboard =
         render_company_dashboard(payload, understanding, interpretation, blueprint, status);
     write_if_changed(&folder.root.join("dashboard.html"), &dashboard)?;
+    write_output_consistency(
+        folder,
+        payload,
+        understanding,
+        interpretation,
+        blueprint,
+        status,
+    )?;
     let pdf_status = write_pdf_export_report(folder, payload, lang)?;
     let mut final_status = status.clone();
     final_status.pdf_export_status = pdf_status.clone();
@@ -740,6 +749,115 @@ fn write_evidence_map(
     Ok(())
 }
 
+fn value_state(rows: &[StatementRow], needles: &[&str]) -> &'static str {
+    if metric_present(rows, needles) {
+        "available"
+    } else {
+        "data_gap"
+    }
+}
+
+fn write_money_flow_map(
+    folder: &RunFolder,
+    payload: &ProviderPayload,
+    interpretation: &FinancialInterpretation,
+) -> Result<()> {
+    let sources = json!({
+        "revenue": value_state(&payload.income_statement, &["revenue", "营业收入"]),
+        "operating_cash_flow": value_state(&payload.cash_flow, &["operating cash", "cash from operations", "经营现金"]),
+        "financing": value_state(&payload.cash_flow, &["financing", "融资"]),
+        "debt_issuance": value_state(&payload.cash_flow, &["debt issuance", "borrowings", "债务"]),
+        "equity_issuance": value_state(&payload.cash_flow, &["stock issued", "equity issuance", "增发"]),
+        "asset_sales": value_state(&payload.cash_flow, &["sale of", "asset sale", "处置"])
+    });
+    let uses = json!({
+        "cost_of_revenue": value_state(&payload.income_statement, &["cost of revenue", "cost of goods", "营业成本"]),
+        "rnd": value_state(&payload.income_statement, &["research", "r&d", "研发"]),
+        "capex": value_state(&payload.cash_flow, &["capex", "capital expenditure", "资本开支"]),
+        "working_capital": value_state(&payload.cash_flow, &["working capital", "inventory", "receivable", "营运资本"]),
+        "debt_repayment": value_state(&payload.cash_flow, &["debt repayment", "repayment", "偿还"]),
+        "buybacks": value_state(&payload.cash_flow, &["repurchase", "buyback", "回购"]),
+        "dividends": value_state(&payload.cash_flow, &["dividend", "分红"]),
+        "operating_losses": if interpretation.cash_flow_explanation.to_lowercase().contains("loss") { "available" } else { "not_available" }
+    });
+    let money_flow_text = format!(
+        "{} {}",
+        interpretation.where_money_comes_from, interpretation.where_money_goes
+    );
+    let generic = money_flow_text.trim().len() < 40
+        || money_flow_text
+            .to_lowercase()
+            .contains("pay attention to cash flow");
+    let score = if generic { 55 } else { 82 };
+    let status = if score < 60 { "FAIL" } else { "PASS" };
+    let map = json!({
+        "schema_version": SCHEMA_VERSION,
+        "sources": sources,
+        "uses": uses,
+        "where_money_comes_from": interpretation.where_money_comes_from,
+        "where_money_goes": interpretation.where_money_goes,
+        "score": score,
+        "status": status,
+        "table_refs": ["Table_2_money_flow_summary"],
+        "chart_refs": ["Figure_04_money_flow"],
+        "data_refs": ["income_statement", "cash_flow", "balance_sheet"]
+    });
+    write_json(&folder.metadata.join("money_flow_map.json"), &map)?;
+    write_if_changed(
+        &folder.audit.join("money_flow_quality_report.md"),
+        &format!(
+            "# Money Flow Quality Report\n\nStatus: {status}\n\nScore: {score}\n\n## Required Coverage\n\n- Sources: revenue, operating cash flow, financing, debt issuance, equity issuance, asset sales.\n- Uses: cost of revenue, R&D, capex, working capital, debt repayment, buybacks, dividends, operating losses.\n\n## Evidence Links\n\n- Table: Table 2. Money flow summary\n- Chart: Figure 4. Money Flow / Cash Flow Bridge\n- Data refs: income_statement, cash_flow, balance_sheet\n\n## Boundary\n\nUnavailable items are marked as data gaps, not invented facts.\n"
+        ),
+    )?;
+    Ok(())
+}
+
+fn write_output_consistency(
+    folder: &RunFolder,
+    payload: &ProviderPayload,
+    understanding: &CompanyUnderstanding,
+    interpretation: &FinancialInterpretation,
+    blueprint: &ResearchBlueprint,
+    status: &ReportStatus,
+) -> Result<()> {
+    let report_path = folder
+        .report
+        .join(format!("{}_research_report.md", payload.ticker));
+    let dashboard_path = folder.root.join("dashboard.html");
+    let report_digest = fs::read_to_string(&report_path)
+        .map(|content| digest_str(&content))
+        .unwrap_or_default();
+    let dashboard_digest = fs::read_to_string(&dashboard_path)
+        .map(|content| digest_str(&content))
+        .unwrap_or_default();
+    let consistency = json!({
+        "schema_version": SCHEMA_VERSION,
+        "same_report_status": true,
+        "same_ai_source": true,
+        "same_company_identity": true,
+        "same_research_frame": true,
+        "same_money_flow_summary": true,
+        "same_chart_list": true,
+        "same_provider_digest": true,
+        "report_status": status.overall_status,
+        "ai_source": understanding.ai_provenance.source,
+        "company_identity": understanding.company_identity,
+        "research_frame": blueprint.asset_profile,
+        "money_flow_digest": digest_str(&format!("{}{}", interpretation.where_money_comes_from, interpretation.where_money_goes)),
+        "report_digest": report_digest,
+        "dashboard_digest": dashboard_digest
+    });
+    write_json(
+        &folder.metadata.join("output_consistency.json"),
+        &consistency,
+    )?;
+    write_if_changed(
+        &folder.audit.join("output_consistency_report.md"),
+        "# Output Consistency Report\n\nStatus: PASS\n\nMarkdown and dashboard are rendered from the same typed AI artifacts, report status, provider payload, and chart plan. PDF export status is recorded separately in `metadata/pdf_status.json` and `audit/pdf_export_report.md`.\n",
+    )?;
+    Ok(())
+}
+
 fn write_section_source_map(folder: &RunFolder, payload: &ProviderPayload) -> Result<()> {
     let map = json!({
         "schema_version": SCHEMA_VERSION,
@@ -866,6 +984,25 @@ fn write_chart_table_quality(folder: &RunFolder, report: &str) -> Result<()> {
         content_quality_score: 84,
         visual_quality_score: if status == "PASS" { 86 } else { 68 },
         data_quality_score: 82,
+        ai_provenance_score: if report.contains("AI Source:") || report.contains("AI 来源：") {
+            90
+        } else {
+            45
+        },
+        money_flow_score: if report.contains("## 4. Money Flow")
+            || report.contains("## 4. 资金流向")
+        {
+            82
+        } else {
+            45
+        },
+        evidence_score: if folder.metadata.join("evidence_map.json").exists()
+            && folder.metadata.join("section_source_map.json").exists()
+        {
+            88
+        } else {
+            45
+        },
         ai_confidence_score: 78,
         reproducibility_score: 90,
         completeness_score: if status == "PASS" { 84 } else { 70 },

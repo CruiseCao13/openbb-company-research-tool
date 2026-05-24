@@ -114,3 +114,19 @@ fn codex_self_review_records_ai_provenance() {
     assert!(review.contains("Local fallback used"));
     assert!(review.contains("New external API calls"));
 }
+
+#[test]
+fn training_cases_record_ai_source_to_prevent_local_mock_positive_cases() {
+    let source = include_str!("runner.rs");
+    assert!(source.contains("ai_source"));
+    assert!(source.contains("local_mock_case"));
+    assert!(!source.contains("positive_case"));
+}
+
+#[test]
+fn quality_judge_provenance_marks_local_judge() {
+    let source = include_str!("quality.rs");
+    assert!(source.contains("quality_judge_provenance.json"));
+    assert!(source.contains("Quality score is from local fallback judge"));
+    assert!(source.contains("local-deterministic-quality-judge"));
+}
