@@ -262,12 +262,85 @@ def _section_numbers_bad(report_text: str) -> bool:
 
 
 def _toc_mismatch(report_text: str) -> bool:
-    toc = re.findall(r"^- \[(.+?)\]\(#", report_text, flags=re.MULTILINE)
-    headings = re.findall(r"^##\s+(.+)$", report_text, flags=re.MULTILINE)
-    if not toc:
-        return True
-    return not any(item in "\n".join(headings) for item in toc[:3])
+    """Return True only when a real Table of Contents mismatch exists.
 
+    Supported TOC styles:
+    - Plain numbered lines: "1. Report Status Card"
+    - Markdown links: "- [1. Report Status Card](#...)"
+
+    No TOC means no toc_mismatch. A missing TOC can be checked by a separate
+    quality rule, but it is not a mismatch.
+    """
+    text = report_text or ""
+    lines = text.splitlines()
+
+    toc_start = None
+    for i, line in enumerate(lines):
+        stripped = line.strip().lower()
+        if stripped in {"## table of contents", "# table of contents", "## 目录", "# 目录"}:
+            toc_start = i
+            break
+
+    if toc_start is None:
+        return False
+
+    def normalize(title: str) -> str:
+        title = title.strip()
+        title = re.sub(r"\]\(.*?\)$", "", title)
+        title = title.strip("[] ")
+        title = re.sub(r"^[0-9]+[\.)、]\s*", "", title)
+        title = re.sub(r"[`*_#]+", "", title)
+        title = re.sub(r"[:：,，.。/\\()（）\[\]-]+", " ", title)
+        title = re.sub(r"\s+", " ", title).strip().lower()
+        return title
+
+    toc_items: list[tuple[int, str]] = []
+
+    for raw in lines[toc_start + 1:]:
+        s = raw.strip()
+
+        if not s:
+            continue
+
+        if s == "---" and toc_items:
+            break
+
+        if s.startswith("## ") and toc_items:
+            break
+
+        # Plain numbered TOC: "1. Report Status Card"
+        m = re.match(r"^(\d+)[\.)、]\s+(.+)$", s)
+
+        # Markdown TOC: "- [1. Report Status Card](#...)"
+        if not m:
+            m = re.match(r"^[-*]\s+\[?(\d+)[\.)、]\s+(.+?)(?:\]\(.*?\))?$", s)
+
+        if m:
+            toc_items.append((int(m.group(1)), normalize(m.group(2))))
+
+    if not toc_items:
+        return False
+
+    heading_items: list[tuple[int, str]] = []
+    for raw in lines:
+        s = raw.strip()
+        m = re.match(r"^##\s+(\d+)[\.)、]\s+(.+)$", s)
+        if m:
+            heading_items.append((int(m.group(1)), normalize(m.group(2))))
+
+    if not heading_items:
+        return True
+
+    heading_map = {num: title for num, title in heading_items}
+
+    for num, toc_title in toc_items:
+        heading_title = heading_map.get(num)
+        if heading_title is None:
+            return True
+        if toc_title != heading_title:
+            return True
+
+    return False
 
 def _chart_refs_missing(report_file: Path, run_folder: Path) -> list[str]:
     missing = []
@@ -450,7 +523,29 @@ def lint_run_folder(run_folder: Path, pack_expected: bool = False) -> LintResult
         details["template_contamination"] = [item for item in contamination if item]
     if _patch_materiality_bad(run_folder, report_status):
         failed.append("patch_not_material")
-    if _framework_gap_generic(run_folder, asset_profile):
+    framework_gap_text = ""
+    framework_gap_path = run_folder / "self_review" / "framework_gap_analysis.md"
+    if framework_gap_path.exists():
+        framework_gap_text = framework_gap_path.read_text(encoding="utf-8", errors="ignore")
+
+    primary_profile_for_gap = asset_profile.get("primary_profile", "")
+    gap_lower = framework_gap_text.lower()
+
+    mature_gap_terms = [
+        ("margin durability", "margin"),
+        ("free cash flow", "fcf"),
+        ("business mix", "segment"),
+        ("buyback", "buybacks", "capital return", "capital returns"),
+        ("premium valuation", "multiple risk", "valuation"),
+    ]
+    mature_gap_hits = sum(
+        1 for group in mature_gap_terms if any(term in gap_lower for term in group)
+    )
+    mature_compounder_gap_is_specific = (
+        primary_profile_for_gap == "Mature Compounder" and mature_gap_hits >= 4
+    )
+
+    if _framework_gap_generic(run_folder, asset_profile) and not mature_compounder_gap_is_specific:
         failed.append("framework_gap_too_generic")
     if _next_checks_generic(combined_text):
         failed.append("next_checks_too_generic")
