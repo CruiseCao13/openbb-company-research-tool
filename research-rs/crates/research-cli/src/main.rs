@@ -5,6 +5,7 @@ use research_ai::run_local_compact_analyst;
 use research_batch::quality::{run_quality, QualityRunOptions};
 use research_batch::runner::{run_batch, BatchRunOptions};
 use research_core::config::EngineConfig;
+use research_core::io::{write_if_changed, write_json};
 use research_core::provider::fetch_provider_payload;
 use research_core::run_folder::RunFolder;
 use research_core::types::*;
@@ -14,6 +15,7 @@ use research_core::validation::{
 use research_report::pack::pack_run;
 use research_report::renderer::{render_run, RenderRunInput};
 use std::path::PathBuf;
+use std::time::Instant;
 
 #[derive(Parser)]
 #[command(name = "research-rs")]
@@ -125,9 +127,40 @@ fn run_one(args: &RunArgs, render: bool) -> Result<()> {
     let folder = RunFolder::new(&ctx);
     folder.create()?;
     let config = EngineConfig::default();
+    let run_started = Local::now();
+    let total_timer = Instant::now();
+    let mut stages: Vec<StageTrace> = Vec::new();
 
     println!("[1/9] Fetching provider data              ...");
+    let stage_timer = Instant::now();
     let payload = fetch_provider_payload(&ctx, &config, &folder.raw.join("provider_payload.json"))?;
+    stages.push(StageTrace {
+        stage: "provider_fetch".into(),
+        status: if payload.error.is_some() {
+            "WARNING"
+        } else {
+            "PASS"
+        }
+        .into(),
+        duration_ms: stage_timer.elapsed().as_millis(),
+        cache_hit: folder.metadata.join("provider_status.json").exists()
+            && std::fs::read_to_string(folder.metadata.join("provider_status.json"))
+                .unwrap_or_default()
+                .contains("\"cache_hit\": true"),
+        provider_used: Some(args.provider.clone()),
+        ai_calls: 0,
+        errors: payload
+            .error
+            .as_ref()
+            .map(|e| vec![e.error_message.clone()])
+            .unwrap_or_default(),
+        warnings: payload.metadata.data_quality_warnings.clone(),
+        output_files: vec![
+            "raw/provider_payload.json".into(),
+            "metadata/provider_status.json".into(),
+        ],
+    });
+    let stage_timer = Instant::now();
     let payload_failures = validate_provider_payload(&payload);
     println!(
         "[2/9] Validating locked data              {}",
@@ -137,13 +170,51 @@ fn run_one(args: &RunArgs, render: bool) -> Result<()> {
             "warning"
         }
     );
+    stages.push(StageTrace {
+        stage: "provider_validation".into(),
+        status: if payload_failures.is_empty() {
+            "PASS"
+        } else {
+            "WARNING"
+        }
+        .into(),
+        duration_ms: stage_timer.elapsed().as_millis(),
+        cache_hit: false,
+        provider_used: Some(args.provider.clone()),
+        ai_calls: 0,
+        errors: vec![],
+        warnings: payload_failures.clone(),
+        output_files: vec!["audit/provider_validation.md".into()],
+    });
 
+    let stage_timer = Instant::now();
     println!("[3/9] AI company understanding            done  local");
     let (understanding, interpretation, blueprint, review, ai_calls, cache_hits) =
         run_local_compact_analyst(&payload);
     println!("[4/9] AI financial interpretation         done");
     println!("[5/9] AI research blueprint               done");
     let ai_failures = validate_ai_json(&understanding, &interpretation, &blueprint, &review);
+    stages.push(StageTrace {
+        stage: "local_compact_ai_analysis".into(),
+        status: if ai_failures.is_empty() {
+            "PASS"
+        } else {
+            "WARNING"
+        }
+        .into(),
+        duration_ms: stage_timer.elapsed().as_millis(),
+        cache_hit: cache_hits > 0,
+        provider_used: None,
+        ai_calls,
+        errors: vec![],
+        warnings: ai_failures.clone(),
+        output_files: vec![
+            "metadata/company_understanding.json".into(),
+            "metadata/financial_interpretation.json".into(),
+            "metadata/research_blueprint.json".into(),
+            "self_review/ai_self_review.json".into(),
+        ],
+    });
     let status = report_status(
         &payload_failures,
         &ai_failures,
@@ -159,6 +230,7 @@ fn run_one(args: &RunArgs, render: bool) -> Result<()> {
     );
 
     if render {
+        let stage_timer = Instant::now();
         render_run(RenderRunInput {
             folder: &folder,
             payload: &payload,
@@ -170,6 +242,21 @@ fn run_one(args: &RunArgs, render: bool) -> Result<()> {
             lang: &args.lang,
         })?;
         println!("[6/9] Rendering report                    done");
+        stages.push(StageTrace {
+            stage: "report_render".into(),
+            status: "PASS".into(),
+            duration_ms: stage_timer.elapsed().as_millis(),
+            cache_hit: false,
+            provider_used: None,
+            ai_calls: 0,
+            errors: vec![],
+            warnings: vec![],
+            output_files: vec![
+                format!("report/{}_research_report.md", ctx.ticker),
+                "dashboard.html".into(),
+                "audit/visual_lint_report.md".into(),
+            ],
+        });
         println!(
             "[7/9] AI self review                      {}",
             if review.human_review_required {
@@ -191,11 +278,31 @@ fn run_one(args: &RunArgs, render: bool) -> Result<()> {
                 "pass"
             }
         );
+        let stage_timer = Instant::now();
         let pack_path = if args.pack {
             Some(pack_run(&folder, &ctx.ticker)?)
         } else {
             None
         };
+        stages.push(StageTrace {
+            stage: "pack".into(),
+            status: if pack_path.is_some() {
+                "PASS"
+            } else {
+                "SKIPPED"
+            }
+            .into(),
+            duration_ms: stage_timer.elapsed().as_millis(),
+            cache_hit: false,
+            provider_used: None,
+            ai_calls: 0,
+            errors: vec![],
+            warnings: vec![],
+            output_files: pack_path
+                .as_ref()
+                .map(|p| vec![p.to_string_lossy().to_string()])
+                .unwrap_or_default(),
+        });
         println!(
             "[9/9] Writing pack                        {}",
             if pack_path.is_some() {
@@ -221,6 +328,32 @@ fn run_one(args: &RunArgs, render: bool) -> Result<()> {
             println!("Pack: {}", path.display());
         }
     }
+    let trace = RunTrace {
+        ticker: ctx.ticker.clone(),
+        run_id: ctx.run_id.clone(),
+        started_at: run_started.to_rfc3339(),
+        finished_at: Local::now().to_rfc3339(),
+        total_ms: total_timer.elapsed().as_millis(),
+        provider_used: ctx.provider.clone(),
+        ai_mode: ctx.ai_mode.clone(),
+        ai_calls,
+        cache_hits,
+        stages,
+    };
+    write_json(&folder.metadata.join("run_trace.json"), &trace)?;
+    write_if_changed(
+        &folder.audit.join("run_log.md"),
+        &format!(
+            "# Run Log\n\nTicker: {}\nRun ID: {}\nTotal runtime: {} ms\nProvider: {}\nAI mode: {}\nAI calls: {}\nCache hits: {}\n\nSee `metadata/run_trace.json` for machine-readable stage timings.\n",
+            trace.ticker,
+            trace.run_id,
+            trace.total_ms,
+            trace.provider_used,
+            trace.ai_mode,
+            trace.ai_calls,
+            trace.cache_hits
+        ),
+    )?;
     Ok(())
 }
 

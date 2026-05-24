@@ -12,6 +12,7 @@
 | README UX | PASS | README is bilingual, product-oriented, includes Mermaid pipeline, responsibility map, folder structure, sample output path, limits, and disclaimer. |
 | Language Quality | WARNING | The local compact analyst is clear and bounded; deeper natural-language nuance depends on a future external AI adapter. |
 | Data Coverage | PASS | Data inventory, data usage coverage, chart plan, and evidence map are generated for each run. |
+| Observability | PASS | `metadata/run_trace.json`, `audit/run_log.md`, validation passes, provider status, and batch trace files are generated. |
 
 No display category is below WARNING.
 
@@ -49,6 +50,16 @@ No display category is below WARNING.
 - Critical unused fields policy: PASS when empty, WARNING path available when a fetched critical field has no destination.
 - Evidence map generated: PASS.
 - Data gaps are not hidden: PASS.
+
+## Rust Engineering Brain Review
+
+- Typed status/report artifacts: PASS.
+- Provider status and cache visibility: PASS.
+- Compiler-style validation passes: PASS.
+- Table plan generated before rendering: PASS.
+- Run trace and stage timings: PASS.
+- Batch trace with runtime summary: PASS.
+- Pack manifest includes file sizes and digests: PASS.
 
 ## Dashboard Review
 

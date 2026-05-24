@@ -8,6 +8,7 @@
 - v5 single-company command that creates report, raw, metadata, audit, self-review, pack, and dashboard artifacts.
 - v5 batch command that runs `broad_30_probe`, isolates ticker-level failures, writes matrix outputs, and generates local training cases.
 - Per-run data inventory, data usage coverage, chart plan, evidence map, chart/table quality report, and PDF export audit artifacts.
+- A Rust-side engineering control layer with error taxonomy types, provider status/cache metadata, compiler-style validation passes, table plans, run traces, batch traces, and pack manifest file digests.
 
 ## What Was Not Built
 
@@ -23,6 +24,8 @@
 - Python provider syntax checks
 - `.venv/bin/python -m pytest -q`
 - AAPL v5 run
+- AAPL v5 Rust-brain run with `metadata/run_trace.json`, `metadata/validation_passes.json`, `metadata/table_plan.json`, and digest-aware pack manifest
+- smoke_12 three-name batch probe with `batch_trace.json` and runtime matrix
 - 600519.SH v5 run
 - broad_30 v5 batch
 - broad_30 content quality run
@@ -83,6 +86,10 @@ See `reports/release_checks/v5_0/display_review.md`.
 - Data usage coverage: Yes, `metadata/data_usage_coverage.json` and `audit/data_usage_coverage_report.md` map fetched critical fields to report/chart/table/appendix destinations or data gaps.
 - Chart/table judge: Yes, `metadata/chart_table_quality.json` and `audit/chart_table_quality_report.md` score relevance, readability, explanation, units, source trace, and visual polish.
 - Evidence map: Yes, key claims are mapped to provider sections, chart references, table references, confidence, and unsupported-claim status.
+- Table plan: Yes, `metadata/table_plan.json` and `audit/table_selection_report.md` are generated before report rendering.
+- Validation passes: Yes, `metadata/validation_passes.json` records compiler-style provider, AI schema, money flow, evidence, chart/table, visual, and PDF passes.
+- Traceability: Yes, single runs write `metadata/run_trace.json` and `audit/run_log.md`; batch runs write `batch_trace.json`.
+- Pack manifest: Yes, pack manifests include PDF/dashboard/chart flags plus per-file size and SHA-256 digest.
 - Folder structure: Clear v5 run folders with report/raw/metadata/audit/self_review/data/charts/pack/dashboard.
 - Template flavor: Reduced but not eliminated; local compact analyst remains less natural than future external AI.
 - Unsupported claims: Flagged in AI self-review instead of silently presented.
@@ -93,6 +100,7 @@ See `reports/release_checks/v5_0/display_review.md`.
 - AI calls total: 0 external paid calls.
 - AI calls avoided by cache: External AI is disabled; local compact fallback used.
 - Provider cache hits: Provider cache is path-based and avoids refetch unless `--force` is used.
+- Stage timing: `run_trace.json` records provider fetch, validation, local analysis, report render, and pack durations.
 - Chart cache hits: Chart generation is deterministic; deeper digest-based chart cache remains future work.
 - Batch runtime: broad_30 validation completed in roughly one minute in this environment.
 - Slowest stage: provider fetch / yfinance response.

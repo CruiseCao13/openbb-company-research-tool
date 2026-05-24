@@ -1,0 +1,62 @@
+{
+  "not_rendered_as_tables": [
+    {
+      "data": "raw statement rows",
+      "reason": "Raw rows stay in locked data/appendix; compact tables summarize only the evidence needed for reading."
+    },
+    {
+      "data": "long AI interpretation",
+      "reason": "Long explanation belongs in prose, not table cells."
+    }
+  ],
+  "tables": [
+    {
+      "columns": [
+        "Item",
+        "Value"
+      ],
+      "data_used": [
+        "metadata/report_status.json"
+      ],
+      "reason_if_skipped": "",
+      "research_question": "Can this report be trusted as a first-pass memo?",
+      "source": "metadata/report_status.json",
+      "status": "generated",
+      "table_id": "Table_1_status_summary",
+      "unit": "status/text"
+    },
+    {
+      "columns": [
+        "Flow",
+        "Signal",
+        "Unit",
+        "Why it matters"
+      ],
+      "data_used": [
+        "provider_payload.json",
+        "financial_interpretation.json"
+      ],
+      "reason_if_skipped": "",
+      "research_question": "Where does money come from and where does it go?",
+      "source": "provider_payload.json and financial_interpretation.json",
+      "status": "generated",
+      "table_id": "Table_2_money_flow_summary",
+      "unit": "text"
+    },
+    {
+      "columns": [
+        "Field",
+        "Value"
+      ],
+      "data_used": [
+        "raw/provider_payload.json"
+      ],
+      "reason_if_skipped": "",
+      "research_question": "Which locked data exists before interpretation?",
+      "source": "raw/provider_payload.json",
+      "status": "generated",
+      "table_id": "Table_3_locked_data_coverage",
+      "unit": "count/text"
+    }
+  ]
+}

@@ -157,6 +157,57 @@ pub struct ReportStatus {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProviderStatus {
+    pub ticker: String,
+    pub provider: String,
+    pub status: String,
+    pub cache_hit: bool,
+    pub attempts: usize,
+    pub stdout_excerpt: String,
+    pub stderr_excerpt: String,
+    pub user_message: String,
+    pub suggested_next_action: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StageTrace {
+    pub stage: String,
+    pub status: String,
+    pub duration_ms: u128,
+    pub cache_hit: bool,
+    pub provider_used: Option<String>,
+    pub ai_calls: usize,
+    pub errors: Vec<String>,
+    pub warnings: Vec<String>,
+    pub output_files: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RunTrace {
+    pub ticker: String,
+    pub run_id: String,
+    pub started_at: String,
+    pub finished_at: String,
+    pub total_ms: u128,
+    pub provider_used: String,
+    pub ai_mode: String,
+    pub ai_calls: usize,
+    pub cache_hits: usize,
+    pub stages: Vec<StageTrace>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ValidationPassResult {
+    pub pass_name: String,
+    pub status: String,
+    pub errors: Vec<String>,
+    pub warnings: Vec<String>,
+    pub evidence: Vec<String>,
+    pub suggested_fix: String,
+    pub blocking: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UnitPolicy {
     pub reporting_currency: String,
     pub price_currency: String,
@@ -178,8 +229,17 @@ pub struct PackManifest {
     pub ai_mode: String,
     pub provider: String,
     pub has_dashboard: bool,
+    pub has_pdf: bool,
     pub has_charts: bool,
     pub has_self_review: bool,
+    pub file_entries: Vec<PackFileEntry>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PackFileEntry {
+    pub path: String,
+    pub size_bytes: u64,
+    pub sha256: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

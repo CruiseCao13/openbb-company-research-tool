@@ -1,0 +1,84 @@
+{
+  "ticker": "AAPL",
+  "run_id": "v5_aapl_rust_brain",
+  "started_at": "2026-05-25T05:20:29.635625+08:00",
+  "finished_at": "2026-05-25T05:20:32.335871+08:00",
+  "total_ms": 2700,
+  "provider_used": "auto",
+  "ai_mode": "compact",
+  "ai_calls": 0,
+  "cache_hits": 0,
+  "stages": [
+    {
+      "stage": "provider_fetch",
+      "status": "PASS",
+      "duration_ms": 1535,
+      "cache_hit": false,
+      "provider_used": "auto",
+      "ai_calls": 0,
+      "errors": [],
+      "warnings": [],
+      "output_files": [
+        "raw/provider_payload.json",
+        "metadata/provider_status.json"
+      ]
+    },
+    {
+      "stage": "provider_validation",
+      "status": "PASS",
+      "duration_ms": 0,
+      "cache_hit": false,
+      "provider_used": "auto",
+      "ai_calls": 0,
+      "errors": [],
+      "warnings": [],
+      "output_files": [
+        "audit/provider_validation.md"
+      ]
+    },
+    {
+      "stage": "local_compact_ai_analysis",
+      "status": "PASS",
+      "duration_ms": 0,
+      "cache_hit": false,
+      "provider_used": null,
+      "ai_calls": 0,
+      "errors": [],
+      "warnings": [],
+      "output_files": [
+        "metadata/company_understanding.json",
+        "metadata/financial_interpretation.json",
+        "metadata/research_blueprint.json",
+        "self_review/ai_self_review.json"
+      ]
+    },
+    {
+      "stage": "report_render",
+      "status": "PASS",
+      "duration_ms": 1009,
+      "cache_hit": false,
+      "provider_used": null,
+      "ai_calls": 0,
+      "errors": [],
+      "warnings": [],
+      "output_files": [
+        "report/AAPL_research_report.md",
+        "dashboard.html",
+        "audit/visual_lint_report.md"
+      ]
+    },
+    {
+      "stage": "pack",
+      "status": "PASS",
+      "duration_ms": 154,
+      "cache_hit": false,
+      "provider_used": null,
+      "ai_calls": 0,
+      "errors": [],
+      "warnings": [],
+      "output_files": [
+        "reports/AAPL/runs/v5_aapl_rust_brain/pack/AAPL_research_pack.zip"
+      ]
+    }
+  ]
+}

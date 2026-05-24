@@ -1,5 +1,6 @@
 pub mod cache;
 pub mod config;
+pub mod error;
 pub mod io;
 pub mod provider;
 pub mod run_folder;

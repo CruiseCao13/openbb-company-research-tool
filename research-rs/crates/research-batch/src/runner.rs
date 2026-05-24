@@ -14,6 +14,7 @@ use research_report::dashboard::render_batch_dashboard;
 use research_report::pack::pack_run;
 use research_report::renderer::{render_run, RenderRunInput};
 use std::path::{Path, PathBuf};
+use std::time::Instant;
 
 #[derive(Debug, Clone)]
 pub struct BatchRunOptions {
@@ -34,6 +35,7 @@ struct Row {
     frame: String,
     run_folder: String,
     failed_checks: Vec<String>,
+    duration_ms: u128,
 }
 
 pub fn run_batch(options: &BatchRunOptions) -> Result<PathBuf> {
@@ -52,8 +54,10 @@ pub fn run_batch(options: &BatchRunOptions) -> Result<PathBuf> {
         .collect::<Vec<_>>();
     let mut rows = Vec::new();
     let mut training_cases = Vec::new();
+    let batch_timer = Instant::now();
 
     for ticker in tickers {
+        let ticker_timer = Instant::now();
         let ctx = RunContext {
             ticker: ticker.clone(),
             market: "US".to_string(),
@@ -105,6 +109,53 @@ pub fn run_batch(options: &BatchRunOptions) -> Result<PathBuf> {
         if options.pack {
             let _ = pack_run(&folder, &ticker);
         }
+        let ticker_duration = ticker_timer.elapsed().as_millis();
+        let run_trace = RunTrace {
+            ticker: ticker.clone(),
+            run_id: ctx.run_id.clone(),
+            started_at: Local::now().to_rfc3339(),
+            finished_at: Local::now().to_rfc3339(),
+            total_ms: ticker_duration,
+            provider_used: ctx.provider.clone(),
+            ai_mode: ctx.ai_mode.clone(),
+            ai_calls,
+            cache_hits,
+            stages: vec![StageTrace {
+                stage: "batch_ticker_pipeline".into(),
+                status: status.overall_status.clone(),
+                duration_ms: ticker_duration,
+                cache_hit: cache_hits > 0,
+                provider_used: Some(ctx.provider.clone()),
+                ai_calls,
+                errors: vec![],
+                warnings: provider_failures
+                    .iter()
+                    .chain(ai_failures.iter())
+                    .cloned()
+                    .collect(),
+                output_files: vec![
+                    "raw/provider_payload.json".into(),
+                    "metadata/research_blueprint.json".into(),
+                    "report/*_research_report.md".into(),
+                    "dashboard.html".into(),
+                ],
+            }],
+        };
+        research_core::io::write_json(&folder.metadata.join("run_trace.json"), &run_trace)?;
+        write_if_changed(
+            &folder.audit.join("run_log.md"),
+            &format!(
+                "# Run Log\n\nTicker: {}\nRun ID: {}\nTotal runtime: {} ms\nProvider: {}\nAI mode: {}\nAI calls: {}\nCache hits: {}\n\nThis run was executed inside batch `{}`.\n",
+                run_trace.ticker,
+                run_trace.run_id,
+                run_trace.total_ms,
+                run_trace.provider_used,
+                run_trace.ai_mode,
+                run_trace.ai_calls,
+                run_trace.cache_hits,
+                options.run_id
+            ),
+        )?;
         let expected = eval.expected_family.get(&ticker);
         let lint = lint_status(&status, expected, &understanding.correct_research_frame);
         let row_status = if !lint.failed_checks.is_empty() {
@@ -166,30 +217,56 @@ pub fn run_batch(options: &BatchRunOptions) -> Result<PathBuf> {
             frame: understanding.correct_research_frame,
             run_folder: folder.root.to_string_lossy().to_string(),
             failed_checks: lint.failed_checks,
+            duration_ms: ticker_duration,
         });
     }
 
-    write_batch_outputs(&batch_root, &eval.name, &rows, training_cases.len())?;
+    write_batch_outputs(
+        &batch_root,
+        &eval.name,
+        options.workers,
+        batch_timer.elapsed().as_millis(),
+        &rows,
+        training_cases.len(),
+    )?;
     Ok(batch_root)
 }
 
 use std::io::Write;
 
-fn write_batch_outputs(root: &Path, name: &str, rows: &[Row], training_count: usize) -> Result<()> {
+fn write_batch_outputs(
+    root: &Path,
+    name: &str,
+    workers: usize,
+    total_ms: u128,
+    rows: &[Row],
+    training_count: usize,
+) -> Result<()> {
     let total = rows.len();
     let pass = rows.iter().filter(|r| r.status == "PASS").count();
     let fail = rows.iter().filter(|r| r.status == "FAIL").count();
     let warning = rows.iter().filter(|r| r.status == "WARNING").count();
+    let avg_ms = if total == 0 {
+        0
+    } else {
+        total_ms / total as u128
+    };
+    let slowest = rows
+        .iter()
+        .max_by_key(|r| r.duration_ms)
+        .map(|r| format!("{} ({} ms)", r.ticker, r.duration_ms))
+        .unwrap_or_else(|| "n/a".into());
     let generated = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
     let mut summary = format!(
-        "# v5 Batch Evaluation Report\n\n> Eval Set: {name}  \n> Generated: {generated}  \n> AI Mode: compact/local fallback  \n> External AI Calls: 0\n\n## 1. Executive Summary\n\nThis batch validates the v5 AI-led Rust research pipeline. Provider failures are isolated per ticker, and local compact analyst fallback is used when no external AI is called.\n\n## 2. Status Dashboard\n\n| Metric | Value |\n|---|---:|\n| Total tickers | {total} |\n| PASS | {pass} |\n| WARNING | {warning} |\n| FAIL | {fail} |\n| Training cases generated | {training_count} |\n| External AI calls | 0 |\n\n## 3. Company Matrix\n\n| Ticker | Status | Research Frame | Failed Checks |\n|---|---|---|---|\n"
+        "# v5 Batch Evaluation Report\n\n> Eval Set: {name}  \n> Generated: {generated}  \n> AI Mode: compact/local fallback  \n> External AI Calls: 0\n\n## 1. Executive Summary\n\nThis batch validates the v5 AI-led Rust research pipeline. Provider failures are isolated per ticker, and local compact analyst fallback is used when no external AI is called.\n\n## 2. Status Dashboard\n\n| Metric | Value |\n|---|---:|\n| Total tickers | {total} |\n| PASS | {pass} |\n| WARNING | {warning} |\n| FAIL | {fail} |\n| Training cases generated | {training_count} |\n| External AI calls | 0 |\n| Workers requested | {workers} |\n| Avg runtime per ticker | {avg_ms} ms |\n| Slowest ticker | {slowest} |\n\n## 3. Company Matrix\n\n| Ticker | Status | Research Frame | Runtime | Failed Checks |\n|---|---|---|---:|---|\n"
     );
     for r in rows {
         summary.push_str(&format!(
-            "| {} | {} | {} | {} |\n",
+            "| {} | {} | {} | {} ms | {} |\n",
             r.ticker,
             r.status,
             r.frame,
+            r.duration_ms,
             r.failed_checks.join(", ")
         ));
     }
@@ -251,7 +328,14 @@ fn write_batch_outputs(root: &Path, name: &str, rows: &[Row], training_count: us
     )?;
 
     let mut wtr = csv::Writer::from_path(root.join("company_matrix.csv"))?;
-    wtr.write_record(["ticker", "status", "frame", "run_folder", "failed_checks"])?;
+    wtr.write_record([
+        "ticker",
+        "status",
+        "frame",
+        "run_folder",
+        "failed_checks",
+        "duration_ms",
+    ])?;
     for r in rows {
         wtr.write_record([
             &r.ticker,
@@ -259,8 +343,27 @@ fn write_batch_outputs(root: &Path, name: &str, rows: &[Row], training_count: us
             &r.frame,
             &r.run_folder,
             &r.failed_checks.join(";"),
+            &r.duration_ms.to_string(),
         ])?;
     }
     wtr.flush()?;
+    let trace = serde_json::json!({
+        "batch_name": name,
+        "workers_requested": workers,
+        "total_ms": total_ms,
+        "avg_runtime_per_ticker_ms": avg_ms,
+        "slowest_ticker": slowest,
+        "provider_failure_count": rows.iter().filter(|r| r.status == "FETCH_FAILED").count(),
+        "ai_call_count": 0,
+        "cache_hit_impact": "Provider cache hits are recorded per run in metadata/provider_status.json.",
+        "tickers": rows.iter().map(|r| serde_json::json!({
+            "ticker": r.ticker,
+            "status": r.status,
+            "duration_ms": r.duration_ms,
+            "run_folder": r.run_folder,
+            "failed_checks": r.failed_checks
+        })).collect::<Vec<_>>()
+    });
+    research_core::io::write_json(&root.join("batch_trace.json"), &trace)?;
     Ok(())
 }

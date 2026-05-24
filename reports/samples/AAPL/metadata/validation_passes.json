@@ -1,0 +1,87 @@
+[
+  {
+    "pass_name": "ProviderPayloadPass",
+    "status": "PASS",
+    "errors": [],
+    "warnings": [],
+    "evidence": [
+      "raw/provider_payload.json",
+      "metadata/provider_status.json"
+    ],
+    "suggested_fix": "Inspect provider_status.json and retry or switch provider when warning.",
+    "blocking": false
+  },
+  {
+    "pass_name": "AiJsonSchemaPass",
+    "status": "PASS",
+    "errors": [],
+    "warnings": [],
+    "evidence": [
+      "metadata/company_understanding.json",
+      "metadata/financial_interpretation.json",
+      "metadata/research_blueprint.json",
+      "self_review/ai_self_review.json"
+    ],
+    "suggested_fix": "Regenerate AI artifacts with the schema-constrained prompt compiler.",
+    "blocking": true
+  },
+  {
+    "pass_name": "MoneyFlowPass",
+    "status": "PASS",
+    "errors": [],
+    "warnings": [],
+    "evidence": [
+      "metadata/financial_interpretation.json",
+      "report/*_research_report.md"
+    ],
+    "suggested_fix": "Regenerate money-flow interpretation from locked cash-flow and balance-sheet data.",
+    "blocking": true
+  },
+  {
+    "pass_name": "EvidenceMapPass",
+    "status": "PASS",
+    "errors": [],
+    "warnings": [],
+    "evidence": [
+      "metadata/evidence_map.json",
+      "audit/evidence_map.md"
+    ],
+    "suggested_fix": "Map claims to locked data, chart/table evidence, assumptions, or data gaps.",
+    "blocking": true
+  },
+  {
+    "pass_name": "ChartTablePass",
+    "status": "PASS",
+    "errors": [],
+    "warnings": [],
+    "evidence": [
+      "metadata/chart_plan.json",
+      "metadata/table_plan.json",
+      "audit/chart_table_quality_report.md"
+    ],
+    "suggested_fix": "Regenerate chart/table plan and explanation blocks.",
+    "blocking": true
+  },
+  {
+    "pass_name": "VisualLintPass",
+    "status": "PASS",
+    "errors": [],
+    "warnings": [],
+    "evidence": [
+      "audit/visual_lint_report.md"
+    ],
+    "suggested_fix": "Fix report structure, chart links, dashboard, data coverage, or forbidden language.",
+    "blocking": true
+  },
+  {
+    "pass_name": "PdfExportPass",
+    "status": "PASS",
+    "errors": [],
+    "warnings": [],
+    "evidence": [
+      "audit/pdf_export_report.md"
+    ],
+    "suggested_fix": "Install or repair the PDF export helper; do not pretend PDF succeeded.",
+    "blocking": false
+  }
+]

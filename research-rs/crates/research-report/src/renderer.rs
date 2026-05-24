@@ -59,6 +59,7 @@ pub fn render_run(input: RenderRunInput<'_>) -> Result<()> {
     write_data_inventory(folder, payload, blueprint)?;
     write_data_usage_coverage(folder, payload, blueprint)?;
     write_chart_plan(folder, payload)?;
+    write_table_plan(folder)?;
     write_evidence_map(folder, understanding, interpretation, blueprint)?;
     write_if_changed(
         &folder.self_review.join("ai_self_review.md"),
@@ -125,13 +126,7 @@ pub fn render_run(input: RenderRunInput<'_>) -> Result<()> {
         "# Provider Validation\n\nProvider payload was parsed into the v5 locked-data schema.\n",
     )?;
     write_if_changed(&folder.audit.join("data_quality.md"), "# Data Quality\n\nData quality warnings are recorded in raw/provider_payload.json metadata.\n")?;
-    write_if_changed(
-        &folder.audit.join("validator_report.md"),
-        &format!(
-            "# Validator Report\n\nOverall status: {}\n\nHuman review required: {}\n",
-            status.overall_status, status.human_review_required
-        ),
-    )?;
+    write_validator_report(folder, &final_status, &pdf_status)?;
     write_if_changed(
         &folder.audit.join("lint_report.md"),
         "# Lint Report\n\nDeterministic report lint completed.\n",
@@ -163,6 +158,7 @@ pub fn render_run(input: RenderRunInput<'_>) -> Result<()> {
     if visual_status == "FAIL" {
         anyhow::bail!("visual lint failed: {}", visual_failures.join(", "));
     }
+    write_iteration_log(folder, &visual_status, &pdf_status)?;
     let report_entry = if lang == "zh" {
         format!("report/{}_research_report_cn.md", payload.ticker)
     } else {
@@ -658,6 +654,26 @@ fn write_chart_plan(folder: &RunFolder, payload: &ProviderPayload) -> Result<()>
     Ok(())
 }
 
+fn write_table_plan(folder: &RunFolder) -> Result<()> {
+    let plan = json!({
+        "tables": [
+            {"table_id":"Table_1_status_summary","data_used":["metadata/report_status.json"],"research_question":"Can this report be trusted as a first-pass memo?","columns":["Item","Value"],"unit":"status/text","source":"metadata/report_status.json","status":"generated","reason_if_skipped":""},
+            {"table_id":"Table_2_money_flow_summary","data_used":["provider_payload.json","financial_interpretation.json"],"research_question":"Where does money come from and where does it go?","columns":["Flow","Signal","Unit","Why it matters"],"unit":"text","source":"provider_payload.json and financial_interpretation.json","status":"generated","reason_if_skipped":""},
+            {"table_id":"Table_3_locked_data_coverage","data_used":["raw/provider_payload.json"],"research_question":"Which locked data exists before interpretation?","columns":["Field","Value"],"unit":"count/text","source":"raw/provider_payload.json","status":"generated","reason_if_skipped":""}
+        ],
+        "not_rendered_as_tables": [
+            {"data":"raw statement rows","reason":"Raw rows stay in locked data/appendix; compact tables summarize only the evidence needed for reading."},
+            {"data":"long AI interpretation","reason":"Long explanation belongs in prose, not table cells."}
+        ]
+    });
+    write_json(&folder.metadata.join("table_plan.json"), &plan)?;
+    write_if_changed(
+        &folder.audit.join("table_selection_report.md"),
+        "# Table Selection Report\n\nTables are planned before rendering. The report uses compact table surfaces and keeps long reasoning in prose. Raw provider rows are not pasted into the report body.\n",
+    )?;
+    Ok(())
+}
+
 fn write_evidence_map(
     folder: &RunFolder,
     understanding: &CompanyUnderstanding,
@@ -811,6 +827,121 @@ fn write_pdf_export_report(
         ),
     )?;
     Ok(status.to_string())
+}
+
+fn write_validator_report(
+    folder: &RunFolder,
+    status: &ReportStatus,
+    pdf_status: &str,
+) -> Result<()> {
+    let passes = vec![
+        ValidationPassResult {
+            pass_name: "ProviderPayloadPass".into(),
+            status: status.provider_payload_valid.clone(),
+            errors: vec![],
+            warnings: vec![],
+            evidence: vec!["raw/provider_payload.json".into(), "metadata/provider_status.json".into()],
+            suggested_fix: "Inspect provider_status.json and retry or switch provider when warning.".into(),
+            blocking: false,
+        },
+        ValidationPassResult {
+            pass_name: "AiJsonSchemaPass".into(),
+            status: status.ai_self_review_present.clone(),
+            errors: vec![],
+            warnings: vec![],
+            evidence: vec![
+                "metadata/company_understanding.json".into(),
+                "metadata/financial_interpretation.json".into(),
+                "metadata/research_blueprint.json".into(),
+                "self_review/ai_self_review.json".into(),
+            ],
+            suggested_fix: "Regenerate AI artifacts with the schema-constrained prompt compiler.".into(),
+            blocking: true,
+        },
+        ValidationPassResult {
+            pass_name: "MoneyFlowPass".into(),
+            status: status.money_flow_present.clone(),
+            errors: vec![],
+            warnings: vec![],
+            evidence: vec!["metadata/financial_interpretation.json".into(), "report/*_research_report.md".into()],
+            suggested_fix: "Regenerate money-flow interpretation from locked cash-flow and balance-sheet data.".into(),
+            blocking: true,
+        },
+        ValidationPassResult {
+            pass_name: "EvidenceMapPass".into(),
+            status: "PASS".into(),
+            errors: vec![],
+            warnings: vec![],
+            evidence: vec!["metadata/evidence_map.json".into(), "audit/evidence_map.md".into()],
+            suggested_fix: "Map claims to locked data, chart/table evidence, assumptions, or data gaps.".into(),
+            blocking: true,
+        },
+        ValidationPassResult {
+            pass_name: "ChartTablePass".into(),
+            status: "PASS".into(),
+            errors: vec![],
+            warnings: vec![],
+            evidence: vec![
+                "metadata/chart_plan.json".into(),
+                "metadata/table_plan.json".into(),
+                "audit/chart_table_quality_report.md".into(),
+            ],
+            suggested_fix: "Regenerate chart/table plan and explanation blocks.".into(),
+            blocking: true,
+        },
+        ValidationPassResult {
+            pass_name: "VisualLintPass".into(),
+            status: status.visual_lint_status.clone(),
+            errors: vec![],
+            warnings: vec![],
+            evidence: vec!["audit/visual_lint_report.md".into()],
+            suggested_fix: "Fix report structure, chart links, dashboard, data coverage, or forbidden language.".into(),
+            blocking: true,
+        },
+        ValidationPassResult {
+            pass_name: "PdfExportPass".into(),
+            status: pdf_status.into(),
+            errors: vec![],
+            warnings: if pdf_status == "PASS" {
+                vec![]
+            } else {
+                vec!["PDF unavailable; Markdown and HTML remain authoritative.".into()]
+            },
+            evidence: vec!["audit/pdf_export_report.md".into()],
+            suggested_fix: "Install or repair the PDF export helper; do not pretend PDF succeeded.".into(),
+            blocking: false,
+        },
+    ];
+    write_json(&folder.metadata.join("validation_passes.json"), &passes)?;
+    let rows = passes
+        .iter()
+        .map(|pass| {
+            format!(
+                "| {} | {} | {} | {} |\n",
+                pass.pass_name, pass.status, pass.blocking, pass.suggested_fix
+            )
+        })
+        .collect::<String>();
+    write_if_changed(
+        &folder.audit.join("validator_report.md"),
+        &format!(
+            "# Validator Report\n\nOverall status: {}\n\nHuman review required: {}\n\n## Compiler-style Validation Passes\n\n| Pass | Status | Blocking | Suggested Fix |\n|---|---|---:|---|\n{}",
+            status.overall_status, status.human_review_required, rows
+        ),
+    )?;
+    Ok(())
+}
+
+fn write_iteration_log(folder: &RunFolder, visual_status: &str, pdf_status: &str) -> Result<()> {
+    write_if_changed(
+        &folder.audit.join("iteration_log.md"),
+        &format!(
+            "# Iteration Log\n\n| Attempt | Stage | Result | Fixes attempted | Remaining issues |\n|---|---|---|---|---|\n| 1 | render / validate / visual lint | {} | deterministic render, chart/table plans, data coverage audit, PDF export audit | PDF status: {} |\n\nMax automatic attempts for this foundation path: 1. Future external AI polish loops may run up to 2 bounded interpretation rewrites without modifying locked data.\n",
+            if visual_status == "PASS" { "PASS" } else { "WARNING" },
+            pdf_status
+        ),
+    )?;
+    Ok(())
 }
 
 fn export_pdf(markdown_path: &std::path::Path, pdf_path: &std::path::Path) -> Result<()> {

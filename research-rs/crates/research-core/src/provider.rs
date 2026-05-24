@@ -1,7 +1,9 @@
+use crate::cache::digest_str;
 use crate::config::EngineConfig;
-use crate::io::{read_json, write_json};
-use crate::types::{ProviderPayload, RunContext};
+use crate::io::{ensure_dir, read_json, write_if_changed, write_json};
+use crate::types::{ProviderPayload, ProviderStatus, RunContext};
 use anyhow::{anyhow, Result};
+use chrono::Local;
 use std::path::Path;
 use std::process::Command;
 
@@ -11,7 +13,9 @@ pub fn fetch_provider_payload(
     out_path: &Path,
 ) -> Result<ProviderPayload> {
     if out_path.exists() && !ctx.force {
-        return read_json(out_path);
+        let payload: ProviderPayload = read_json(out_path)?;
+        write_provider_status(ctx, out_path, true, 0, "", "", "PASS")?;
+        return Ok(payload);
     }
 
     let python = if Path::new(".venv/bin/python").exists() {
@@ -19,7 +23,7 @@ pub fn fetch_provider_payload(
     } else {
         "python3"
     };
-    let status = Command::new(python)
+    let output = Command::new(python)
         .arg(&config.provider_script)
         .arg("--ticker")
         .arg(&ctx.ticker)
@@ -29,12 +33,96 @@ pub fn fetch_provider_payload(
         .arg(&ctx.provider)
         .arg("--out")
         .arg(out_path)
-        .status()?;
+        .output()?;
 
-    if !status.success() {
-        return Err(anyhow!("provider script failed for {}", ctx.ticker));
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    if !output.status.success() {
+        write_provider_status(ctx, out_path, false, 1, &stdout, &stderr, "PROVIDER_ERROR")?;
+        return Err(anyhow!(
+            "provider script failed for {}: {}",
+            ctx.ticker,
+            stderr.trim()
+        ));
     }
     let payload: ProviderPayload = read_json(out_path)?;
     write_json(out_path, &payload)?;
+    write_provider_status(ctx, out_path, false, 1, &stdout, &stderr, "PASS")?;
     Ok(payload)
+}
+
+fn excerpt(text: &str) -> String {
+    let trimmed = text.trim();
+    if trimmed.len() > 600 {
+        format!("{}...", &trimmed[..600])
+    } else {
+        trimmed.to_string()
+    }
+}
+
+fn write_provider_status(
+    ctx: &RunContext,
+    out_path: &Path,
+    cache_hit: bool,
+    attempts: usize,
+    stdout: &str,
+    stderr: &str,
+    status: &str,
+) -> Result<()> {
+    let root = out_path
+        .parent()
+        .and_then(|p| p.parent())
+        .ok_or_else(|| anyhow!("invalid provider output path"))?;
+    let metadata = root.join("metadata");
+    let audit = root.join("audit");
+    ensure_dir(&metadata)?;
+    ensure_dir(&audit)?;
+    let cache_key = digest_str(&format!(
+        "{}:{}:{}:{}:{}",
+        ctx.ticker, ctx.market, ctx.provider, ctx.run_id, ctx.force
+    ));
+    let provider_status = ProviderStatus {
+        ticker: ctx.ticker.clone(),
+        provider: ctx.provider.clone(),
+        status: status.to_string(),
+        cache_hit,
+        attempts,
+        stdout_excerpt: excerpt(stdout),
+        stderr_excerpt: excerpt(stderr),
+        user_message: if status == "PASS" {
+            "Provider payload is available and parsed into the locked-data contract.".to_string()
+        } else {
+            "Provider fetch failed; this ticker should be isolated and classified without crashing the batch.".to_string()
+        },
+        suggested_next_action: if status == "PASS" {
+            "Continue to validation and report rendering.".to_string()
+        } else {
+            "Retry with --force, inspect provider stderr, or try a fallback provider.".to_string()
+        },
+    };
+    write_json(&metadata.join("provider_status.json"), &provider_status)?;
+    write_if_changed(
+        &metadata.join("provider_cache_info.json"),
+        &format!(
+            "{{\n  \"cache_key\": \"{}\",\n  \"cache_hit\": {},\n  \"created_at\": \"{}\",\n  \"source\": \"{}\"\n}}\n",
+            cache_key,
+            cache_hit,
+            Local::now().to_rfc3339(),
+            ctx.provider
+        ),
+    )?;
+    write_if_changed(
+        &audit.join("provider_validation.md"),
+        &format!(
+            "# Provider Validation\n\nStatus: {}\n\nProvider: {}\nCache hit: {}\nAttempts: {}\n\n## User Message\n\n{}\n\n## Suggested Next Action\n\n{}\n\n## stderr excerpt\n\n```text\n{}\n```\n",
+            provider_status.status,
+            provider_status.provider,
+            provider_status.cache_hit,
+            provider_status.attempts,
+            provider_status.user_message,
+            provider_status.suggested_next_action,
+            provider_status.stderr_excerpt
+        ),
+    )?;
+    Ok(())
 }

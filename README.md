@@ -95,6 +95,17 @@ Validator -> locked-data boundaries, forbidden advice, visual/data coverage, qua
 Batch     -> cross-industry regression, training cases, quality trends
 ```
 
+Rust engineering brain / Rust 工程大脑：
+
+```text
+Typed contracts: ProviderPayload, AI JSON, ReportStatus, ValidationPassResult
+Error taxonomy: provider, AI, validation, render, chart, PDF, cache, batch, I/O
+Traceability: metadata/run_trace.json, audit/run_log.md, reports/batch_runs/*/batch_trace.json
+Cache control: provider cache status, AI/cache metadata, pack manifest digests
+Compiler-style validation: provider, AI schema, money flow, evidence, chart/table, visual, PDF
+Incremental direction: JSON in v5.0; Arrow/Parquet/Polars are reserved for v5.1 batch analytics
+```
+
 ### What It Does Not Do / 它不做什么
 
 - It does not give buy/sell/hold recommendations.
@@ -123,6 +134,10 @@ cargo test
 cargo clippy --all-targets --all-features -- -D warnings
 cargo build --bin research-rs
 ```
+
+Configuration starts from `research.toml`; CLI flags override operational
+choices such as ticker, market, provider, language, AI mode, pack, and force.
+Secrets must stay in environment variables, not config files or report packs.
 
 Run one company:
 

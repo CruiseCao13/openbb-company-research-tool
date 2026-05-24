@@ -1,6 +1,6 @@
 use crate::io::{ensure_dir, write_json};
 use anyhow::Result;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};
 
@@ -22,4 +22,17 @@ pub fn write_cache<T: Serialize>(path: &Path, value: &T) -> Result<()> {
     }
     write_json(path, value)?;
     Ok(())
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CacheEntry {
+    pub cache_key: String,
+    pub input_digest: String,
+    pub output_digest: String,
+    pub created_at: String,
+    pub expires_at: Option<String>,
+    pub version: String,
+    pub source: String,
+    pub hit_count: usize,
+    pub invalidation_reason: Option<String>,
 }
