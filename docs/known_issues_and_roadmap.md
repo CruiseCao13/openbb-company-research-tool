@@ -1,5 +1,22 @@
 # Known Issues and Future Roadmap
 
+## v4.3 Status Note
+
+v4.3 adds asset-aware routing, thesis spine generation, profile-specific interpretation blocks, AI interpretation patch artifacts, organized report packs, and automatic self-review files.
+
+This reduces the risk that a speculative-growth company receives mature-compounder language, but it does not mean the system fully covers every industry. Low-confidence or specialized companies should still be downgraded to screening-only when sector-specific data is missing.
+
+Remaining future work:
+
+- deeper industry frameworks for biotech, REITs, insurance, shipping, utilities, and other specialized industries
+- deeper semiconductor sub-frameworks for IDM, foundry, fabless, memory, equipment, and cyclical semi-capex names
+- stronger numeric-claim alignment lint after AI patching
+- more peer-relative and industry-normalized scoring
+- broader random-company pressure testing
+- optional Rust report-pack checker only after measuring a real local bottleneck
+
+Recent INTC-like stress testing showed that a generic `Technology / Screening Only` downgrade is not enough when the system has enough clues to form a better industry hypothesis. The router now includes a generalized `Capital-Intensive Semiconductor Turnaround` profile and framework-gap reports must name foundry, capex, gross-margin, process-node, data-center, and free-cash-flow verification needs when those clues appear.
+
 This document records the current limitations, known risks, and future development directions of `openbb-company-research-tool`.
 
 The purpose is not to solve every issue immediately. The purpose is to keep the project honest, maintainable, and methodologically clear.

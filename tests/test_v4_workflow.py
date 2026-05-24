@@ -1,4 +1,5 @@
 import importlib.util
+import re
 import sys
 import tempfile
 import unittest
@@ -236,6 +237,8 @@ class V4WorkflowTests(unittest.TestCase):
     def test_v42_status_card_and_localized_metrics(self):
         card = tool.zh_status_card_table("AAPL", "SPY", "2023-01-01", None, "Watchlist", "Mature Compounder", self._gate_status())
         self.assertIn("报告状态", card)
+        self.assertIn("数字验证", card)
+        self.assertIn("主线验证", card)
         self.assertIn("成熟复利型公司", card)
         table = tool.localized_metric_table(self._report_data()["raw"]["fundamental_summary"], term_style="pure")
         self.assertIn("收入复合增速", table)
@@ -247,6 +250,29 @@ class V4WorkflowTests(unittest.TestCase):
         result = v4.lint_language("DATA_AUDIT_STATUS：WARNING\n## 图表看什么", "zh")
         self.assertIn("DATA_AUDIT_STATUS", result["mixed_language_hits"])
         self.assertIn("language_quality_score", result)
+
+    def test_v43_negative_valuation_multiples_are_not_rendered_as_normal_numbers(self):
+        valuation = pd.DataFrame(
+            [
+                {"Group": "Valuation", "Metric": "forwardPE", "Value": -3.4},
+                {"Group": "Valuation", "Metric": "enterpriseToEbitda", "Value": -10.0},
+            ]
+        )
+        text = tool.valuation_group_sections(valuation)
+        self.assertIn("Not applicable / profitability not established", text)
+        self.assertIn("Not applicable / EBITDA negative", text)
+        self.assertNotIn("| forwardPE | -3.4", text)
+
+    def test_generated_report_has_reader_friendly_numeric_format(self):
+        report = """
+| Metric | Value |
+|---|---|
+| Sharpe Ratio | 1.16 |
+| Cash Runway Years | ~3.7 years |
+| Price | 24.06 |
+| forwardPE | Not applicable / profitability not established |
+"""
+        self.assertIsNone(re.search(r"\| -?[0-9]+\.[0-9]{3,}", report))
 
     def _report_data(self):
         fundamental = pd.DataFrame(

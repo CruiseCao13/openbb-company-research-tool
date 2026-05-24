@@ -6,12 +6,14 @@ set -e
 
 PROJECT_DIR="${PROJECT_DIR:-$(pwd)}"
 COMMAND_NAME="${COMMAND_NAME:-cresearch}"
+SECONDARY_COMMAND_NAME="${SECONDARY_COMMAND_NAME:-openbb-research}"
 LOCAL_BIN_DIR="${LOCAL_BIN_DIR:-$HOME/.local/bin}"
 ZSHRC_FILE="${ZSHRC_FILE:-$HOME/.zshrc}"
 
 echo "== OpenBB Company Research Tool Environment Setup =="
 echo "Project dir : $PROJECT_DIR"
 echo "Command    : $COMMAND_NAME"
+echo "Alias      : $SECONDARY_COMMAND_NAME"
 echo ""
 
 cd "$PROJECT_DIR"
@@ -60,6 +62,24 @@ EOF
 
 chmod +x "$LOCAL_BIN_DIR/$COMMAND_NAME"
 
+if [ "$SECONDARY_COMMAND_NAME" != "$COMMAND_NAME" ]; then
+  cat > "$LOCAL_BIN_DIR/$SECONDARY_COMMAND_NAME" <<EOF
+#!/bin/zsh
+PROJECT_DIR="$PROJECT_DIR"
+
+cd "\$PROJECT_DIR" || exit 1
+
+if [ ! -f ".venv/bin/activate" ]; then
+  echo "ERROR: .venv not found in \$PROJECT_DIR"
+  exit 1
+fi
+
+source .venv/bin/activate
+python -m openbb_company_research_tool "\$@"
+EOF
+  chmod +x "$LOCAL_BIN_DIR/$SECONDARY_COMMAND_NAME"
+fi
+
 PATH_LINE='export PATH="$HOME/.local/bin:$PATH"'
 
 if [ ! -f "$ZSHRC_FILE" ]; then
@@ -86,6 +106,14 @@ echo "Testing command..."
   exit 1
 }
 
+if [ "$SECONDARY_COMMAND_NAME" != "$COMMAND_NAME" ]; then
+  "$LOCAL_BIN_DIR/$SECONDARY_COMMAND_NAME" --help >/tmp/openbb_research_setup_test.txt 2>&1 || {
+    echo "ERROR: secondary command test failed."
+    cat /tmp/openbb_research_setup_test.txt
+    exit 1
+  }
+fi
+
 echo "Setup complete."
 echo ""
 echo "Run:"
@@ -93,4 +121,5 @@ echo "  source ~/.zshrc"
 echo ""
 echo "Then try:"
 echo "  $COMMAND_NAME --help"
+echo "  $SECONDARY_COMMAND_NAME --help"
 echo "  $COMMAND_NAME AAPL --benchmark SPY --start 2023-01-01"

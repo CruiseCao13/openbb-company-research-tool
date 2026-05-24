@@ -1,5 +1,40 @@
 # Report Structure
 
+## v4.3 Asset-Aware Report Pack
+
+v4.3 reports begin with an asset profile and thesis spine before rendering the main memo. This prevents a speculative-growth company from receiving mature-compounder wording, and it prevents unknown companies from being forced into a confident template.
+
+The v4.3 report pack contains:
+
+- `report/`: English and Chinese Markdown reports
+- `charts/`: static PNG figures
+- `data/`: CSV exports
+- `audit/`: data, method, language, lifecycle, company-specificity, and presentation checks
+- `ai/`: correction logs and interpretation patch artifacts
+- `dashboard/`: interactive HTML charts
+- `metadata/`: `asset_profile.json`, `report_status.json`, and `run_metadata.json`
+- `self_review/`: system self-review, framework gap analysis, improvement suggestions, and regression test suggestions
+
+The main report structure is:
+
+1. Report Status Card
+2. One-line Verdict
+3. Asset Profile
+4. Thesis Spine
+5. AI Analyst Red Flags
+6. Research Battle Card
+7. Key Questions and Answers
+8. Chart Walkthrough
+9. Business Quality
+10. Risk and Resilience
+11. Valuation Stress Test
+12. Data Audit and Methodology
+13. Next Research Steps
+14. Appendix A: Metric Definitions and Units
+15. Appendix B: Data Deficits and Manual Checks
+
+Older notes below describe the v4.0/v4.2 reading model and remain useful background.
+
 v4.0 reports are designed as thesis-driven, audit-ready first-pass research workflows. They organize public-market data into a reviewable structure, but they do not replace primary-source research or investment judgment.
 
 v4.0 adds four gates:

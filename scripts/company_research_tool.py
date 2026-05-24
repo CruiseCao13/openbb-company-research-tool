@@ -17,15 +17,17 @@ This tool is NOT a buy/sell recommendation engine.
 
 from __future__ import annotations
 
-__version__ = "4.2.0"
+__version__ = "4.3.0"
 
 import argparse
 from datetime import datetime
 import math
 import os
 import shutil
+import sys
 import tempfile
 import textwrap
+import zipfile
 from pathlib import Path
 from typing import Any
 
@@ -77,6 +79,55 @@ try:
     import terminal_ui
 except Exception:
     terminal_ui = None
+
+try:
+    from asset_aware import (
+        build_asset_profile,
+        build_report_blocks,
+        lifecycle_logic_check,
+        apply_interpretation_patch,
+        write_patch_artifacts,
+        company_specificity_status,
+        fallback_status,
+        overall_status_v43,
+        rollup_data_verification_status,
+        rollup_thesis_verification_status,
+        overall_status_from_verification,
+        organize_report_pack,
+        write_run_readme,
+        write_json,
+        write_framework_gap_analysis,
+        write_improvement_suggestions,
+        write_regression_test_suggestions,
+        write_system_self_review,
+        write_lifecycle_logic_report,
+        presentation_gate,
+        copy_pack_to_latest,
+        build_asset_aware_ai_correction_log,
+    )
+except Exception:
+    build_asset_profile = None
+    build_report_blocks = None
+    lifecycle_logic_check = None
+    apply_interpretation_patch = None
+    write_patch_artifacts = None
+    company_specificity_status = None
+    fallback_status = None
+    overall_status_v43 = None
+    rollup_data_verification_status = None
+    rollup_thesis_verification_status = None
+    overall_status_from_verification = None
+    organize_report_pack = None
+    write_run_readme = None
+    write_json = None
+    write_framework_gap_analysis = None
+    write_improvement_suggestions = None
+    write_regression_test_suggestions = None
+    write_system_self_review = None
+    write_lifecycle_logic_report = None
+    presentation_gate = None
+    copy_pack_to_latest = None
+    build_asset_aware_ai_correction_log = None
 
 try:
     from v4_workflow import (
@@ -173,7 +224,7 @@ def fmt_number(value: Any) -> str:
         return f"{value / 1_000_000:.2f}M"
     if abs_value >= 1_000:
         return f"{value:,.2f}"
-    return f"{value:.4f}"
+    return f"{value:.2f}"
 
 
 def fmt_percent(value: Any) -> str:
@@ -363,6 +414,19 @@ def format_value_by_metric(metric: str, value: Any) -> str:
     except Exception:
         pass
 
+    if metric in {"trailingPE", "forwardPE"}:
+        try:
+            if float(value) <= 0:
+                return "不适用 / 盈利未建立"
+        except Exception:
+            pass
+    if metric == "enterpriseToEbitda":
+        try:
+            if float(value) <= 0:
+                return "不适用 / EBITDA 为负"
+        except Exception:
+            pass
+
     if kind == "percent":
         return fmt_percent(value)
 
@@ -371,7 +435,7 @@ def format_value_by_metric(metric: str, value: Any) -> str:
 
     if kind == "ratio":
         try:
-            return f"{float(value):.4f}"
+            return f"{float(value):.2f}"
         except Exception:
             return str(value)
 
@@ -1167,16 +1231,36 @@ def valuation_group_sections(valuation: pd.DataFrame) -> str:
     if valuation is None or valuation.empty or "Group" not in valuation.columns:
         return markdown_table(valuation, max_rows=50)
 
+    def readable_valuation_table(df: pd.DataFrame) -> pd.DataFrame:
+        table = df[["Metric", "Value"]].copy()
+
+        def display(row: pd.Series) -> object:
+            metric = str(row.get("Metric", ""))
+            value = row.get("Value")
+            try:
+                value_float = float(value)
+            except Exception:
+                return value
+            if metric in {"trailingPE", "forwardPE"} and value_float <= 0:
+                return "Not applicable / profitability not established"
+            if metric == "enterpriseToEbitda" and value_float <= 0:
+                return "Not applicable / EBITDA negative"
+            return value
+
+        table["Value"] = table.apply(display, axis=1)
+        return table
+
     sections = []
     for group, group_df in valuation.groupby("Group", sort=False):
         sections.append(f"### {group}")
-        sections.append(markdown_table(group_df[["Metric", "Value"]], max_rows=50))
+        sections.append(markdown_table(readable_valuation_table(group_df), max_rows=50))
     return "\n\n".join(sections)
 
 
 ZH_STATUS_LABELS = {
     "PASS": "通过",
     "WARNING": "有警告",
+    "WARNING_DEGRADED": "降级警告",
     "FAIL": "未通过",
     "VERIFIED": "已验证",
     "WARNING_OVERALL": "需要复核",
@@ -1189,7 +1273,17 @@ ZH_STATUS_LABELS = {
     "Mature Compounder": "成熟复利型公司",
     "Profitable Growth": "盈利成长型公司",
     "Speculative Growth": "投机成长型公司",
+    "Unprofitable Growth": "未盈利成长型公司",
+    "Unknown / Data-Limited Screening": "未知或数据不足，仅限初筛",
+    "Hybrid Growth Compounder": "混合成长复利型公司",
     "Financials": "金融类公司",
+    "Capital-Intensive Semiconductor Turnaround": "资本开支重的半导体制造转型",
+    "Insurance-like Screening": "保险类初筛",
+    "REIT-like Screening": "REIT 类初筛",
+    "Consumer / Retail": "消费 / 零售",
+    "Utilities / Infrastructure": "公用事业 / 基础设施",
+    "Shipping / Airlines / Transport": "航运 / 航空 / 运输",
+    "Cyclical": "周期型公司",
     "Cyclical / Asset Heavy": "周期或重资产公司",
     "ETF / Fund": "基金或 ETF",
     "Data Limited": "数据不足",
@@ -1289,6 +1383,29 @@ def zh_term(term: str, term_style: str = "pure") -> str:
     return label
 
 
+def zh_profile_value(value: Any) -> str:
+    mapping = {
+        "Aerospace / Space Systems": "航天 / 空间系统",
+        "PARTIAL": "部分覆盖",
+        "FULL": "完整覆盖",
+        "SCREENING_ONLY": "仅限初筛",
+        "UNKNOWN": "未知",
+        "LOW": "低",
+        "MEDIUM": "中",
+        "HIGH": "高",
+        "PS / EV Revenue / burn / dilution": "市销率 / 企业价值收入倍数 / 现金消耗 / 稀释",
+        "PE / FCF sensitivity": "市盈率 / 自由现金流敏感性",
+        "P/B / ROE": "市净率 / 净资产收益率",
+        "Negative or unproven FCF": "自由现金流为负或尚未证明",
+        "Positive FCF": "自由现金流为正",
+        "backlog/order conversion": "backlog / 订单转化",
+        "dilution plan": "潜在稀释计划",
+    }
+    if isinstance(value, list):
+        return "、".join(zh_profile_value(item) for item in value)
+    return mapping.get(str(value), str(value))
+
+
 def localized_metric_table(
     df: pd.DataFrame,
     term_style: str = "pure",
@@ -1362,6 +1479,8 @@ def status_card_table(symbol: str, benchmark: str, start_date: str, end_date: st
             {"Item": "Research Status", "Value": rating},
             {"Item": "Research Profile", "Value": category},
             {"Item": "Report Status", "Value": gate_status.get("OVERALL_REPORT_STATUS", "VERIFIED")},
+            {"Item": "Data Verification", "Value": gate_status.get("DATA_VERIFICATION_STATUS", STATUS_PASS)},
+            {"Item": "Thesis Verification", "Value": gate_status.get("THESIS_VERIFICATION_STATUS", STATUS_PASS)},
             {"Item": "Data Audit", "Value": gate_status.get("DATA_AUDIT_STATUS", STATUS_PASS)},
             {"Item": "Risk Method", "Value": gate_status.get("RISK_METHOD_STATUS", STATUS_PASS)},
             {"Item": "AI Analyst Gate", "Value": gate_status.get("AI_ANALYST_REVIEW_STATUS", STATUS_PASS)},
@@ -1381,6 +1500,8 @@ def zh_status_card_table(symbol: str, benchmark: str, start_date: str, end_date:
             {"项目": "研究状态", "内容": ZH_STATUS_LABELS.get(rating, rating)},
             {"项目": "研究类型", "内容": ZH_STATUS_LABELS.get(category, category)},
             {"项目": "报告状态", "内容": zh_overall_status(gate_status.get("OVERALL_REPORT_STATUS", "VERIFIED"))},
+            {"项目": "数字验证", "内容": zh_status(gate_status.get("DATA_VERIFICATION_STATUS", STATUS_PASS))},
+            {"项目": "主线验证", "内容": zh_status(gate_status.get("THESIS_VERIFICATION_STATUS", STATUS_PASS))},
             {"项目": "数据审计", "内容": zh_status(gate_status.get("DATA_AUDIT_STATUS", STATUS_PASS))},
             {"项目": "风险方法", "内容": zh_status(gate_status.get("RISK_METHOD_STATUS", STATUS_PASS))},
             {"项目": "AI 二次复核", "内容": zh_status(gate_status.get("AI_ANALYST_REVIEW_STATUS", STATUS_PASS))},
@@ -1392,7 +1513,7 @@ def zh_status_card_table(symbol: str, benchmark: str, start_date: str, end_date:
 
 
 def english_chart_walkthrough(symbol: str, benchmark: str, charts: dict[str, str]) -> str:
-    return f"""## 7. Chart Walkthrough
+    return f"""## 8. Chart Walkthrough
 
 ### Actual Close Price
 
@@ -1433,7 +1554,7 @@ def english_chart_walkthrough(symbol: str, benchmark: str, charts: dict[str, str
 
 
 def chinese_chart_walkthrough(symbol: str, benchmark: str, charts: dict[str, str]) -> str:
-    return f"""## 7. 图表解读
+    return f"""## 8. 图表解读
 
 ### 实际收盘价
 
@@ -2755,6 +2876,7 @@ def write_report(
     ai_review_markdown: str | None = None,
     v4_sections: dict[str, str] | None = None,
     gate_status: dict[str, str] | None = None,
+    asset_profile_data: dict[str, Any] | None = None,
 ) -> Path:
     report_data = generate_report_data_dict(
         symbol=symbol,
@@ -2784,19 +2906,35 @@ def write_report(
         radar_chart_name=radar_chart_name,
         ai_review_markdown=ai_review_markdown,
     )
+    if asset_profile_data:
+        report_data["asset_profile"] = asset_profile_data
+        report_data["research_profile"] = asset_profile_data.get("primary_profile", report_data["research_profile"])
 
     total_score = report_data["research_score"]["score"]
     rating = report_data["research_status"]
 
-    verdict = report_data["one_line_verdict"]
+    v4_sections = v4_sections or {}
+    verdict = v4_sections.get("one_line_verdict") or report_data["one_line_verdict"]
     takeaways = report_data["key_takeaways"]
     takeaways_md = "\n".join([f"- {item}" for item in takeaways]) if takeaways else "_No automatic takeaways available._"
     beginner_summary = pd.DataFrame(report_data["beginner_summary"])
 
     category = report_data["research_profile"]
     charts = report_data["charts"]
+    if category == "Capital-Intensive Semiconductor Turnaround":
+        business_quality_intro = "**Conclusion:** This section is not asking whether the company has a generic growth story. For a capital-intensive semiconductor turnaround, revenue must be read together with gross-margin recovery, capex pressure, manufacturing execution, and free-cash-flow pressure."
+        business_quality_interp = "**Interpretation:** Margin and FCF lines are transition evidence. If revenue improves but gross margin, capex burden, or free cash flow do not improve, the turnaround is still unproven."
+    elif category in {"Speculative Growth", "Unprofitable Growth"}:
+        business_quality_intro = "**Conclusion:** This section asks whether revenue growth is becoming better economics. For speculative growth, growth only matters if it starts improving gross margin, operating loss, and cash burn."
+        business_quality_interp = "**Interpretation:** Revenue growth without improving unit economics is not enough. The next check is whether losses and free-cash-flow burn are narrowing."
+    elif category == "Unknown / Data-Limited Screening":
+        business_quality_intro = "**Conclusion:** This section is a first-pass data screen, not a full business-quality judgment. The company-specific research frame still needs verification."
+        business_quality_interp = "**Interpretation:** These metrics show what public provider data can support. They do not replace industry-specific operating metrics."
+    else:
+        business_quality_intro = "**Conclusion:** This section checks whether the company converts revenue into profit and cash. A mature company with slow revenue growth can still be high quality if margins and free cash flow remain strong."
+        business_quality_interp = "**Interpretation:** Revenue growth tells only part of the story. Margin stability and free-cash-flow conversion show whether the business model is doing useful economic work."
     report_status_card = status_card_table(symbol, benchmark, start_date, end_date, rating, category, gate_status or {})
-    key_questions_section = english_key_questions(symbol, benchmark, price_summary, fundamental_summary, valuation)
+    key_questions_section = v4_sections.get("key_questions") or english_key_questions(symbol, benchmark, price_summary, fundamental_summary, valuation)
     chart_walkthrough_section = english_chart_walkthrough(symbol, benchmark, charts)
     ai_review_section = ""
     manual_section_number = 14
@@ -2810,7 +2948,6 @@ def write_report(
         final_section_number = 17
         files_section_number = 18
 
-    v4_sections = v4_sections or {}
     gate_status = gate_status or {
         "DATA_AUDIT_STATUS": STATUS_PASS,
         "RISK_METHOD_STATUS": STATUS_PASS,
@@ -2821,8 +2958,77 @@ def write_report(
     risk_method_section = v4_sections.get("risk_methodology", "")
     valuation_sensitivity_section = v4_sections.get("valuation_sensitivity", "")
     segment_revenue_section = v4_sections.get("segment_revenue", "")
+    next_checks_section = v4_sections.get("next_checks", "")
+    core_view = v4_sections.get("core_view") or (
+        f"{symbol} should be read as a first-pass research case, not as a finished investment conclusion. "
+        "The report asks whether business quality, cash generation, valuation, and risk are consistent with the current market story."
+    )
+
+    def without_first_heading(text: str) -> str:
+        lines = (text or "").splitlines()
+        if lines and lines[0].startswith("## "):
+            return "\n".join(lines[1:]).strip()
+        return (text or "").strip()
+
+    generated_at = datetime.now().strftime("%Y-%m-%d %H:%M")
+    fallback_next_checks = "\n".join(
+        [
+            "1. Latest 10-K / 10-Q revenue breakdown",
+            "2. Whether growth comes from volume, price, services, or accounting effects",
+            "3. Whether free cash flow is stable or one-off",
+            "4. Whether valuation is justified by future growth",
+            "5. Whether the company has hidden dilution, debt, or margin pressure",
+        ]
+    )
+    asset_profile_section = ""
+    if report_data.get("asset_profile"):
+        ap = report_data["asset_profile"]
+        asset_profile_section = f"""## 3. Asset Profile
+
+| Field | Value |
+|---|---|
+| Primary Profile | {ap.get('primary_profile')} |
+| Secondary Profile | {ap.get('secondary_profile') or 'None'} |
+| Framework Coverage | {ap.get('framework_coverage_level')} |
+| Profile Confidence | {ap.get('thesis_spine_confidence')} |
+| Valuation Method Fit | {ap.get('valuation_method_fit')} |
+| Cash Flow Profile | {ap.get('cash_flow_profile')} |
+| Data Deficits | {', '.join(ap.get('data_deficit_flags') or []) or 'None detected automatically'} |
+
+**What this means:** The report shell is reusable, but the research logic is routed through this asset profile. If framework coverage is partial or screening-only, the report should be read as a starting point rather than a complete industry note.
+"""
 
     report = f"""# {symbol} Equity Research Report
+
+> Version: v{__version__}  
+> Ticker: {symbol}  
+> Benchmark: {benchmark}  
+> Period: {start_date} to {end_date or 'latest available'}  
+> Report Status: {gate_status.get('OVERALL_REPORT_STATUS', 'PASS')}  
+> Generated: {generated_at}  
+> Note: This report is for first-pass research only. It is not investment advice.
+
+---
+
+## Table of Contents
+
+1. Report Status Card
+2. One-line Verdict
+3. Asset Profile
+4. Thesis Spine
+5. AI Analyst Red Flags
+6. Research Battle Card
+7. Key Questions and Answers
+8. Chart Walkthrough
+9. Business Quality
+10. Risk and Resilience
+11. Valuation Stress Test
+12. Segment Revenue Gap
+13. Data Audit and Methodology
+14. Next Research Steps
+15. Boundary
+16. Appendix A: Metric Definitions and Units
+17. Appendix B: Data Deficits and Manual Checks
 
 ---
 
@@ -2830,7 +3036,7 @@ def write_report(
 
 {report_status_card}
 
-This status card is a reading guide. A warning does not mean the report is unusable; it means one or more assumptions, data fields, or labels need review before the report becomes decision-grade evidence.
+This status card is a reading guide. A warning does not mean the report is unusable; it means one or more assumptions, data fields, or labels need review before the report becomes decision-grade evidence. Numbers can be auditable while the research thesis still remains unverified.
 
 ---
 
@@ -2840,21 +3046,25 @@ This status card is a reading guide. A warning does not mean the report is unusa
 
 ---
 
-## 3. Core View
-
-{symbol} should be read as a first-pass research case, not as a finished investment conclusion. The report asks whether business quality, cash generation, valuation, and risk are consistent with the current market story. The important question is not whether the company is familiar or popular; it is whether the evidence supports deeper work.
+{asset_profile_section}
 
 ---
 
-## 4. AI Analyst Red Flags
+## 4. Thesis Spine
 
-The bounded AI analyst gate reviews the deterministic payload and writes `ai_correction_log.md`. It does not change revenue, cash flow, valuation multiples, risk metrics, or the research score. Its job is to flag thin reasoning, unanswered questions, and evidence gaps.
+{core_view}
 
 ---
 
-## 5. Research Battle Card
+## 5. AI Analyst Red Flags
 
-{battle_card_section.replace("## Research Battle Card", "").strip()}
+The bounded AI analyst gate reviews locked data, detects profile mismatch and thin reasoning, and writes patches into interpretation-layer report blocks. It cannot change revenue, cash flow, valuation multiples, risk metrics, or the research score, and it cannot turn missing data into facts.
+
+---
+
+## 6. Research Battle Card
+
+{without_first_heading(battle_card_section)}
 
 ---
 
@@ -2874,17 +3084,17 @@ This table turns the chart movement into comparable return and risk metrics. Rea
 
 ---
 
-## 8. Business Quality
+## 9. Business Quality
 
-**Conclusion:** This section checks whether the company converts revenue into profit and cash. A mature company with slow revenue growth can still be high quality if margins and free cash flow remain strong.
+{business_quality_intro}
 
 {markdown_table(fundamental_summary, max_rows=30, percent_columns=FUND_PERCENT_COLS)}
 
-**Interpretation:** Revenue growth tells only part of the story. Margin stability and free-cash-flow conversion show whether the business model is doing useful economic work.
+{business_quality_interp}
 
 ---
 
-## 9. Risk and Resilience
+## 10. Risk and Resilience
 
 ![{symbol} balance-sheet resilience]({ruin_risk_chart_name})
 
@@ -2900,11 +3110,11 @@ Balance Sheet Resilience Score direction: higher score = stronger balance sheet 
 
 ---
 
-## 10. Valuation Sensitivity
+## 11. Valuation Stress Test
 
 **Conclusion:** Valuation is not a target price exercise here. It is a pressure test: if the market pays a lower multiple, how much business performance is needed to offset that pressure?
 
-{valuation_sensitivity_section.replace("## Valuation Sensitivity", "").strip()}
+{without_first_heading(valuation_sensitivity_section)}
 
 ### Valuation Snapshot
 
@@ -2916,15 +3126,15 @@ This table shows the provider valuation snapshot. Treat it as screening data bec
 
 ---
 
-## 11. Segment Revenue Gap
+## 12. Segment Revenue Gap
 
-{segment_revenue_section.replace("## Segment Revenue Analysis", "").strip()}
+{without_first_heading(segment_revenue_section)}
 
 ---
 
-## 12. Data Audit and Methodology
+## 13. Data Audit and Methodology
 
-{risk_method_section}
+{without_first_heading(risk_method_section)}
 
 ### Data Confidence
 
@@ -2940,19 +3150,13 @@ This table shows the provider valuation snapshot. Treat it as screening data bec
 
 ---
 
-## 13. Next Research Steps
+## 14. Next Research Steps
 
-Before making any serious judgment, manually check:
-
-1. Latest 10-K / 10-Q revenue breakdown
-2. Whether growth comes from volume, price, services, or accounting effects
-3. Whether free cash flow is stable or one-off
-4. Whether valuation is justified by future growth
-5. Whether the company has hidden dilution, debt, or margin pressure
+{without_first_heading(next_checks_section) or fallback_next_checks}
 
 ---
 
-## Boundary
+## 15. Boundary
 
 This report is a structured first-pass research workflow.
 
@@ -2964,6 +3168,22 @@ It does **not** provide:
 - Automatic investment decision
 
 The score is a **research prioritization score**, not a prediction.
+
+---
+
+## 16. Appendix A: Metric Definitions and Units
+
+| Metric | Unit | Meaning |
+|---|---|---|
+| Revenue | USD | Total company sales reported by provider data. |
+| Gross / Operating / FCF Margin | % | Margin ratios used to judge business economics and cash conversion. |
+| PE / PS / EV Revenue | x | Valuation multiples; applicability depends on asset profile. |
+| Drawdown / Volatility | % | Historical price-risk metrics, not business survival metrics. |
+| Balance Sheet Resilience Score | 0-100 | Higher score means stronger balance-sheet resilience. |
+
+## 17. Appendix B: Data Deficits and Manual Checks
+
+{chr(10).join(f"- {item}" for item in (report_data.get("asset_profile", {}).get("data_deficit_flags") or ["No major profile-specific deficit was detected automatically."]))}
 
 ---
 
@@ -3293,11 +3513,73 @@ def write_chinese_report(
     charts = report_data["charts"]
     score = report_data["research_score"]["score"]
     status_card = zh_status_card_table(symbol, benchmark, report_data["start_date"], report_data["end_date"], report_data["research_status"], report_data["research_profile"], gate_status)
-    questions = chinese_key_questions(symbol, benchmark, price_summary, fundamental_summary, valuation)
+    questions = v4_sections.get("key_questions_zh") or chinese_key_questions(symbol, benchmark, price_summary, fundamental_summary, valuation)
     charts_section = chinese_chart_walkthrough(symbol, benchmark, charts)
-    verdict = chinese_verdict(symbol, benchmark, report_data)
+    verdict = v4_sections.get("one_line_verdict_zh") or chinese_verdict(symbol, benchmark, report_data)
+    core_view = v4_sections.get("core_view_zh") or "这份报告用于第一轮研究，不负责替用户给买卖结论。核心任务是判断当前证据是否足够支持继续研究，以及哪些问题必须人工复核。"
+    generated_at = datetime.now().strftime("%Y-%m-%d %H:%M")
+    ap = report_data.get("asset_profile", {})
+    profile_rows = pd.DataFrame(
+        [
+            {"项目": "主要画像", "内容": ZH_STATUS_LABELS.get(ap.get("primary_profile", ""), ap.get("primary_profile", ""))},
+            {"项目": "次要画像", "内容": zh_profile_value(ap.get("secondary_profile") or "无")},
+            {"项目": "研究框架覆盖程度", "内容": zh_profile_value(ap.get("framework_coverage_level", "未知"))},
+            {"项目": "画像置信度", "内容": zh_profile_value(ap.get("thesis_spine_confidence", "未知"))},
+            {"项目": "适用估值框架", "内容": zh_profile_value(ap.get("valuation_method_fit", "未知"))},
+            {"项目": "数据缺口", "内容": zh_profile_value(ap.get("data_deficit_flags") or []) or "自动检查未发现重大缺口"},
+        ]
+    )
+    battle_card_zh = v4_sections.get("battle_card_zh", "").strip()
+    if battle_card_zh.startswith("## "):
+        battle_card_zh = "\n".join(battle_card_zh.splitlines()[1:]).strip()
+    next_checks_zh = v4_sections.get("next_checks_zh", "").strip() or "## 13. 下一步研究清单\n\n1. 核查最新财报。\n2. 核查业务驱动因素。\n3. 核查估值方法。"
+    if next_checks_zh.startswith("## "):
+        next_checks_zh = "\n".join(next_checks_zh.splitlines()[1:]).strip()
+    profile_name = ap.get("primary_profile", report_data["research_profile"])
+    if profile_name == "Capital-Intensive Semiconductor Turnaround":
+        business_quality_intro = "**结论：这里不是看公司有没有科技故事，而是看收入能不能和毛利率修复、资本开支压力、制造执行和自由现金流改善一起出现。**"
+        business_quality_interp = "这说明什么：对资本开支重的半导体转型公司，收入改善只是第一层。毛利率、capex、free cash flow、foundry 和 data center 业务线才决定转型有没有经营证据。"
+    elif profile_name in {"Speculative Growth", "Unprofitable Growth"}:
+        business_quality_intro = "**结论：这里看的不是收入有没有增长，而是增长有没有开始变成更好的经济性。**"
+        business_quality_interp = "这说明什么：如果收入增长没有带来毛利率改善、亏损收窄或现金消耗下降，成长故事还不能算经营证据。"
+    elif profile_name == "Unknown / Data-Limited Screening":
+        business_quality_intro = "**结论：这里是第一轮数据初筛，不是完整业务质量判断。**"
+        business_quality_interp = "这说明什么：这些指标只能说明公共数据里能看到什么。行业专属经营指标缺失时，不能把普通财务表格当作完整结论。"
+    else:
+        business_quality_intro = "**结论：这里看的不是公司有没有故事，而是收入能不能变成利润和现金。** 对成熟公司来说，收入不高速增长也不一定是问题；真正要看的是毛利率、经营利润率和自由现金流率能不能守住。"
+        business_quality_interp = "这说明什么：如果收入增长慢，但利润率和自由现金流率很强，研究重点就不是“爆发式增长”，而是“高质量现金流能不能继续支撑估值”。"
 
     content = f"""# {symbol} 股票研究报告
+
+> 版本：v{__version__}  
+> 标的：{symbol}  
+> 基准：{benchmark}  
+> 周期：{report_data["start_date"]} 至 {report_data["end_date"] or "最新可得数据"}  
+> 报告状态：{zh_overall_status(gate_status.get("OVERALL_REPORT_STATUS", "PASS"))}  
+> 生成时间：{generated_at}  
+> 说明：本报告用于第一轮研究，不构成买卖建议。
+
+---
+
+## 目录
+
+1. 报告状态卡片
+2. 一句话结论
+3. 资产画像
+4. 报告主线
+5. AI 二次复核红旗
+6. 投研博弈卡片
+7. 关键问题与回答
+8. 图表解读
+9. 业务质量
+10. 风险与韧性
+11. 估值压力测试
+12. 业务线拆解：当前缺口
+13. 数据审计与方法说明
+14. 下一步研究清单
+15. 结论边界
+16. 附录 A：指标定义与单位
+17. 附录 B：数据缺口与人工核查项
 
 ---
 
@@ -3305,7 +3587,7 @@ def write_chinese_report(
 
 {status_card}
 
-这张状态卡告诉你这份报告现在能不能直接使用。出现“有警告”不代表报告作废，而是提醒你：相关数字、方法或数据标签还需要复核，不能直接当成最终证据。
+这张状态卡告诉你这份报告现在能不能直接使用。出现“有警告”不代表报告作废，而是提醒你：相关数字、方法或数据标签还需要复核，不能直接当成最终证据。数字层可以是可审计的，但研究主线仍可能未验证。
 
 ---
 
@@ -3315,21 +3597,29 @@ def write_chinese_report(
 
 ---
 
-## 3. 核心判断
+## 3. 资产画像
 
-{symbol} 的核心问题不是“公司能不能赚钱”，而是当前价格是否已经把未来很多年的利润率、现金流和回购能力提前计入。读这份报告时，不要先问“能不能买”，而要先问：当前证据是否足够支持继续研究，以及哪些关键假设一旦失效就会推翻原来的乐观判断。
+{markdown_table(profile_rows, max_rows=10)}
 
----
-
-## 4. AI 二次复核红旗
-
-AI 二次复核层只负责找茬、分辨哪些问题能回答、哪些问题不能回答，并生成下一步核查动作。它不能修改底层财务指标，也不能把缺失数据补成事实。详细记录见 `ai_correction_log.md`。
+这说明什么：报告外壳可以复用，但研究逻辑必须跟资产画像一致。如果研究框架覆盖程度不是完整覆盖，这份报告只能作为初筛，不能当完整行业研究。
 
 ---
 
-## 5. 投研博弈卡片
+## 4. 报告主线
 
-{v4_sections.get("battle_card_zh", "").replace("## 投研博弈卡片", "").strip()}
+{core_view}
+
+---
+
+## 5. AI 二次复核红旗
+
+AI 二次复核层会审查锁定数据、识别画像错配和推理过薄的问题，并在解释层文本中写入修正补丁。它不能修改收入、现金流、估值倍数、风险指标或研究评分，也不能把缺失数据补成事实。详细记录见 `../ai/ai_correction_log.md` 和 `../ai/patch_diff_log.md`。
+
+---
+
+## 6. 投研博弈卡片
+
+{battle_card_zh}
 
 ---
 
@@ -3341,17 +3631,17 @@ AI 二次复核层只负责找茬、分辨哪些问题能回答、哪些问题�
 
 ---
 
-## 8. 业务质量
+## 9. 业务质量
 
-**结论：这里看的不是公司有没有故事，而是收入能不能变成利润和现金。** 对成熟公司来说，收入不高速增长也不一定是问题；真正要看的是毛利率、经营利润率和自由现金流率能不能守住。
+{business_quality_intro}
 
 {localized_metric_table(fundamental_summary, term_style=term_style, max_rows=30, percent_columns=FUND_PERCENT_COLS)}
 
-这说明什么：如果收入增长慢，但利润率和自由现金流率很强，研究重点就不是“爆发式增长”，而是“高质量现金流能不能继续支撑估值”。
+{business_quality_interp}
 
 ---
 
-## 9. 风险与韧性
+## 10. 风险与韧性
 
 ![{symbol} 资产负债表韧性]({charts["ruin_risk"]})
 
@@ -3367,11 +3657,7 @@ AI 二次复核层只负责找茬、分辨哪些问题能回答、哪些问题�
 
 ---
 
-## 10. 估值压力测试
-
-**结论：{symbol} 当前最大的风险不一定是公司突然变差，而是市场不再愿意给它高估值。**
-
-{v4_sections.get("valuation_sensitivity_zh", "").replace("## 估值压力测试", "").strip()}
+{v4_sections.get("valuation_sensitivity_zh", "").strip()}
 
 下面的估值快照来自数据供应商，只能作为初筛输入。真正严肃的判断，仍要回到最新财报和公司公告。
 
@@ -3381,13 +3667,13 @@ AI 二次复核层只负责找茬、分辨哪些问题能回答、哪些问题�
 
 ---
 
-## 11. 业务线拆解：当前缺口
+## 12. 业务线拆解：当前缺口
 
 {v4_sections.get("segment_revenue_zh", "").replace("## 业务线拆解", "").strip()}
 
 ---
 
-## 12. 数据审计与方法说明
+## 13. 数据审计与方法说明
 
 ### 风险指标方法
 
@@ -3399,17 +3685,31 @@ AI 二次复核层只负责找茬、分辨哪些问题能回答、哪些问题�
 
 ---
 
-## 13. 下一步研究清单
+## 14. 下一步研究清单
 
-1. 分业务线收入和服务业务增长。
-2. 自由现金流是否稳定，还是受一次性项目影响。
-3. 当前估值是否已经透支未来每股收益增长。
+{next_checks_zh}
 
 ---
 
-## 结论边界
+## 15. 结论边界
 
 当前研究分数为 {fmt_score(score)}。它只说明这家公司值得按上述路径继续核查，不代表应该买入或卖出，也不代表未来收益。
+
+---
+
+## 16. 附录 A：指标定义与单位
+
+| 指标 | 单位 | 含义 |
+|---|---|---|
+| 收入 | 美元 | 数据供应商提供的公司销售收入。 |
+| 毛利率 / 经营利润率 / 自由现金流率 | % | 判断商业模式、盈利能力和现金转化质量。 |
+| 市盈率 / 市销率 / 企业价值 / 收入 | 倍 | 估值倍数，是否适用取决于资产画像。 |
+| 回撤 / 波动率 | % | 历史价格风险，不等于公司生存风险。 |
+| 资产负债表韧性分数 | 0-100 | 分数越高，资产负债表韧性越强。 |
+
+## 17. 附录 B：数据缺口与人工核查项
+
+{chr(10).join(f"- {zh_profile_value(item)}" for item in (ap.get("data_deficit_flags") or ["自动检查未发现重大画像相关缺口。"]))}
 """
     content = clean_report_placeholders(content, "zh")
     path = out_dir / report_filename(safe_symbol(symbol), "research_report_cn.md", gate_status.get("OVERALL_REPORT_STATUS", "VERIFIED"))
@@ -3449,7 +3749,34 @@ def run_one(
     benchmark = benchmark.upper()
 
     out_dir = output_dir_for_run(output, symbol, benchmark, start_date, end_date, archive, run_id)
+    if out_dir.exists():
+        for generated_name in ["report", "charts", "data", "audit", "ai", "dashboard", "metadata", "self_review", "README.md"]:
+            generated_path = out_dir / generated_name
+            if generated_path.is_dir():
+                shutil.rmtree(generated_path)
+            elif generated_path.exists():
+                generated_path.unlink()
+        for stale_zip in out_dir.glob("*_research_pack.zip"):
+            stale_zip.unlink()
     ensure_dir(out_dir)
+    pack_dirs = organize_report_pack(out_dir, symbol) if organize_report_pack is not None else {
+        "report": out_dir,
+        "charts": out_dir,
+        "data": out_dir,
+        "audit": out_dir,
+        "ai": out_dir,
+        "dashboard": out_dir,
+        "metadata": out_dir,
+        "self_review": out_dir,
+    }
+    report_dir = pack_dirs["report"]
+    charts_dir = pack_dirs["charts"]
+    data_dir = pack_dirs["data"]
+    audit_dir = pack_dirs["audit"]
+    ai_dir = pack_dirs["ai"]
+    dashboard_dir = pack_dirs["dashboard"]
+    metadata_dir = pack_dirs["metadata"]
+    self_review_dir = pack_dirs["self_review"]
 
     if terminal_ui is not None:
         terminal_ui.print_run_config(symbol, benchmark, ai_review, archive_enabled=True, model=ai_model)
@@ -3461,8 +3788,8 @@ def run_one(
     if terminal_ui is not None:
         terminal_ui.step_done("[1/8] Fetching market data")
 
-    target_price.to_csv(out_dir / f"{safe_symbol(symbol)}_price_history.csv")
-    benchmark_price.to_csv(out_dir / f"{safe_symbol(benchmark)}_price_history.csv")
+    target_price.to_csv(data_dir / f"{safe_symbol(symbol)}_price_history.csv")
+    benchmark_price.to_csv(data_dir / f"{safe_symbol(benchmark)}_price_history.csv")
 
     close = pd.DataFrame({
         symbol: select_price_series(target_price, price_field),
@@ -3473,13 +3800,13 @@ def run_one(
         raise ValueError(f"No overlapping price data for {symbol} and {benchmark}.")
 
     normalized = close / close.iloc[0] * 100
-    normalized.to_csv(out_dir / f"{safe_symbol(symbol)}_vs_{safe_symbol(benchmark)}_normalized.csv")
+    normalized.to_csv(data_dir / f"{safe_symbol(symbol)}_vs_{safe_symbol(benchmark)}_normalized.csv")
 
-    actual_chart_path = out_dir / f"{safe_symbol(symbol)}_vs_{safe_symbol(benchmark)}_actual_close_price_chart.png"
-    chart_path = out_dir / f"{safe_symbol(symbol)}_vs_{safe_symbol(benchmark)}_performance_chart.png"
-    drawdown_chart_path = out_dir / f"{safe_symbol(symbol)}_vs_{safe_symbol(benchmark)}_drawdown_chart.png"
-    interactive_chart_path = out_dir / f"{safe_symbol(symbol)}_vs_{safe_symbol(benchmark)}_interactive_dashboard.html"
-    radar_chart_path = out_dir / f"{safe_symbol(symbol)}_research_score_radar.html"
+    actual_chart_path = charts_dir / "Figure_01_price_actual.png"
+    chart_path = charts_dir / "Figure_02_price_normalized.png"
+    drawdown_chart_path = charts_dir / "Figure_03_drawdown.png"
+    interactive_chart_path = dashboard_dir / f"{safe_symbol(symbol)}_vs_{safe_symbol(benchmark)}_interactive_dashboard.html"
+    radar_chart_path = dashboard_dir / f"{safe_symbol(symbol)}_research_score_radar.html"
 
     plot_actual_close_price(close, symbol, benchmark, actual_chart_path)
     plot_normalized_performance(normalized, symbol, benchmark, chart_path)
@@ -3488,7 +3815,7 @@ def run_one(
 
     price_summary = build_price_summary(close[symbol], close[benchmark], risk_free_rate, annualization_days)
     price_summary.to_csv(
-        out_dir / f"{safe_symbol(symbol)}_vs_{safe_symbol(benchmark)}_price_summary.csv",
+        data_dir / f"{safe_symbol(symbol)}_vs_{safe_symbol(benchmark)}_price_summary.csv",
         index=False,
     )
 
@@ -3497,8 +3824,8 @@ def run_one(
     profile = build_company_profile(info)
     valuation = build_valuation_snapshot(info)
 
-    profile.to_csv(out_dir / f"{safe_symbol(symbol)}_company_profile.csv", index=False)
-    valuation.to_csv(out_dir / f"{safe_symbol(symbol)}_valuation_snapshot.csv", index=False)
+    profile.to_csv(data_dir / f"{safe_symbol(symbol)}_company_profile.csv", index=False)
+    valuation.to_csv(data_dir / f"{safe_symbol(symbol)}_valuation_snapshot.csv", index=False)
 
     if is_fund_like(info):
         trends = pd.DataFrame()
@@ -3507,26 +3834,26 @@ def run_one(
         else:
             print(f"[WARN] {symbol} appears to be a fund-like instrument. Skipping company financial statements.")
     else:
-        trends = fetch_money_source_and_flow(symbol, out_dir, years)
+        trends = fetch_money_source_and_flow(symbol, data_dir, years)
         if terminal_ui is not None:
             terminal_ui.step_done("[2/8] Loading fundamentals")
 
     fundamental_summary = build_fundamental_summary(trends)
-    fundamental_summary.to_csv(out_dir / f"{safe_symbol(symbol)}_fundamental_summary.csv", index=False)
+    fundamental_summary.to_csv(data_dir / f"{safe_symbol(symbol)}_fundamental_summary.csv", index=False)
 
     score_table = build_research_score(price_summary, fundamental_summary, info)
-    score_table.to_csv(out_dir / f"{safe_symbol(symbol)}_research_potential_score.csv", index=False)
-    score_components_chart_path = out_dir / f"{safe_symbol(symbol)}_research_score_components.png"
+    score_table.to_csv(data_dir / f"{safe_symbol(symbol)}_research_potential_score.csv", index=False)
+    score_components_chart_path = charts_dir / "Figure_05_score_components.png"
 
     ruin_risk = build_ruin_risk_snapshot(info, trends)
-    ruin_risk.to_csv(out_dir / f"{safe_symbol(symbol)}_ruin_risk_snapshot.csv", index=False)
-    ruin_risk_chart_path = out_dir / f"{safe_symbol(symbol)}_ruin_risk_snapshot.png"
+    ruin_risk.to_csv(data_dir / f"{safe_symbol(symbol)}_ruin_risk_snapshot.csv", index=False)
+    ruin_risk_chart_path = charts_dir / "Figure_06_ruin_risk.png"
 
-    growth_quality_chart_path = out_dir / f"{safe_symbol(symbol)}_growth_quality_trend.png"
+    growth_quality_chart_path = charts_dir / "Figure_04_growth_quality.png"
 
     margin_stress = build_margin_stress(account_equity, margin_loan, [0.20, 0.30, 0.50, 0.70])
     if not margin_stress.empty:
-        margin_stress.to_csv(out_dir / f"{safe_symbol(symbol)}_personal_margin_stress.csv", index=False)
+        margin_stress.to_csv(data_dir / f"{safe_symbol(symbol)}_personal_margin_stress.csv", index=False)
     if terminal_ui is not None:
         terminal_ui.step_done("[3/8] Calculating metrics")
 
@@ -3547,7 +3874,7 @@ def run_one(
         trends=trends,
         ruin_risk=ruin_risk,
     )
-    sanity_checks.to_csv(out_dir / f"{safe_symbol(symbol)}_sanity_checks.csv", index=False)
+    sanity_checks.to_csv(data_dir / f"{safe_symbol(symbol)}_sanity_checks.csv", index=False)
     if terminal_ui is not None:
         terminal_ui.step_done("[4/8] Running sanity checks")
 
@@ -3567,12 +3894,23 @@ def run_one(
         benchmark=benchmark,
     ) if RiskMethod is not None else None
 
+    chart_refs = {
+        "actual": f"../charts/{actual_chart_path.name}",
+        "normalized": f"../charts/{chart_path.name}",
+        "drawdown": f"../charts/{drawdown_chart_path.name}",
+        "score_components": f"../charts/{score_components_chart_path.name}",
+        "growth_quality": f"../charts/{growth_quality_chart_path.name}" if growth_quality_chart_path.exists() else None,
+        "ruin_risk": f"../charts/{ruin_risk_chart_path.name}",
+        "interactive": f"../dashboard/{interactive_chart_path.name}",
+        "radar": f"../dashboard/{radar_chart_path.name}",
+    }
+
     report_data = generate_report_data_dict(
         symbol=symbol,
         benchmark=benchmark,
         start_date=start_date,
         end_date=end_date,
-        out_dir=out_dir,
+        out_dir=report_dir,
         profile=profile,
         valuation=valuation,
         trends=trends,
@@ -3585,15 +3923,20 @@ def run_one(
         sanity_checks=sanity_checks,
         ruin_risk=ruin_risk,
         margin_stress=margin_stress,
-        actual_chart_name=actual_chart_path.name,
-        chart_name=chart_path.name,
-        drawdown_chart_name=drawdown_chart_path.name,
-        score_components_chart_name=score_components_chart_path.name,
-        growth_quality_chart_name=growth_quality_chart_name,
-        ruin_risk_chart_name=ruin_risk_chart_path.name,
-        interactive_chart_name=interactive_chart_path.name,
-        radar_chart_name=radar_chart_path.name,
+        actual_chart_name=chart_refs["actual"],
+        chart_name=chart_refs["normalized"],
+        drawdown_chart_name=chart_refs["drawdown"],
+        score_components_chart_name=chart_refs["score_components"],
+        growth_quality_chart_name=chart_refs["growth_quality"],
+        ruin_risk_chart_name=chart_refs["ruin_risk"],
+        interactive_chart_name=chart_refs["interactive"],
+        radar_chart_name=chart_refs["radar"],
     )
+
+    asset_profile = build_asset_profile(info, fundamental_summary, valuation, trends, ruin_risk) if build_asset_profile is not None else None
+    if asset_profile is not None:
+        report_data["asset_profile"] = asset_profile.to_dict()
+        report_data["research_profile"] = asset_profile.primary_profile
 
     data_audit_status = STATUS_PASS
     data_audit = None
@@ -3620,13 +3963,53 @@ def run_one(
         data_audit_status = STATUS_WARNING
     price_label_status = STATUS_FAIL if STATUS_FAIL in set(price_label_check["status"]) else STATUS_WARNING if STATUS_WARNING in set(price_label_check["status"]) else STATUS_PASS
 
+    patch_log = {"patch_status": "NOT_NEEDED", "patch_records": [], "patch_attempts": 0}
+    patched_blocks_en = []
+    patched_blocks_zh = []
+    lifecycle_report = {"status": STATUS_PASS, "failure_reasons": []}
+    company_specificity = {"COMPANY_SPECIFICITY_STATUS": STATUS_PASS, "framework_coverage_level": "FULL", "patch_status": "NOT_NEEDED"}
+    if asset_profile is not None and build_report_blocks is not None:
+        draft_blocks_en = build_report_blocks(report_data, asset_profile, "en")
+        draft_blocks_zh = build_report_blocks(report_data, asset_profile, "zh")
+        block_map = {block["block_id"]: block["content"] for block in draft_blocks_en + draft_blocks_zh}
+        lifecycle_report = lifecycle_logic_check(asset_profile, block_map) if lifecycle_logic_check is not None else lifecycle_report
+        patched_blocks_en, patch_log_en = apply_interpretation_patch(draft_blocks_en, asset_profile, lifecycle_report.get("failure_reasons", [])) if apply_interpretation_patch is not None else (draft_blocks_en, patch_log)
+        patched_blocks_zh, patch_log_zh = apply_interpretation_patch(draft_blocks_zh, asset_profile, lifecycle_report.get("failure_reasons", [])) if apply_interpretation_patch is not None else (draft_blocks_zh, patch_log)
+        patch_log = {
+            "patch_status": "APPLIED" if patch_log_en.get("patch_status") == "APPLIED" or patch_log_zh.get("patch_status") == "APPLIED" else "NOT_NEEDED",
+            "patch_materiality_status": "MATERIAL_PATCH_APPLIED"
+            if "MATERIAL_PATCH_APPLIED" in {patch_log_en.get("patch_materiality_status"), patch_log_zh.get("patch_materiality_status")}
+            else "FALLBACK_PATCH_APPLIED"
+            if "FALLBACK_PATCH_APPLIED" in {patch_log_en.get("patch_materiality_status"), patch_log_zh.get("patch_materiality_status")}
+            else "NO_MATERIAL_CHANGE",
+            "patch_attempts": max(patch_log_en.get("patch_attempts", 0), patch_log_zh.get("patch_attempts", 0)),
+            "material_patch_count": patch_log_en.get("material_patch_count", 0) + patch_log_zh.get("material_patch_count", 0),
+            "fallback_patch_count": patch_log_en.get("fallback_patch_count", 0) + patch_log_zh.get("fallback_patch_count", 0),
+            "patch_records": patch_log_en.get("patch_records", []) + patch_log_zh.get("patch_records", []),
+        }
+        company_specificity = company_specificity_status(asset_profile, lifecycle_report, patch_log) if company_specificity_status is not None else company_specificity
+
+    def block_content(blocks: list[dict[str, Any]], block_id: str) -> str:
+        for block in blocks:
+            if block.get("block_id") == block_id:
+                return block.get("content", "")
+        return ""
+
     v4_sections = {
-        "battle_card": render_battle_card(report_data, "en"),
-        "battle_card_zh": render_battle_card(report_data, "zh"),
+        "battle_card": block_content(patched_blocks_en, "battle_card") or render_battle_card(report_data, "en"),
+        "battle_card_zh": block_content(patched_blocks_zh, "battle_card") or render_battle_card(report_data, "zh"),
+        "key_questions": block_content(patched_blocks_en, "key_questions"),
+        "key_questions_zh": block_content(patched_blocks_zh, "key_questions"),
+        "one_line_verdict": block_content(patched_blocks_en, "one_line_verdict"),
+        "one_line_verdict_zh": block_content(patched_blocks_zh, "one_line_verdict"),
+        "core_view": block_content(patched_blocks_en, "core_view"),
+        "core_view_zh": block_content(patched_blocks_zh, "core_view"),
+        "valuation_sensitivity": block_content(patched_blocks_en, "valuation") or render_valuation_sensitivity(report_data, "en"),
+        "valuation_sensitivity_zh": block_content(patched_blocks_zh, "valuation") or render_valuation_sensitivity(report_data, "zh"),
+        "next_checks": block_content(patched_blocks_en, "next_checks"),
+        "next_checks_zh": block_content(patched_blocks_zh, "next_checks"),
         "risk_methodology": render_risk_methodology(risk_method, "en") if risk_method is not None else "",
         "risk_methodology_zh": render_risk_methodology(risk_method, "zh") if risk_method is not None else "",
-        "valuation_sensitivity": render_valuation_sensitivity(report_data, "en"),
-        "valuation_sensitivity_zh": render_valuation_sensitivity(report_data, "zh"),
         "segment_revenue": render_segment_revenue(report_data, "en"),
         "segment_revenue_zh": render_segment_revenue(report_data, "zh"),
     }
@@ -3635,7 +4018,10 @@ def run_one(
     lint_zh = lint_language(language_preview, "zh") if cn else {"language": "zh", "banned_phrase_hits": [], "overlong_sentences": [], "overlong_sections": [], "rewritten_sections": [], "rewrite_attempts": 0, "final_status": STATUS_PASS}
     language_status = STATUS_FAIL if STATUS_FAIL in {lint_en["final_status"], lint_zh["final_status"]} else STATUS_WARNING if STATUS_WARNING in {lint_en["final_status"], lint_zh["final_status"]} else STATUS_PASS
     risk_status = risk_method_status(risk_method) if risk_method is not None else STATUS_FAIL
-    ai_correction_log = build_ai_correction_log(report_data, "en")
+    if asset_profile is not None and build_asset_aware_ai_correction_log is not None:
+        ai_correction_log = build_asset_aware_ai_correction_log(asset_profile, symbol, benchmark, "en")
+    else:
+        ai_correction_log = build_ai_correction_log(report_data, "en")
     ai_analyst_status = validate_ai_correction_log(ai_correction_log)
     gate_status = {
         "DATA_AUDIT_STATUS": data_audit_status,
@@ -3643,15 +4029,43 @@ def run_one(
         "AI_ANALYST_REVIEW_STATUS": ai_analyst_status,
         "LANGUAGE_LINT_STATUS": language_status,
         "PRICE_LABEL_CHECK_STATUS": price_label_status,
+        "LIFECYCLE_LOGIC_STATUS": lifecycle_report.get("status", STATUS_PASS),
+        "COMPANY_SPECIFICITY_STATUS": company_specificity.get("COMPANY_SPECIFICITY_STATUS", STATUS_PASS),
+        "PATCH_STATUS": patch_log.get("patch_status", "NOT_NEEDED"),
+        "PATCH_MATERIALITY_STATUS": patch_log.get("patch_materiality_status", "NO_MATERIAL_CHANGE"),
+        "FALLBACK_STATUS": fallback_status(asset_profile) if asset_profile is not None and fallback_status is not None else "NONE",
+        "FALLBACK_USED_COUNT": asset_profile.fallback_used_count if asset_profile is not None else 0,
+        "FRAMEWORK_COVERAGE_LEVEL": asset_profile.framework_coverage_level if asset_profile is not None else "UNKNOWN",
+        "ASSET_PROFILE": asset_profile.primary_profile if asset_profile is not None else classify_research_category(info, fundamental_summary),
     }
-    gate_status["OVERALL_REPORT_STATUS"] = overall_report_status(gate_status)
+    if rollup_data_verification_status is not None and rollup_thesis_verification_status is not None and overall_status_from_verification is not None:
+        gate_status["DATA_VERIFICATION_STATUS"] = rollup_data_verification_status(gate_status)
+        gate_status["THESIS_VERIFICATION_STATUS"] = rollup_thesis_verification_status(gate_status)
+        gate_status["OVERALL_REPORT_STATUS"] = overall_status_from_verification(
+            gate_status["DATA_VERIFICATION_STATUS"],
+            gate_status["THESIS_VERIFICATION_STATUS"],
+        )
+    elif overall_status_v43 is not None:
+        gate_status["OVERALL_REPORT_STATUS"] = overall_status_v43(gate_status, fallback_count=asset_profile.fallback_used_count if asset_profile is not None else 0)
+    else:
+        gate_status["OVERALL_REPORT_STATUS"] = overall_report_status(gate_status)
 
     overall_status = gate_status["OVERALL_REPORT_STATUS"]
     if data_audit is not None:
-        write_data_audit(out_dir, data_audit, overall_status)
-    write_price_label_sanity_check(out_dir, price_label_check, overall_status)
-    write_ai_correction_log(out_dir, ai_correction_log, overall_status)
-    write_language_lint_report(out_dir, [lint_en, lint_zh], overall_status)
+        write_data_audit(audit_dir, data_audit, overall_status)
+    write_price_label_sanity_check(audit_dir, price_label_check, overall_status)
+    write_ai_correction_log(ai_dir, ai_correction_log, overall_status)
+    if write_patch_artifacts is not None:
+        write_patch_artifacts(ai_dir, patch_log, patched_blocks_en + patched_blocks_zh)
+    write_language_lint_report(audit_dir, [lint_en, lint_zh], overall_status)
+    if write_json is not None:
+        if asset_profile is not None:
+            write_json(metadata_dir / "asset_profile.json", asset_profile.to_dict())
+        write_json(audit_dir / "lifecycle_logic_report.json", lifecycle_report)
+        write_json(audit_dir / "company_specificity_report.json", company_specificity)
+        write_json(metadata_dir / "report_status.json", gate_status)
+    if asset_profile is not None and write_lifecycle_logic_report is not None:
+        write_lifecycle_logic_report(audit_dir / "lifecycle_logic_report.md", lifecycle_report, asset_profile)
 
     ai_review_markdown = None
     if ai_review:
@@ -3685,7 +4099,7 @@ def run_one(
         benchmark=benchmark,
         start_date=start_date,
         end_date=end_date,
-        out_dir=out_dir,
+        out_dir=report_dir,
         profile=profile,
         valuation=valuation,
         trends=trends,
@@ -3698,28 +4112,74 @@ def run_one(
         sanity_checks=sanity_checks,
         ruin_risk=ruin_risk,
         margin_stress=margin_stress,
-        actual_chart_name=actual_chart_path.name,
-        chart_name=chart_path.name,
-        drawdown_chart_name=drawdown_chart_path.name,
-        score_components_chart_name=score_components_chart_path.name,
-        growth_quality_chart_name=growth_quality_chart_name,
-        ruin_risk_chart_name=ruin_risk_chart_path.name,
-        interactive_chart_name=interactive_chart_path.name,
-        radar_chart_name=radar_chart_path.name,
+        actual_chart_name=chart_refs["actual"],
+        chart_name=chart_refs["normalized"],
+        drawdown_chart_name=chart_refs["drawdown"],
+        score_components_chart_name=chart_refs["score_components"],
+        growth_quality_chart_name=chart_refs["growth_quality"],
+        ruin_risk_chart_name=chart_refs["ruin_risk"],
+        interactive_chart_name=chart_refs["interactive"],
+        radar_chart_name=chart_refs["radar"],
         ai_review_markdown=ai_review_markdown,
         v4_sections=v4_sections,
         gate_status=gate_status,
+        asset_profile_data=asset_profile.to_dict() if asset_profile is not None else None,
     )
     final_lint_results = [lint_language(report_path.read_text(encoding="utf-8"), "en")]
-    if cn or language == "zh":
-        chinese_report_path = write_chinese_report(report_data, out_dir, v4_sections, gate_status, term_style=term_style)
+    if cn or language in {"zh", "both"}:
+        chinese_report_path = write_chinese_report(report_data, report_dir, v4_sections, gate_status, term_style=term_style)
         final_lint_results.append(lint_language(chinese_report_path.read_text(encoding="utf-8"), "zh"))
     else:
         final_lint_results.append(lint_zh)
-    write_language_lint_report(out_dir, final_lint_results, gate_status["OVERALL_REPORT_STATUS"])
+    write_language_lint_report(audit_dir, final_lint_results, gate_status["OVERALL_REPORT_STATUS"])
+
+    if write_json is not None:
+        write_json(
+            metadata_dir / "run_metadata.json",
+            {
+                "ticker": symbol,
+                "benchmark": benchmark,
+                "run_id": out_dir.name,
+                "version": __version__,
+                "generated_at": datetime.now().isoformat(timespec="seconds"),
+                "report_path": str(report_path.relative_to(out_dir)),
+                "chinese_report_path": str(chinese_report_path.relative_to(out_dir)) if "chinese_report_path" in locals() else None,
+            },
+        )
+        write_json(metadata_dir / "report_status.json", gate_status)
+
+    if asset_profile is not None:
+        self_review_data = {
+            "ticker": symbol,
+            "run_id": out_dir.name,
+            "asset_profile": asset_profile.to_dict(),
+            "lifecycle_logic_status": lifecycle_report.get("status", STATUS_PASS),
+            "company_specificity_status": gate_status.get("COMPANY_SPECIFICITY_STATUS"),
+            "patch_status": patch_log.get("patch_status"),
+        }
+        if write_system_self_review is not None:
+            write_system_self_review(self_review_dir / "system_self_review.md", self_review_data)
+        if write_framework_gap_analysis is not None:
+            write_framework_gap_analysis(self_review_dir / "framework_gap_analysis.md", asset_profile)
+        if write_improvement_suggestions is not None:
+            write_improvement_suggestions(self_review_dir / "improvement_suggestions.md", asset_profile)
+        if write_regression_test_suggestions is not None:
+            write_regression_test_suggestions(self_review_dir / "regression_test_suggestions.md", asset_profile)
+
+    if write_run_readme is not None:
+        write_run_readme(out_dir, safe_symbol(symbol), benchmark, gate_status)
+    if presentation_gate is not None:
+        presentation = presentation_gate(out_dir)
+        gate_status["PRESENTATION_STATUS"] = presentation.get("PRESENTATION_STATUS", STATUS_PASS)
+        if write_json is not None:
+            write_json(audit_dir / "presentation_report.json", presentation)
+            write_json(metadata_dir / "report_status.json", gate_status)
 
     latest_dir = output / safe_symbol(symbol) / "latest"
-    copy_run_to_latest(out_dir, latest_dir)
+    if copy_pack_to_latest is not None:
+        copy_pack_to_latest(out_dir, latest_dir)
+    else:
+        copy_run_to_latest(out_dir, latest_dir)
     if terminal_ui is not None:
         terminal_ui.step_done("[8/8] Writing outputs")
         if gate_status.get("OVERALL_REPORT_STATUS") == "UNVERIFIED":
@@ -3813,43 +4273,73 @@ The score is a research-priority score, not a buy/sell signal.
     copy_run_to_latest(out_dir, output / "_comparison" / "latest")
 
 
+def pack_report_folder(run_dir: Path) -> Path:
+    """Create a zip archive for a v4.3 report run folder."""
+    run_dir = run_dir.expanduser().resolve()
+    if not run_dir.exists() or not run_dir.is_dir():
+        raise FileNotFoundError(f"Run folder not found: {run_dir}")
+    ticker = run_dir.parents[1].name if len(run_dir.parents) >= 2 and run_dir.parent.name == "runs" else run_dir.name.split("_")[0].upper()
+    zip_path = run_dir / f"{safe_symbol(ticker)}_research_pack.zip"
+    required = ["README.md", "report", "charts", "data", "audit", "ai", "dashboard", "metadata", "self_review"]
+    missing = [item for item in required if not (run_dir / item).exists()]
+    if missing:
+        raise ValueError(f"Cannot pack incomplete run folder. Missing: {', '.join(missing)}")
+    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        for path in sorted(run_dir.rglob("*")):
+            if path == zip_path or path.is_dir():
+                continue
+            archive.write(path, path.relative_to(run_dir))
+    return zip_path
+
+
 def parse_args() -> argparse.Namespace:
     examples = """
 Examples:
 
-  # Basic: AAPL vs SPY
-  cresearch AAPL
+  # Basic asset-aware research pack
+  openbb-research AAPL
+
+  # Chinese report only
+  openbb-research AAPL --zh
 
   # Multiple tickers ranked together
-  cresearch AAPL TSLA RKLB
+  openbb-research AAPL TSLA RKLB
 
   # Use VOO as benchmark
-  cresearch TSLA --benchmark VOO
+  openbb-research TSLA --benchmark VOO
 
   # Use QQQ for technology/growth comparison
-  cresearch NVDA MSFT --benchmark QQQ
+  openbb-research NVDA MSFT --benchmark QQQ
 
   # Compare one stock against another stock
-  cresearch TSLA --benchmark AAPL --start 2020-01-01
+  openbb-research TSLA --benchmark AAPL --start 2020-01-01
 
   # Custom risk-free rate
-  cresearch AAPL --risk-free-rate 0.04
+  openbb-research AAPL --risk-free-rate 0.04
 
   # Optional personal margin stress table
-  cresearch AAPL --account-equity 100000 --margin-loan 25000
+  openbb-research AAPL --account-equity 100000 --margin-loan 25000
 
   # Optional AI review layer
-  cresearch AAPL --ai-review
+  openbb-research AAPL --ai-review
 
-  # Every run is archived by default; latest is refreshed automatically
-  cresearch AAPL
+  # Generate English and Chinese reports
+  openbb-research RKLB --both --full
+
+  # Generate and zip the organized report pack
+  openbb-research TICKER --pack
+  openbb-research RKLB --both --full --pack
+
+  # Pack an existing run folder
+  openbb-research pack RUN_FOLDER
+  openbb-research pack reports/RKLB/runs/manual_review_rklb_v43
 
   # Use your own run id
-  cresearch AAPL --run-id test_2023_start
+  openbb-research AAPL --run-id test_2023_start
 """
     parser = argparse.ArgumentParser(
-        prog="cresearch",
-        description="Generate a company research data pack with benchmark comparison, charts, financial metrics, and Markdown report.",
+        prog="openbb-research",
+        description="Generate an asset-aware first-pass equity research pack with benchmark comparison, audit logs, charts, and English/Chinese reports.",
         epilog=textwrap.dedent(examples),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -3871,16 +4361,37 @@ Examples:
     parser.add_argument("--ai-review-depth", choices=["basic", "deep"], default="basic", help="AI review depth. Default: basic.")
     parser.add_argument("--ai-timeout", type=int, default=60, help="OpenAI API timeout in seconds. Default: 60.")
     parser.add_argument("--ai-max-output-tokens", type=int, default=1200, help="Max tokens for AI review output. Default: 1200.")
-    parser.add_argument("--audit-data", action="store_true", help="Generate v4 data audit files: data_audit.md and data_audit.csv.")
-    parser.add_argument("--language", choices=["en", "zh"], default="en", help="Primary report language. Default: en. Use zh for a native Chinese report.")
+    parser.add_argument("--audit-data", dest="audit_data", action="store_true", default=True, help="Generate data audit files. Default: enabled in v4.3.")
+    parser.add_argument("--no-audit-data", dest="audit_data", action="store_false", help="Disable data audit file generation.")
+    parser.add_argument("--language", choices=["en", "zh", "both"], default="both", help="Report language. Default: both.")
+    parser.add_argument("--en", dest="language", action="store_const", const="en", help="Generate English report only.")
+    parser.add_argument("--zh", dest="language", action="store_const", const="zh", help="Generate Chinese report only.")
+    parser.add_argument("--both", dest="language", action="store_const", const="both", help="Generate both English and Chinese reports.")
     parser.add_argument("--term-style", choices=["pure", "bilingual"], default="pure", help="Term display style for localized reports. Default: pure.")
-    parser.add_argument("--cn", "--chinese", dest="cn", action="store_true", help="Generate an independent Chinese Markdown report.")
+    parser.add_argument("--cn", "--chinese", dest="language", action="store_const", const="zh", help="Generate an independent Chinese Markdown report.")
+    parser.add_argument("--quick", action="store_true", help="Fast mode placeholder. Keeps core report generation but skips optional AI review unless requested.")
+    parser.add_argument("--full", action="store_true", help="Full research mode. In v4.3 this is the default behavior.")
+    parser.add_argument("--pack", action="store_true", help="Create TICKER_research_pack.zip in each run folder after generation.")
     parser.add_argument("--no-rich", action="store_true", help="Disable Rich terminal UI and use plain output.")
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
-    return parser.parse_args()
+    args = parser.parse_args()
+    args.cn = args.language in {"zh", "both"}
+    return args
 
 
 def main() -> None:
+    if len(sys.argv) >= 2 and sys.argv[1] == "pack":
+        if len(sys.argv) < 3:
+            print("Usage: openbb-research pack RUN_FOLDER")
+            raise SystemExit(2)
+        try:
+            zip_path = pack_report_folder(Path(sys.argv[2]))
+        except Exception as exc:
+            print(f"[ERROR] Failed to pack report folder: {exc}")
+            raise SystemExit(1)
+        print(f"Packed report folder: {zip_path}")
+        return
+
     args = parse_args()
     output = Path(args.output)
     ensure_dir(output)
@@ -3892,32 +4403,35 @@ def main() -> None:
     rows = []
     for symbol in args.symbols:
         try:
-            rows.append(
-                run_one(
-                    symbol=symbol,
-                    benchmark=args.benchmark,
-                    start_date=args.start,
-                    end_date=args.end,
-                    years=args.years,
-                    output=output,
-                    risk_free_rate=args.risk_free_rate,
-                    archive=args.archive,
-                    run_id=args.run_id,
-                    account_equity=args.account_equity,
-                    margin_loan=args.margin_loan,
-                    ai_review=args.ai_review,
-                    ai_model=args.ai_model,
-                    ai_review_depth=args.ai_review_depth,
-                    ai_timeout=args.ai_timeout,
-                    ai_max_output_tokens=args.ai_max_output_tokens,
-                    audit_data=args.audit_data,
-                    cn=args.cn or args.language == "zh",
-                    language=args.language,
-                    term_style=args.term_style,
-                    price_field=args.price_field,
-                    annualization_days=args.annualization_days,
-                )
+            row = run_one(
+                symbol=symbol,
+                benchmark=args.benchmark,
+                start_date=args.start,
+                end_date=args.end,
+                years=args.years,
+                output=output,
+                risk_free_rate=args.risk_free_rate,
+                archive=args.archive,
+                run_id=args.run_id,
+                account_equity=args.account_equity,
+                margin_loan=args.margin_loan,
+                ai_review=args.ai_review,
+                ai_model=args.ai_model,
+                ai_review_depth=args.ai_review_depth,
+                ai_timeout=args.ai_timeout,
+                ai_max_output_tokens=args.ai_max_output_tokens,
+                audit_data=args.audit_data,
+                cn=args.language in {"zh", "both"},
+                language=args.language,
+                term_style=args.term_style,
+                price_field=args.price_field,
+                annualization_days=args.annualization_days,
             )
+            if args.pack:
+                zip_path = pack_report_folder(Path(row["folder"]))
+                row["pack_zip"] = str(zip_path)
+                print(f"Pack zip: {zip_path}")
+            rows.append(row)
         except Exception as exc:
             print(f"\n[ERROR] Failed for {symbol}: {exc}")
 

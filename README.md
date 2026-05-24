@@ -1,14 +1,14 @@
 # openbb-company-research-tool
 
-A thesis-driven first-pass equity research workflow generator.
+A thesis-driven, asset-aware first-pass equity research workflow generator.
 
 A Python-based company research workflow for turning public market data into structured, archived, and reviewable research reports.
 
 It is built for first-pass company research, not for buy/sell decisions.
 
-v4.2 turns the project into a thesis-driven, audit-ready, bilingual first-pass equity research workflow generator with a stronger human-readable report experience.
+v4.3 turns the project into an asset-aware workflow. The report first builds an asset profile, selects a matching research frame, patches interpretation blocks when the profile and wording disagree, and exposes uncertainty when the framework is incomplete.
 
-> Thesis-driven. Audit-ready. No fake certainty. No AI-flavored filler.
+> Locked data. Asset-aware routing. Editable interpretation. Traceable reasoning. Structured uncertainty.
 
 This tool helps retail investors answer a few basic but important questions before getting emotional about a stock:
 
@@ -19,6 +19,7 @@ This tool helps retail investors answer a few basic but important questions befo
 - Is the data complete enough to trust?
 - What should be manually verified before making any judgment?
 - What is the long bet, short trigger, market pricing, and kill criteria?
+- Is the report using the right research frame for this type of company?
 
 > This is not a stock-picking machine.  
 > It is a research workflow designed to reduce false confidence, messy notes, and emotional decision-making.
@@ -28,7 +29,7 @@ This tool helps retail investors answer a few basic but important questions befo
 ## 30-Second Demo
 
 ```bash
-cresearch AAPL --benchmark SPY --start 2023-01-01 --audit-data --cn
+openbb-research AAPL --benchmark SPY --start 2023-01-01
 ```
 
 The tool creates a structured research folder:
@@ -36,24 +37,15 @@ The tool creates a structured research folder:
 ```text
 reports/AAPL/
 ├── latest/
-│   ├── AAPL_research_report.md
-│   ├── AAPL_research_report_cn.md
-│   ├── AAPL_vs_SPY_interactive_dashboard.html
-│   ├── AAPL_vs_SPY_actual_close_price_chart.png
-│   ├── AAPL_vs_SPY_performance_chart.png
-│   ├── AAPL_vs_SPY_drawdown_chart.png
-│   ├── AAPL_research_score_components.png
-│   ├── AAPL_growth_quality_trend.png
-│   ├── AAPL_ruin_risk_snapshot.png
-│   ├── AAPL_sanity_checks.csv
-│   ├── AAPL_ruin_risk_snapshot.csv
-│   ├── AAPL_personal_margin_stress.csv
-│   ├── data_audit.md
-│   ├── data_audit.csv
-│   ├── ai_correction_log.md
-│   ├── ai_correction_log.json
-│   ├── price_label_sanity_check.md
-│   └── language_lint_report.md
+│   ├── README.md
+│   ├── report/
+│   ├── charts/
+│   ├── data/
+│   ├── audit/
+│   ├── ai/
+│   ├── dashboard/
+│   ├── metadata/
+│   └── self_review/
 └── runs/
     └── 20260523_..._AAPL_vs_SPY_start_2023-01-01/
 ```
@@ -89,7 +81,49 @@ The generated report starts with a short "How to Read This Report" section, foll
 
 ---
 
-## v4.2 Workflow Gates and Report Experience
+## v4.3 Asset-Aware Workflow
+
+v4.3 adds the layer that prevents “one template fits every stock.”
+
+The run now follows this shape:
+
+```text
+locked data
+→ asset profile
+→ thesis spine
+→ profile-specific report blocks
+→ AI interpretation patch
+→ lifecycle / company-specificity checks
+→ organized report pack
+```
+
+Examples:
+
+- AAPL-like companies use mature-compounder logic: margin durability, FCF stability, business mix, capital returns, and premium valuation risk.
+- RKLB-like companies use speculative-growth logic: growth quality, burn, runway, dilution, order conversion, and path to profitability.
+- INTC-like companies use semiconductor turnaround logic: foundry execution, capex pressure, gross-margin recovery, process roadmap, data-center competitiveness, and free-cash-flow pressure.
+- Unknown or data-limited companies are downgraded to screening-only instead of being forced into a known template.
+
+Each run includes:
+
+- `metadata/asset_profile.json`
+- `metadata/report_status.json`
+- `ai/correction_patch.json`
+- `ai/patched_report_blocks.json`
+- `ai/patch_diff_log.md`
+- `self_review/system_self_review.md`
+- `self_review/framework_gap_analysis.md`
+
+The principle is simple: if the system does not understand the company well enough, it must say so.
+
+Generate and zip a report pack:
+
+```bash
+openbb-research INTC --both --full --pack --run-id stress_intc_v43
+openbb-research pack reports/INTC/runs/stress_intc_v43
+```
+
+## v4 Workflow Gates and Report Experience
 
 v4.2 keeps the four-gate workflow:
 

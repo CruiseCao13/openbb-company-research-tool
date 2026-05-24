@@ -65,10 +65,10 @@ def _strip_rich(message: str) -> str:
 def print_app_banner(version: str) -> None:
     if _UI._rich:
         _UI.print(f"\n[bold]OpenBB Company Research Tool v{version}[/bold]")
-        _UI.print("[dim]Data-first research workflow with bounded AI analyst gate[/dim]\n")
+        _UI.print("[dim]Asset-aware research workflow with AI interpretation repair[/dim]\n")
     else:
         _UI.print(f"\nOpenBB Company Research Tool v{version}")
-        _UI.print("Data-first research workflow with bounded AI analyst gate\n")
+        _UI.print("Asset-aware research workflow with AI interpretation repair\n")
 
 
 def print_run_config(

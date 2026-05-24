@@ -1,5 +1,39 @@
 # Changelog
 
+## v4.3.0
+
+### Added
+
+- Asset-aware research routing through `asset_profile` and multi-metric thesis spine generation
+- Profile-specific interpretation blocks for Mature Compounder, Speculative / Unprofitable Growth, Capital-Intensive Semiconductor Turnaround, Financials, Cyclicals, Hybrid Growth, and Unknown / Data-Limited Screening
+- AI interpretation patch loop with `correction_patch.json`, `patched_report_blocks.json`, and `patch_diff_log.md`
+- Company specificity and lifecycle logic checks to catch profile/body mismatch
+- `lifecycle_logic_report.md` for lifecycle/profile failure attribution
+- Fallback usage tracking and visible framework coverage warnings
+- Organized report pack layout: `report/`, `charts/`, `data/`, `audit/`, `ai/`, `dashboard/`, `metadata/`, and `self_review/`
+- Automatic run README, asset profile metadata, report status metadata, framework gap analysis, improvement suggestions, and regression test suggestions
+- `openbb-research` console command alias
+- `--pack` and `openbb-research pack RUN_FOLDER` report-pack zip support
+- v4.3 asset-routing tests covering AAPL-like, RKLB-like, semiconductor-turnaround, biotech-like, REIT-like, insurance/financial, cyclical, unknown, patch, fallback, CLI help, and output-pack scenarios
+
+### Changed
+
+- Version bumped to `4.3.0`
+- Default report language is now `both`; use `--en` or `--zh` for single-language output
+- Data audit generation is enabled by default; use `--no-audit-data` to disable it
+- English and Chinese reports now read from asset-aware patched report blocks instead of generic mature-company wording
+- Chart and dashboard files are organized into product-style run folders
+- Terminal banner now describes the asset-aware workflow
+
+### Fixed
+
+- Prevented mature-compounder template contamination in speculative-growth reports
+- Prevented INTC-like semiconductor manufacturing turnarounds from being reduced to generic technology screening-only
+- Prevented earnings/PE-style valuation framing from becoming the core logic for unprofitable growth companies
+- Prevented lifecycle failures from lacking a Markdown attribution report
+- Prevented AI correction logs from staying disconnected from the final report text
+- Prevented unknown/data-limited companies from silently receiving confident template conclusions
+
 ## v4.2.0
 
 ### Added

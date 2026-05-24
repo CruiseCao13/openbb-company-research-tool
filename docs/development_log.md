@@ -1,5 +1,47 @@
 # Development Log & Engineering Rules
 
+## v4.3 — Asset-Aware Research Report System
+
+### Problem
+
+RKLB-style stress testing showed that a report could detect a speculative-growth profile but still reuse mature-compounder interpretation language.
+
+That is a product-level failure: the data label was correct, but the research logic in the body did not follow the label.
+
+### Design Response
+
+v4.3 introduced:
+
+- asset profile routing
+- multi-metric thesis spine
+- profile-specific valuation and Q&A blocks
+- AI interpretation patch artifacts
+- lifecycle logic and company-specificity checks
+- fallback usage tracking
+- organized report pack folders
+- automatic system self-review
+
+### Lesson Learned
+
+The report shell can be shared, but the research conclusion cannot be templated blindly.
+
+Unknown companies may be downgraded. They must not be forced into a confident research frame.
+
+### INTC Pressure-Test Correction
+
+An INTC-like stress test exposed a second failure mode: the system could downgrade too broadly and call a company `Unknown / Data-Limited Screening` even when business clues pointed to a more specific framework.
+
+The fix was not ticker-specific. v4.3 now includes a generalized `Capital-Intensive Semiconductor Turnaround` route based on sector, industry, business-summary clues, capex intensity, margin pressure, weak or negative FCF, and unstable profitability.
+
+The report must treat these companies as manufacturing-turnaround cases, not generic technology screens. The required verification frame includes foundry revenue / margin, data-center segment trend, client computing trend, capex roadmap, process-node progress, manufacturing utilization, inventory pressure, gross-margin bridge, and free-cash-flow pressure.
+
+Rule established:
+
+- lifecycle failures must produce `audit/lifecycle_logic_report.md`
+- framework gap analysis must be specific, not generic
+- `screening-only` must not claim that no sector-specific data is missing
+- pack commands and help text must be treated as part of the product surface, not optional polish
+
 This document records real engineering problems, troubleshooting steps, fixes, verification commands, and design rules discovered during the development of `openbb-company-research-tool`.
 
 It is not a release note. For version-level changes, see `CHANGELOG.md`.

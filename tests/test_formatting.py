@@ -11,8 +11,8 @@ SPEC.loader.exec_module(tool)
 
 class FormattingTests(unittest.TestCase):
     def test_metric_registry_formats_ratios_as_ratios(self):
-        self.assertEqual(tool.format_value_by_metric("Sharpe Ratio", 0.56234), "0.5623")
-        self.assertEqual(tool.format_value_by_metric("Beta vs Benchmark", 1.23456), "1.2346")
+        self.assertEqual(tool.format_value_by_metric("Sharpe Ratio", 0.56234), "0.56")
+        self.assertEqual(tool.format_value_by_metric("Beta vs Benchmark", 1.23456), "1.23")
 
     def test_metric_registry_formats_percent_metrics_as_percentages(self):
         self.assertEqual(tool.format_value_by_metric("Total Return", 1.5919), "159.19%")
