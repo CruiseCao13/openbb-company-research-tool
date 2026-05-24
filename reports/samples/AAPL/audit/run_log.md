@@ -1,8 +1,8 @@
 # Run Log
 
 Ticker: AAPL
-Run ID: v5_aapl_rust_brain
-Total runtime: 2700 ms
+Run ID: v5_aapl_productized_final
+Total runtime: 2969 ms
 Provider: auto
 AI mode: compact
 AI calls: 0

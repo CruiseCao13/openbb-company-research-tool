@@ -1,7 +1,7 @@
 {
   "ticker": "AAPL",
-  "run_id": "v5_aapl_rust_brain",
-  "generated_at": "2026-05-25T05:20:32.252283+08:00",
+  "run_id": "v5_aapl_productized_final",
+  "generated_at": "2026-05-25T05:25:36.073581+08:00",
   "files": [
     "charts/Figure_03_financial_trend.png",
     "charts/Figure_04_money_flow.png",
@@ -17,19 +17,28 @@
     "audit/pdf_export_report.md",
     "audit/visual_lint_report.md",
     "audit/data_quality.md",
+    "audit/table_quality_report.md",
+    "audit/parser_report.md",
     "audit/chart_selection_report.md",
     "audit/chart_table_quality_report.md",
+    "audit/normalizer_report.md",
     "audit/evidence_map.md",
     "audit/provider_validation.md",
     "audit/validator_report.md",
     "audit/iteration_log.md",
+    "audit/cache_report.md",
     "audit/data_usage_coverage_report.md",
+    "audit/chart_coverage_report.md",
+    "audit/rewrite_trace.md",
     "self_review/ai_self_review.json",
     "self_review/ai_self_review.md",
     "report/AAPL_research_report.pdf",
     "report/AAPL_research_report.md",
     "report/AAPL_research_report_cn.pdf",
     "report/AAPL_research_report_cn.md",
+    "data/normalized_price_history.json",
+    "data/normalized_financials.json",
+    "metadata/pdf_status.json",
     "metadata/data_usage_coverage.json",
     "metadata/unit_policy.json",
     "metadata/validation_passes.json",
@@ -37,13 +46,16 @@
     "metadata/table_plan.json",
     "metadata/provider_status.json",
     "metadata/financial_interpretation.json",
+    "metadata/cache_summary.json",
     "metadata/report_status.json",
     "metadata/company_understanding.json",
     "metadata/research_blueprint.json",
     "metadata/evidence_map.json",
     "metadata/provider_cache_info.json",
+    "metadata/rewrite_status.json",
     "metadata/data_inventory.json",
     "metadata/chart_plan.json",
+    "metadata/product_quality_score.json",
     "metadata/prompt_versions.json",
     "raw/provider_payload.json"
   ],
@@ -126,6 +138,16 @@
       "sha256": "c5a1d1c67f323d7fde604ce3b9dd06e79727978a0f463dcd6cdf1abf423cdaae"
     },
     {
+      "path": "audit/table_quality_report.md",
+      "size_bytes": 211,
+      "sha256": "d668eb6d60ada02088856d312c4493065a5b1cc7d5590fca590ada8c3aef10f9"
+    },
+    {
+      "path": "audit/parser_report.md",
+      "size_bytes": 415,
+      "sha256": "bdf0b05ff92026a41d02f6fb4472af91d20bc9f8a89ef9fe861cbf9475b9c4f8"
+    },
+    {
       "path": "audit/chart_selection_report.md",
       "size_bytes": 446,
       "sha256": "638def41b62f0404d9d1ed35bdc5e6a9ae9cb495fbe4cc041d5b9928cb43f0f7"
@@ -134,6 +156,11 @@
       "path": "audit/chart_table_quality_report.md",
       "size_bytes": 738,
       "sha256": "3fa0d0f62bb28c4f583af20adac77f482e0950c41b4156e87082077511558f7b"
+    },
+    {
+      "path": "audit/normalizer_report.md",
+      "size_bytes": 556,
+      "sha256": "8fa1ad22802c855b9794ecc29837cce3c14280228fdf5d95058b28b16fabcd9c"
     },
     {
       "path": "audit/evidence_map.md",
@@ -156,9 +183,24 @@
       "sha256": "4b37dfeccc8c35a3c2bd92cac55f86b03ea469cc05dd0afaf4d9e75539cba757"
     },
     {
+      "path": "audit/cache_report.md",
+      "size_bytes": 332,
+      "sha256": "11fa831776cc04cfc4fad3dbf690b5f2f78028c2d066883f7466c401c9b08c84"
+    },
+    {
       "path": "audit/data_usage_coverage_report.md",
       "size_bytes": 1291,
       "sha256": "cf7b80787a995b5936adcdf4241a2c185bbeb208190f5142d036f15cfbeb8053"
+    },
+    {
+      "path": "audit/chart_coverage_report.md",
+      "size_bytes": 283,
+      "sha256": "42be479b57784d11468b39d76b3f5fa7722f7c5dd55aa2a68ee27e95119000ea"
+    },
+    {
+      "path": "audit/rewrite_trace.md",
+      "size_bytes": 272,
+      "sha256": "1b9ade65bbb8cc1b5b949cb60824f59186c36f2c7e25351dfcf9010ac2dff4f3"
     },
     {
       "path": "self_review/ai_self_review.json",
@@ -189,6 +231,21 @@
       "path": "report/AAPL_research_report_cn.md",
       "size_bytes": 5711,
       "sha256": "21ffc6e74d92d4715b46a0b9a0ec9191cb9cc95dfa848d175a590434d2ce702e"
+    },
+    {
+      "path": "data/normalized_price_history.json",
+      "size_bytes": 26523,
+      "sha256": "50536bf79b1593dc0f76155af5d317d5fb3ebbfae94e158777563dc9d1049b90"
+    },
+    {
+      "path": "data/normalized_financials.json",
+      "size_bytes": 61656,
+      "sha256": "1c81e3ee69fe0a0d5d62111dd60843b8d96179bd29bad463b240de61542be238"
+    },
+    {
+      "path": "metadata/pdf_status.json",
+      "size_bytes": 240,
+      "sha256": "c8aba8b84e6cfd1353ed7c6c357f5161a2d30b9c5fa9351d233f7ae6af9a3cdd"
     },
     {
       "path": "metadata/data_usage_coverage.json",
@@ -226,6 +283,11 @@
       "sha256": "a28beb3dc773d49543730bb8656128895ef041b253dcc61ae0ce12f6ba3149a2"
     },
     {
+      "path": "metadata/cache_summary.json",
+      "size_bytes": 332,
+      "sha256": "645696a2d18221b178369f38ecc193ccce8f6d407b27c94f80de98b7fe08ea7c"
+    },
+    {
       "path": "metadata/report_status.json",
       "size_bytes": 450,
       "sha256": "4cc5db87b056547a5258a6d71cba3fd3815ba016b91f45196247853676e9a92b"
@@ -248,7 +310,12 @@
     {
       "path": "metadata/provider_cache_info.json",
       "size_bytes": 180,
-      "sha256": "7539fa480e36063273ad65b74c7927e39598ee3e6f934c6f56a14905f47726d4"
+      "sha256": "7f657f6d9f52eabc8158b98de415365650b06b3b34db6a59a50a939f0a769f24"
+    },
+    {
+      "path": "metadata/rewrite_status.json",
+      "size_bytes": 216,
+      "sha256": "ff9eb5d3eef248646c187b2886775b50ceefed7cf95d5ae43c4c6f97c1ceb956"
     },
     {
       "path": "metadata/data_inventory.json",
@@ -261,6 +328,11 @@
       "sha256": "5f824ebb63d68318d376209a538e80f51840749f1e011bb5d9ff5741deb508ff"
     },
     {
+      "path": "metadata/product_quality_score.json",
+      "size_bytes": 160,
+      "sha256": "ba19fd83041fddf1f4e40d7e187b7e3963a51fb65f82f4983ad4b0f95cea652d"
+    },
+    {
       "path": "metadata/prompt_versions.json",
       "size_bytes": 352,
       "sha256": "1ea55c19cfa7df51404b47cd47e10e6fb3f94af82e4dac8f27740750ed19c6b9"
@@ -268,7 +340,7 @@
     {
       "path": "raw/provider_payload.json",
       "size_bytes": 109106,
-      "sha256": "08c59eaf28f4df137633eda53a49bc45bbee8cfcb7a435997ab2c2670f341458"
+      "sha256": "5d991d4a42e33d2533a68e35b47be642c40ae09806a83c88d0a7ccfa2c50b907"
     }
   ]
 }

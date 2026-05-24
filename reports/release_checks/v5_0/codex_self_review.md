@@ -9,6 +9,8 @@
 - v5 batch command that runs `broad_30_probe`, isolates ticker-level failures, writes matrix outputs, and generates local training cases.
 - Per-run data inventory, data usage coverage, chart plan, evidence map, chart/table quality report, and PDF export audit artifacts.
 - A Rust-side engineering control layer with error taxonomy types, provider status/cache metadata, compiler-style validation passes, table plans, run traces, batch traces, and pack manifest file digests.
+- Formal parser/normalizer layer that writes typed normalized financials, normalized price history, parser report, and normalizer report before rendering.
+- Rewrite status/trace, cache report, PDF status JSON, product quality score, and README review artifacts.
 
 ## What Was Not Built
 
@@ -25,6 +27,7 @@
 - `.venv/bin/python -m pytest -q`
 - AAPL v5 run
 - AAPL v5 Rust-brain run with `metadata/run_trace.json`, `metadata/validation_passes.json`, `metadata/table_plan.json`, and digest-aware pack manifest
+- AAPL productization run with parser/normalizer reports, rewrite trace, cache report, PDF status JSON, and product quality score
 - smoke_12 three-name batch probe with `batch_trace.json` and runtime matrix
 - 600519.SH v5 run
 - broad_30 v5 batch
@@ -87,7 +90,10 @@ See `reports/release_checks/v5_0/display_review.md`.
 - Chart/table judge: Yes, `metadata/chart_table_quality.json` and `audit/chart_table_quality_report.md` score relevance, readability, explanation, units, source trace, and visual polish.
 - Evidence map: Yes, key claims are mapped to provider sections, chart references, table references, confidence, and unsupported-claim status.
 - Table plan: Yes, `metadata/table_plan.json` and `audit/table_selection_report.md` are generated before report rendering.
+- Parser/normalizer: Yes, `data/normalized_financials.json`, `data/normalized_price_history.json`, `audit/parser_report.md`, and `audit/normalizer_report.md` are generated before report rendering.
 - Validation passes: Yes, `metadata/validation_passes.json` records compiler-style provider, AI schema, money flow, evidence, chart/table, visual, and PDF passes.
+- Rewrite trace: Yes, `metadata/rewrite_status.json` and `audit/rewrite_trace.md` record whether operational rewrite was needed.
+- Cache report: Yes, `metadata/cache_summary.json` and `audit/cache_report.md` record current cache hits and explicit limitations.
 - Traceability: Yes, single runs write `metadata/run_trace.json` and `audit/run_log.md`; batch runs write `batch_trace.json`.
 - Pack manifest: Yes, pack manifests include PDF/dashboard/chart flags plus per-file size and SHA-256 digest.
 - Folder structure: Clear v5 run folders with report/raw/metadata/audit/self_review/data/charts/pack/dashboard.

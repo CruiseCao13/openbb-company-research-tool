@@ -1,0 +1,10 @@
+{
+  "ai_cache_hits": 0,
+  "ai_calls_avoided": 0,
+  "chart_cache_hits": 0,
+  "note": "Provider cache hit detail is stored in metadata/provider_status.json; deeper digest-based chart/report/PDF caches are v5.1 work.",
+  "pdf_cache_hits": 0,
+  "provider_cache_hits": 0,
+  "provider_calls_avoided": 0,
+  "report_render_cache_hits": 0
+}

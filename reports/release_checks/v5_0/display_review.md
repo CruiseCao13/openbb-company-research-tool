@@ -60,6 +60,9 @@ No display category is below WARNING.
 - Run trace and stage timings: PASS.
 - Batch trace with runtime summary: PASS.
 - Pack manifest includes file sizes and digests: PASS.
+- Parser/normalizer reports and normalized JSON outputs: PASS.
+- Rewrite trace/status exists and records when no operational rewrite is needed: PASS.
+- Cache report exists with explicit current limits: PASS.
 
 ## Dashboard Review
 

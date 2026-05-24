@@ -26,6 +26,34 @@ pub struct ProviderPayload {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ValuationSnapshot {
+    pub pe: Option<f64>,
+    pub ps: Option<f64>,
+    pub pb: Option<f64>,
+    pub ev_revenue: Option<f64>,
+    pub ev_ebitda: Option<f64>,
+    pub market_cap: Option<f64>,
+    pub raw_keys: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct NormalizedFinancials {
+    pub ticker: String,
+    pub reporting_currency: String,
+    pub income_statement: Vec<StatementRow>,
+    pub balance_sheet: Vec<StatementRow>,
+    pub cash_flow: Vec<StatementRow>,
+    pub valuation_snapshot: ValuationSnapshot,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct NormalizedPriceHistory {
+    pub ticker: String,
+    pub price_currency: String,
+    pub points: Vec<PricePoint>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct CompanyProfile {
     pub name: String,
     pub sector: String,
@@ -197,6 +225,15 @@ pub struct RunTrace {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProductQualityScore {
+    pub content_quality_score: u8,
+    pub chart_table_score: u8,
+    pub visual_lint_status: String,
+    pub presentation_status: String,
+    pub human_review_required: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ValidationPassResult {
     pub pass_name: String,
     pub status: String,
@@ -253,4 +290,7 @@ pub struct RunContext {
     pub force: bool,
     pub pack: bool,
     pub lang: String,
+    pub max_attempts: usize,
+    pub auto_fix: bool,
+    pub fail_fast: bool,
 }

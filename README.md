@@ -191,6 +191,17 @@ reports/TICKER/runs/RUN_ID/
   dashboard.html
 ```
 
+Parser / normalizer layer:
+
+```text
+raw/provider_payload.json
+-> audit/parser_report.md
+-> data/normalized_financials.json
+-> data/normalized_price_history.json
+-> audit/normalizer_report.md
+-> validator / AI / charts / tables / report
+```
+
 Expanded run folder / 完整输出包：
 
 ```text
@@ -208,9 +219,18 @@ reports/AAPL/runs/v5_aapl_p0_final/
   metadata/chart_plan.json
   metadata/evidence_map.json
   metadata/chart_table_quality.json
+  metadata/pdf_status.json
+  metadata/product_quality_score.json
+  metadata/rewrite_status.json
+  metadata/run_trace.json
+  metadata/validation_passes.json
   audit/data_usage_coverage_report.md
   audit/chart_table_quality_report.md
   audit/pdf_export_report.md
+  audit/parser_report.md
+  audit/normalizer_report.md
+  audit/rewrite_trace.md
+  audit/cache_report.md
   audit/visual_lint_report.md
   self_review/ai_self_review.md
   charts/Figure_01_price_vs_benchmark.png

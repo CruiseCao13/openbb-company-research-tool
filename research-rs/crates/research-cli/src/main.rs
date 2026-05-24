@@ -6,6 +6,8 @@ use research_batch::quality::{run_quality, QualityRunOptions};
 use research_batch::runner::{run_batch, BatchRunOptions};
 use research_core::config::EngineConfig;
 use research_core::io::{write_if_changed, write_json};
+use research_core::normalizer::write_normalized_outputs;
+use research_core::parser::write_parser_report;
 use research_core::provider::fetch_provider_payload;
 use research_core::run_folder::RunFolder;
 use research_core::types::*;
@@ -53,6 +55,12 @@ struct RunArgs {
     pack: bool,
     #[arg(long)]
     force: bool,
+    #[arg(long, default_value_t = 2)]
+    max_attempts: usize,
+    #[arg(long)]
+    auto_fix: bool,
+    #[arg(long)]
+    fail_fast: bool,
 }
 
 #[derive(Parser, Clone)]
@@ -123,6 +131,9 @@ fn run_one(args: &RunArgs, render: bool) -> Result<()> {
         force: args.force,
         pack: args.pack,
         lang: args.lang.clone(),
+        max_attempts: args.max_attempts,
+        auto_fix: args.auto_fix,
+        fail_fast: args.fail_fast,
     };
     let folder = RunFolder::new(&ctx);
     folder.create()?;
@@ -134,6 +145,8 @@ fn run_one(args: &RunArgs, render: bool) -> Result<()> {
     println!("[1/9] Fetching provider data              ...");
     let stage_timer = Instant::now();
     let payload = fetch_provider_payload(&ctx, &config, &folder.raw.join("provider_payload.json"))?;
+    write_parser_report(&folder, &payload)?;
+    write_normalized_outputs(&folder, &payload)?;
     stages.push(StageTrace {
         stage: "provider_fetch".into(),
         status: if payload.error.is_some() {
@@ -158,6 +171,10 @@ fn run_one(args: &RunArgs, render: bool) -> Result<()> {
         output_files: vec![
             "raw/provider_payload.json".into(),
             "metadata/provider_status.json".into(),
+            "data/normalized_financials.json".into(),
+            "data/normalized_price_history.json".into(),
+            "audit/parser_report.md".into(),
+            "audit/normalizer_report.md".into(),
         ],
     });
     let stage_timer = Instant::now();

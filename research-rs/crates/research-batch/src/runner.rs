@@ -6,6 +6,8 @@ use chrono::Local;
 use research_ai::run_local_compact_analyst;
 use research_core::config::EngineConfig;
 use research_core::io::{ensure_dir, write_if_changed};
+use research_core::normalizer::write_normalized_outputs;
+use research_core::parser::write_parser_report;
 use research_core::provider::fetch_provider_payload;
 use research_core::run_folder::RunFolder;
 use research_core::types::*;
@@ -68,11 +70,16 @@ pub fn run_batch(options: &BatchRunOptions) -> Result<PathBuf> {
             force: options.force,
             pack: options.pack,
             lang: "en".to_string(),
+            max_attempts: 2,
+            auto_fix: false,
+            fail_fast: false,
         };
         let folder = RunFolder::new(&ctx);
         folder.create()?;
         let mut payload =
             fetch_provider_payload(&ctx, &config, &folder.raw.join("provider_payload.json"))?;
+        write_parser_report(&folder, &payload)?;
+        write_normalized_outputs(&folder, &payload)?;
         if let Some(expected) = eval.expected_family.get(&ticker) {
             payload.company_profile.description = format!(
                 "{}\n\nBatch eval expected research family guardrail: {}.",

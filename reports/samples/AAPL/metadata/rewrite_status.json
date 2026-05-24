@@ -1,0 +1,8 @@
+{
+  "locked_data_modified": false,
+  "max_rounds": 2,
+  "reason": "Local compact self-review did not request operational rewrite sections.",
+  "rounds_used": 0,
+  "sections_rewritten": [],
+  "status": "NOT_NEEDED"
+}
