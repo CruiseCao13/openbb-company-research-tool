@@ -1,0 +1,18 @@
+ticker: JOBY
+company_name: JOBY
+detected_profile: None
+expected_profile: None
+report_status: {}
+failed_checks:
+  - report_failed
+wrong_output: report_failed
+expected_output_features:
+must_contain:
+must_not_contain:
+reason: Deterministic linter generated this case.
+data_refs_used:
+  - metadata/asset_profile.json
+  - metadata/report_status.json
+  - self_review/framework_gap_analysis.md
+fixed_by: pending
+regression_status: new

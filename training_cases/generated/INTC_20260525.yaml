@@ -1,0 +1,29 @@
+ticker: INTC
+company_name: INTC
+detected_profile: Unknown / Data-Limited Screening
+expected_profile: Unknown / Data-Limited Screening
+report_status: {"DATA_AUDIT_STATUS": "WARNING", "RISK_METHOD_STATUS": "PASS", "AI_ANALYST_REVIEW_STATUS": "PASS", "LANGUAGE_LINT_STATUS": "PASS", "PRICE_LABEL_CHECK_STATUS": "PASS", "LIFECYCLE_LOGIC_STATUS": "PASS", "COMPANY_SPECIFICITY_STATUS": "WARNING", "PATCH_STATUS": "APPLIED", "PATCH_MATERIALITY_STATUS": "FALLBACK_PATCH_APPLIED", "FALLBACK_STATUS": "USED", "FALLBACK_USED_COUNT": 2, "FRAMEWORK_COVERAGE_LEVEL": "SCREENING_ONLY", "ASSET_PROFILE": "Unknown / Data-Limited Screening", "DATA_VERIFICATION_STATUS": "WARNING", "THESIS_VERIFICATION_STATUS": "UNVERIFIED", "OVERALL_REPORT_STATUS": "UNVERIFIED", "PRESENTATION_STATUS": "PASS"}
+failed_checks:
+wrong_output: 
+failure_reason: Deterministic linter generated this case.
+suggested_fix: Inspect failed checks and convert repeated issues into deterministic tests.
+expected_output_features:
+  - basic financials
+  - benchmark return
+  - valuation snapshot
+  - manual business model review
+must_contain:
+  - basic financials
+  - benchmark return
+  - valuation snapshot
+  - manual business model review
+must_not_contain:
+  - generic monitoring
+  - full report rewrite
+reason: Deterministic linter found weak or missing company-specific interpretation.
+data_refs_used:
+  - metadata/asset_profile.json
+  - metadata/report_status.json
+  - self_review/framework_gap_analysis.md
+fixed_by: pending
+regression_status: new

@@ -105,8 +105,10 @@ def build_asset_profile(
     sector = str(info.get("sector") or "").lower()
     industry = str(info.get("industry") or "").lower()
     summary = str(info.get("longBusinessSummary") or "").lower()
+    short_name = str(info.get("shortName") or "").lower()
+    long_name = str(info.get("longName") or "").lower()
     quote_type = str(info.get("quoteType") or "").upper()
-    clues_text = " ".join([sector, industry, summary])
+    clues_text = " ".join([sector, industry, summary, short_name, long_name])
 
     revenue_cagr = _metric(fundamental_summary, "Revenue CAGR")
     latest_growth = _metric(fundamental_summary, "Revenue Growth Latest")
@@ -125,7 +127,7 @@ def build_asset_profile(
 
     insurance_like = any(word in clues_text for word in ["insurance", "reinsurance", "underwriting", "premiums", "claims", "catastrophe"])
     reit_like = "reit" in clues_text or "real estate investment trust" in clues_text
-    utility_like = any(word in clues_text for word in ["utility", "utilities", "electric", "regulated", "rate base", "power generation", "water utility"])
+    utility_like = any(word in clues_text for word in ["utility", "utilities", "electric utility", "regulated utility", "rate base", "power generation", "water utility"])
     transport_like = any(word in clues_text for word in ["shipping", "airline", "freight", "logistics", "transport", "fleet", "load factor", "cruise"])
     consumer_retail_terms = ["retail", "restaurant", "same-store", "same store", "store", "apparel", "coffee", "quick service", "home improvement"]
     consumer_retail_like = any(word in clues_text for word in consumer_retail_terms)
@@ -169,9 +171,25 @@ def build_asset_profile(
         "client computing",
         "accelerator",
         "integrated device",
+        "nvidia",
     ]
     semiconductor_hit_count = sum(1 for word in semiconductor_clues if word in clues_text)
-    semiconductor_like = semiconductor_core or semiconductor_hit_count >= 3
+    semiconductor_like = semiconductor_core or semiconductor_hit_count >= 3 or "nvidia" in clues_text
+    ai_semiconductor_terms = [
+        "artificial intelligence",
+        " ai ",
+        "gpu",
+        "graphics processing",
+        "accelerated computing",
+        "accelerator",
+        "cuda",
+        "data center",
+        "datacenter",
+        "hyperscaler",
+        "networking",
+        "nvidia",
+    ]
+    ai_semiconductor_like = semiconductor_like and any(term in f" {clues_text} " for term in ai_semiconductor_terms)
     semiconductor_turnaround_signal = semiconductor_like and (
         (not math.isnan(capex_intensity) and capex_intensity >= 0.12)
         or (not math.isnan(fcf_margin) and fcf_margin < 0.08)
@@ -213,6 +231,8 @@ def build_asset_profile(
         business_model_clues.append("Cyclical / commodity-sensitive")
     if semiconductor_like:
         business_model_clues.append("Semiconductor / manufacturing turnaround")
+    if ai_semiconductor_like:
+        business_model_clues.append("AI semiconductor / data-center platform")
 
     if fund_like:
         primary = "Unknown / Data-Limited Screening"
@@ -263,6 +283,36 @@ def build_asset_profile(
         dominant = ["cash runway", "R&D burn", "pipeline stage", "trial milestones", "dilution"]
         invalid = ["ordinary PE conclusion", "ordinary FCF quality conclusion", "short-term revenue growth quality"]
         missing_core.extend(["pipeline stage", "clinical trial status", "regulatory milestones"])
+    elif ai_semiconductor_like and hybrid_signal:
+        primary = "Hybrid AI Semiconductor Compounder"
+        secondary = "AI Semiconductor / Data Center Growth Compounder"
+        coverage = "PARTIAL"
+        confidence = "MEDIUM"
+        thesis = "AI semiconductor growth compounder. The core question is whether AI data-center revenue, gross-margin sustainability, supply capacity, customer concentration, hyperscaler capex, export controls, and platform ecosystem strength can keep supporting the premium multiple."
+        anchor = "AI Semiconductor Compounder / profitable high-growth chip platform; focus on AI data-center revenue, capacity, gross margins, customer concentration, hyperscaler capex, export controls, ecosystem durability, and valuation premium risk."
+        dominant = [
+            "AI data center revenue",
+            "gross margin sustainability",
+            "supply / capacity constraint",
+            "customer concentration",
+            "hyperscaler capex cycle",
+            "export control risk",
+            "networking / accelerator ecosystem",
+            "valuation premium risk",
+        ]
+        invalid = ["ordinary mature low-growth thesis", "simple PE compression without growth durability", "generic semiconductor framing"]
+        missing_core.extend(
+            [
+                "AI data center revenue and margin",
+                "supply / capacity constraint",
+                "customer concentration",
+                "hyperscaler capex cycle",
+                "export control exposure",
+                "networking / accelerator ecosystem",
+                "CUDA / platform ecosystem evidence",
+                "valuation premium sensitivity",
+            ]
+        )
     elif semiconductor_turnaround_signal:
         primary = "Capital-Intensive Semiconductor Turnaround"
         secondary = "Hybrid / Technology Manufacturing"
@@ -377,7 +427,7 @@ def build_asset_profile(
 
     profitability = "Profitable" if positive_net_income_years >= 2 and not math.isnan(operating_margin) and operating_margin > 0 else "Unprofitable / not established"
     cash_flow = "Positive FCF" if positive_fcf_years >= 2 and not math.isnan(fcf_margin) and fcf_margin > 0 else "Negative or unproven FCF"
-    valuation_fit = "PS / EV Revenue / burn / dilution" if primary in {"Speculative Growth", "Unprofitable Growth"} else "cash runway / R&D burn / pipeline milestones / dilution" if secondary == "Biotech-like Screening" else "turnaround / margin recovery / capex pressure / segment verification" if primary == "Capital-Intensive Semiconductor Turnaround" else "P/B / ROE" if primary == "Financials" else "combined ratio / float / investment income" if primary == "Insurance-like Screening" else "P/FFO / AFFO yield / NAV / cap rate" if primary == "REIT-like Screening" else "normalized earnings" if primary == "Cyclical" else "regulated asset base / allowed ROE / dividend coverage" if primary == "Utilities / Infrastructure" else "rate cycle / utilization / fuel / leverage" if primary == "Shipping / Airlines / Transport" else "same-store sales / margin / inventory / brand" if primary == "Consumer / Retail" else "PE / FCF sensitivity" if primary in {"Mature Compounder", "Hybrid Growth Compounder"} else "screening-only"
+    valuation_fit = "PS / EV Revenue / burn / dilution" if primary in {"Speculative Growth", "Unprofitable Growth"} else "cash runway / R&D burn / pipeline milestones / dilution" if secondary == "Biotech-like Screening" else "turnaround / margin recovery / capex pressure / segment verification" if primary == "Capital-Intensive Semiconductor Turnaround" else "AI data-center growth / margin durability / valuation premium sensitivity" if primary == "Hybrid AI Semiconductor Compounder" else "P/B / ROE" if primary == "Financials" else "combined ratio / float / investment income" if primary == "Insurance-like Screening" else "P/FFO / AFFO yield / NAV / cap rate" if primary == "REIT-like Screening" else "normalized earnings" if primary == "Cyclical" else "regulated asset base / allowed ROE / dividend coverage" if primary == "Utilities / Infrastructure" else "rate cycle / utilization / fuel / leverage" if primary == "Shipping / Airlines / Transport" else "same-store sales / margin / inventory / brand" if primary == "Consumer / Retail" else "PE / FCF sensitivity" if primary in {"Mature Compounder", "Hybrid Growth Compounder"} else "screening-only"
     capital_intensity = "High / execution dependent" if aerospace_like or cyclical_signal or primary == "Capital-Intensive Semiconductor Turnaround" else "Unknown" if len(missing_core) >= 3 else "Moderate"
     dilution_risk = "Elevated" if cash_flow.startswith("Negative") and (math.isnan(cash_runway) or cash_runway < 4) else "Normal / not primary"
     cyclicality = "High" if cyclical_signal else "Industry-specific" if aerospace_like else "Not primary"
@@ -401,6 +451,8 @@ def build_asset_profile(
         extension = "Aerospace / Space Systems Research Profile"
     elif primary == "Capital-Intensive Semiconductor Turnaround":
         extension = "Semiconductor / Manufacturing Turnaround Research Profile"
+    elif primary == "Hybrid AI Semiconductor Compounder":
+        extension = "AI Semiconductor / Data Center Growth Compounder Research Profile"
     elif reit_like:
         extension = "REIT Research Profile"
     elif utility_like:
@@ -1874,7 +1926,40 @@ def write_json(path: Path, data: dict[str, Any]) -> None:
 
 
 def write_framework_gap_analysis(path: Path, profile: AssetProfile) -> None:
-    if profile.primary_profile == "Capital-Intensive Semiconductor Turnaround":
+    if profile.primary_profile == "Hybrid AI Semiconductor Compounder":
+        suspected = "AI semiconductor / data-center growth compounder"
+        why = (
+            "Generic semiconductor or mature-compounder framing is too thin for AI accelerator platforms. "
+            "The report must test AI data-center revenue, gross-margin sustainability, supply and capacity limits, "
+            "customer concentration, hyperscaler capex cyclicality, export controls, networking / accelerator ecosystem strength, "
+            "and valuation premium risk."
+        )
+        can_judge = [
+            "basic price and benchmark behavior",
+            "high-level profitability and revenue growth",
+            "whether the company deserves a growth-premium research frame",
+            "which AI-semiconductor metrics must be manually verified",
+        ]
+        cannot_judge = [
+            "AI data-center segment durability without segment revenue and margin details",
+            "customer concentration risk without customer / hyperscaler disclosure",
+            "supply capacity and lead-time constraints without operational disclosures",
+            "export-control exposure without region and product detail",
+            "CUDA / platform ecosystem durability without product and developer evidence",
+        ]
+        missing = profile.data_deficit_flags or [
+            "AI data center revenue and margin",
+            "gross margin sustainability bridge",
+            "supply / capacity constraint",
+            "customer concentration",
+            "hyperscaler capex cycle",
+            "export control exposure",
+            "networking / accelerator ecosystem",
+            "CUDA / platform ecosystem evidence",
+            "valuation premium sensitivity",
+        ]
+        extension = "AI Semiconductor / Data Center Growth Compounder Research Profile"
+    elif profile.primary_profile == "Capital-Intensive Semiconductor Turnaround":
         suspected = "Semiconductor / integrated device manufacturing / foundry turnaround"
         why = (
             "Ordinary mature-compounder logic does not capture capex intensity, manufacturing transition, "

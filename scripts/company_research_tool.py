@@ -1085,10 +1085,16 @@ def plot_growth_quality(trends: pd.DataFrame, path: Path) -> None:
     cols = [c for c in ["Revenue Growth YoY", "Gross Margin", "Operating Margin", "FCF Margin"] if c in trends]
     if not cols:
         return
+    view = trends[cols].apply(pd.to_numeric, errors="coerce").dropna(how="all")
+    if view.empty:
+        return
     fig, ax = plt.subplots(figsize=(12.5, 6))
     palette = [CHART_COLORS["target"], CHART_COLORS["positive"], CHART_COLORS["accent"], CHART_COLORS["negative"]]
     for idx, col in enumerate(cols):
-        ax.plot(trends.index, trends[col], marker="o", linewidth=2.0, label=col, color=palette[idx % len(palette)])
+        series = view[col].dropna()
+        if series.empty:
+            continue
+        ax.plot(series.index, series, marker="o", linewidth=2.0, label=col, color=palette[idx % len(palette)])
     ax.set_title("Growth quality: revenue, margins, and cash conversion", loc="left", color=CHART_COLORS["text"], pad=22)
     add_subtitle(ax, "Use this to check whether growth is supported by economics and cash flow")
     ax.set_xlabel("Fiscal Period")
@@ -4334,6 +4340,11 @@ Examples:
   openbb-research pack RUN_FOLDER
   openbb-research pack reports/RKLB/runs/manual_review_rklb_v43
 
+  # Batch evaluation and local self-training cases
+  openbb-research batch eval_sets/smoke_12.yaml
+  openbb-research batch eval_sets/broad_200.yaml --both --full --pack --no-ai
+  openbb-research batch eval_sets/broad_200.yaml --ai-review-failures --max-ai-reviews 40 --resume
+
   # Use your own run id
   openbb-research AAPL --run-id test_2023_start
 """
@@ -4380,6 +4391,15 @@ Examples:
 
 
 def main() -> None:
+    if len(sys.argv) >= 2 and sys.argv[1] == "batch":
+        try:
+            from batch_eval import main as batch_main
+            batch_main(sys.argv[2:])
+        except Exception as exc:
+            print(f"[ERROR] Batch evaluation failed: {exc}")
+            raise SystemExit(1)
+        return
+
     if len(sys.argv) >= 2 and sys.argv[1] == "pack":
         if len(sys.argv) < 3:
             print("Usage: openbb-research pack RUN_FOLDER")

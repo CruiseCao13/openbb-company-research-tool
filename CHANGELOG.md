@@ -1,5 +1,28 @@
 # Changelog
 
+## v4.4.0
+
+### Added
+
+- Batch evaluation foundation via `openbb-research batch EVAL_SET`
+- `eval_sets/smoke_12.yaml` smoke regression set
+- `eval_sets/broad_200.yaml` 200-ticker cross-industry evaluation set
+- Network/provider-safe ticker isolation so one failed ticker does not crash the batch
+- Deterministic run-folder linter for report artifacts, pack files, numeric formatting, framework gaps, patch materiality, and training-case triggers
+- Product-style batch output files: `batch_summary.md`, `failures.md`, `warnings.md`, `profile_distribution.md`, `failure_type_distribution.md`, `ai_review_summary.md`, and `credit_usage_estimate.md`
+- Local system-training case generation under `training_cases/`
+- Compact local failure review path with max-review cap and no external paid AI calls in the batch foundation pass
+
+### Changed
+
+- Batch review workflow now starts with deterministic `smoke_12`, then deterministic `broad_200`, then compact review only for failed/suspicious cases
+- Batch summaries now explain failures, suggested fixes, training cases, and credit usage in human-readable Markdown
+
+### Fixed
+
+- Hardened growth-quality chart rendering against provider `NA` values
+- Added AI-semiconductor hybrid framework-gap logic for NVDA-like companies so data-center AI chip platforms do not receive generic semiconductor framing
+
 ## v4.3.0
 
 ### Added

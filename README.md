@@ -123,6 +123,47 @@ openbb-research INTC --both --full --pack --run-id stress_intc_v43
 openbb-research pack reports/INTC/runs/stress_intc_v43
 ```
 
+## v4.4 Batch Evaluation Foundation
+
+v4.4 adds batch evaluation infrastructure so the user does not have to manually inspect one company at a time.
+
+Start with the smoke set:
+
+```bash
+openbb-research batch eval_sets/smoke_12.yaml --both --full --pack --max-workers 2 --no-ai
+openbb-research batch eval_sets/smoke_12.yaml --ai-review-failures --max-ai-reviews 5 --resume
+```
+
+Then, only after the smoke run is stable, run the broad set deterministically:
+
+```bash
+openbb-research batch eval_sets/broad_200.yaml --both --full --pack --max-workers 2 --no-ai
+openbb-research batch eval_sets/broad_200.yaml --ai-review-failures --max-ai-reviews 40 --resume
+```
+
+`broad_200.yaml` is an evaluation set, not something that should be run casually with full AI review. Batch mode defaults toward deterministic lint and compact failure review to control credit usage.
+
+## Batch Evaluation Output
+
+Batch runs write to `reports/batch_runs/<batch_id>/`.
+
+- `batch_summary.md`: human-readable dashboard for the whole batch
+- `batch_summary.csv` / `batch_summary.json`: machine-readable batch status
+- `failures.md`: failure review report with error type, reason, and next action
+- `warnings.md`: warning-level ticker review
+- `profile_distribution.md`: asset-profile coverage across the batch
+- `failure_type_distribution.md`: repeated failure modes
+- `training_cases_generated.jsonl`: local system-training cases; not fine-tuning
+- `credit_usage_estimate.md`: AI / credit usage and compact-review rules
+- `ai_review_summary.md`: compact review scope and reviewed tickers
+
+The intended review flow is:
+
+1. Open `batch_summary.md`.
+2. Inspect `failures.md`.
+3. Check generated training cases for repeated failure modes.
+4. Convert repeated deterministic failures into tests and code fixes before spending AI credits.
+
 ## v4 Workflow Gates and Report Experience
 
 v4.2 keeps the four-gate workflow:

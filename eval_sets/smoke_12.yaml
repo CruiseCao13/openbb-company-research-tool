@@ -1,0 +1,15 @@
+name: smoke_12_cross_profile
+description: Small cross-profile smoke test before broad_200.
+tickers:
+  - AAPL
+  - RKLB
+  - INTC
+  - RXRX
+  - JPM
+  - O
+  - XOM
+  - JOBY
+  - NVDA
+  - PGR
+  - ZIM
+  - NEE

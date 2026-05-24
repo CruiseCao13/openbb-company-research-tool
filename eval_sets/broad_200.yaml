@@ -1,0 +1,230 @@
+name: broad_200_cross_industry
+description: 200-company cross-industry asset-aware regression and self-training set
+groups:
+  mature_compounder:
+    - AAPL
+    - MSFT
+    - COST
+    - MCD
+    - WMT
+    - PG
+    - KO
+    - PEP
+    - JNJ
+    - V
+    - MA
+    - ADP
+    - CL
+  mega_cap_tech:
+    - GOOGL
+    - META
+    - AMZN
+    - NFLX
+    - CRM
+    - ORCL
+    - NET
+    - SHOP
+  semiconductor_ai:
+    - NVDA
+    - AMD
+    - AVGO
+    - TSM
+    - ASML
+    - LRCX
+    - AMAT
+    - QCOM
+    - KLAC
+    - MRVL
+    - TXN
+  semiconductor_turnaround:
+    - INTC
+    - MU
+    - WOLF
+    - ON
+    - STM
+    - GFS
+    - QRVO
+    - SWKS
+  speculative_growth:
+    - RKLB
+    - ASTS
+    - JOBY
+    - ACHR
+    - PLTR
+    - SOFI
+    - RIVN
+    - LCID
+    - U
+    - PATH
+  biotech_like:
+    - RXRX
+    - CRSP
+    - EDIT
+    - NTLA
+    - DNA
+    - BEAM
+    - SANA
+    - VERV
+    - IOVA
+    - TGTX
+  pharma:
+    - LLY
+    - NVO
+    - PFE
+    - MRK
+    - BMY
+    - GILD
+    - ABBV
+    - VRTX
+  medical_devices:
+    - ISRG
+    - MDT
+    - SYK
+    - BSX
+    - DXCM
+    - ABT
+  banks:
+    - JPM
+    - BAC
+    - WFC
+    - C
+    - GS
+    - MS
+    - TFC
+    - FITB
+  brokers_exchanges:
+    - IBKR
+    - SCHW
+    - CME
+    - ICE
+    - NDAQ
+    - COIN
+    - MKTX
+  insurance:
+    - BRK-B
+    - CB
+    - TRV
+    - PGR
+    - AIG
+    - PRU
+    - ALL
+    - HIG
+  reit:
+    - O
+    - PLD
+    - AMT
+    - SPG
+    - VICI
+    - EQIX
+    - PSA
+    - CCI
+  energy:
+    - XOM
+    - CVX
+    - COP
+    - SLB
+    - HAL
+    - OXY
+    - EOG
+    - FANG
+  materials_mining:
+    - FCX
+    - NUE
+    - NEM
+    - SCCO
+    - ALB
+    - AA
+    - BHP
+    - RIO
+    - CLF
+  industrials:
+    - CAT
+    - DE
+    - HON
+    - GE
+    - MMM
+    - ETN
+    - EMR
+    - PH
+  aerospace_defense:
+    - BA
+    - LMT
+    - RTX
+    - NOC
+    - GD
+    - HII
+    - TDG
+  airlines_transport:
+    - DAL
+    - UAL
+    - AAL
+    - LUV
+    - FDX
+    - UPS
+    - UNP
+    - CSX
+    - NSC
+    - JBLU
+  shipping_logistics:
+    - ZIM
+    - DAC
+    - MATX
+    - GSL
+    - SBLK
+    - GOGL
+    - FRO
+  consumer_retail:
+    - NKE
+    - SBUX
+    - TGT
+    - LULU
+    - HD
+    - LOW
+    - ULTA
+    - TPR
+    - DKS
+  restaurants:
+    - CMG
+    - YUM
+    - QSR
+    - DPZ
+    - TXRH
+    - SBUX
+    - MCD
+  utilities:
+    - NEE
+    - SO
+    - DUK
+    - AEP
+    - EXC
+    - SRE
+    - D
+  telecom_media:
+    - T
+    - VZ
+    - TMUS
+    - DIS
+    - WBD
+    - PARA
+    - CMCSA
+  luxury_apparel:
+    - LVMUY
+    - HESAY
+    - CPRI
+    - RL
+    - PVH
+  payments_fintech:
+    - PYPL
+    - SQ
+    - FIS
+    - FISV
+    - GPN
+  small_unknown:
+    - LUNR
+    - BBAI
+    - IONQ
+    - QBTS
+    - SERV
+    - AEHR
+    - ENVX
+    - QS

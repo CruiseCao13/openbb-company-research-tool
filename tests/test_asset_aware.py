@@ -139,6 +139,29 @@ class AssetAwareRoutingTests(unittest.TestCase):
             self.assertIn(term, joined)
         self.assertNotIn("mature quality case", joined)
 
+    def test_ai_semiconductor_hybrid_gets_specific_framework_gap(self):
+        profile = asset_aware.build_asset_profile(
+            self._info(
+                "Technology",
+                "Semiconductors",
+                "semiconductor gpu accelerated computing artificial intelligence data center networking cuda platform hyperscaler",
+            ),
+            self._fundamentals(revenue_cagr=0.42, latest_growth=0.55, operating_margin=0.48, fcf_margin=0.35, positive_ni=4, positive_fcf=4),
+            self._valuation(pe=55.0, ps=28.0, ev_revenue=27.0),
+            pd.DataFrame(),
+            self._ruin(cash_runway=float("nan")),
+        )
+        self.assertEqual(profile.primary_profile, "Hybrid AI Semiconductor Compounder")
+        self.assertIn("AI data center revenue", profile.dominant_metric_set)
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "framework_gap_analysis.md"
+            asset_aware.write_framework_gap_analysis(path, profile)
+            text = path.read_text()
+        self.assertIn("AI semiconductor / data-center growth compounder", text)
+        self.assertIn("hyperscaler capex", text)
+        self.assertIn("export-control", text)
+        self.assertIn("CUDA", text)
+
     def test_semiconductor_turnaround_generates_sector_data_deficits(self):
         profile = asset_aware.build_asset_profile(
             self._info("Technology", "Semiconductors", "semiconductor foundry manufacturing data center processor"),
