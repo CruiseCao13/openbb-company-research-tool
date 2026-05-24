@@ -97,6 +97,20 @@ Start with `report/TICKER_research_report.md`, then inspect
 `dashboard.html`, `metadata/research_blueprint.json`,
 `self_review/ai_self_review.md`, and `audit/validator_report.md`.
 
+### Example Outputs
+
+Sample v5 report packs are checked in under `reports/samples/`:
+
+- `reports/samples/AAPL/`
+- `reports/samples/GOOGL/`
+- `reports/samples/CAT/`
+- `reports/samples/ISRG/`
+- `reports/samples/AMD/`
+- `reports/samples/600519.SH/`
+
+Each sample includes a Markdown report, dashboard, company understanding JSON,
+research blueprint JSON, AI self-review, validator report, and pack zip.
+
 ### Supported Markets
 
 - US/global: v5 currently uses the Python provider bridge with yfinance/OpenBB

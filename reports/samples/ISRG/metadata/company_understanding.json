@@ -1,0 +1,29 @@
+{
+  "company_identity": "Intuitive Surgical, Inc. is best treated as Biotech / Pharma Research Frame based on the locked provider profile and financial context.",
+  "business_model": "The research frame is Biotech / Pharma Research Frame. The report should explain how the company earns money before interpreting valuation.",
+  "revenue_engines": [
+    "product revenue or partnership revenue",
+    "pipeline milestones"
+  ],
+  "profit_pool": "Profit pool assessment should focus on the economics implied by Biotech / Pharma Research Frame, not a generic template.",
+  "key_growth_drivers": [
+    "Pipeline and regulatory risk"
+  ],
+  "key_risks": [
+    "clinical failure",
+    "regulatory risk",
+    "cash runway and dilution"
+  ],
+  "not_this": [
+    "ordinary PE story",
+    "SaaS growth company"
+  ],
+  "correct_research_frame": "Biotech / Pharma Research Frame",
+  "wrong_frames_to_avoid": [
+    "generic mature compounder unless supported",
+    "target price model",
+    "buy/sell advice"
+  ],
+  "confidence": "LOW",
+  "human_review_required": true
+}

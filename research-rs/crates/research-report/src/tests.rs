@@ -80,6 +80,7 @@ fn report_renderer_has_required_sections() {
         ai_calls: 0,
         cache_hits: 0,
         provider_status: "PASS".into(),
+        visual_lint_status: "PASS".into(),
     };
     let report = render_report(
         &payload,
@@ -90,5 +91,5 @@ fn report_renderer_has_required_sections() {
         &status,
     );
     assert!(report.contains("## 4. Money Flow"));
-    assert!(report.contains("## 12. Appendix: Locked Data"));
+    assert!(report.contains("## 13. Appendix: Locked Data"));
 }

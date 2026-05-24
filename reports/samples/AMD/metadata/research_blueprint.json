@@ -1,0 +1,42 @@
+{
+  "core_thesis": "The central research question is whether the Capital-Intensive Semiconductor Turnaround frame is supported by locked data and company-specific evidence.",
+  "asset_profile": "Capital-Intensive Semiconductor Turnaround",
+  "secondary_profile": "Technology manufacturing",
+  "must_analyze": [
+    "data center revenue",
+    "gross margin sustainability",
+    "capacity / supply constraint",
+    "customer concentration",
+    "export control risk"
+  ],
+  "must_not_analyze_as_core": [
+    "bank metrics",
+    "generic mature-compounder conclusion"
+  ],
+  "key_questions": [
+    "Is demand durable beyond the current AI/capex cycle?",
+    "Can margins hold as supply expands?",
+    "What data is missing for segment-level evidence?"
+  ],
+  "red_flags": [
+    "hyperscaler capex slowdown",
+    "export controls",
+    "margin compression"
+  ],
+  "valuation_frame": "Use revenue growth, gross margin durability, capex intensity, and valuation premium risk; do not use a target price.",
+  "data_gaps": [
+    "segment revenue / margin",
+    "customer concentration",
+    "supply constraints"
+  ],
+  "next_checks": [
+    "Verify data center / AI revenue split.",
+    "Check gross margin bridge and capacity commentary.",
+    "Review export-control and customer concentration disclosures."
+  ],
+  "report_section_guidance": [
+    "Start with identity, then money flow, then valuation fit, then unsupported claims."
+  ],
+  "confidence": "MEDIUM",
+  "human_review_required": false
+}

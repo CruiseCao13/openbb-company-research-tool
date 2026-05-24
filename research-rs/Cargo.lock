@@ -694,6 +694,7 @@ name = "research-report"
 version = "5.0.0"
 dependencies = [
  "anyhow",
+ "chrono",
  "research-core",
  "serde",
  "serde_json",

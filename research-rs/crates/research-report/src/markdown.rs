@@ -8,6 +8,43 @@ fn bullet(items: &[String]) -> String {
     }
 }
 
+fn table_rows(items: &[(&str, String, &str, &str)]) -> String {
+    items
+        .iter()
+        .map(|(a, b, c, d)| format!("| {a} | {b} | {c} | {d} |\n"))
+        .collect()
+}
+
+fn chart_block(figure: usize, title: &str, file: &str, status: &str) -> String {
+    let link = if file.ends_with(".png") {
+        format!("![Figure {figure}. {title}](../charts/{file})")
+    } else {
+        format!("[Figure {figure}. {title}](../charts/{file})")
+    };
+    format!(
+        r#"### Figure {figure}. {title}
+
+{link}
+
+Source: provider_payload.json  
+Status: {status}
+
+What to look at:
+This figure is evidence for the section's main question, not decoration.
+
+What it means:
+Read it together with the locked data and the research frame.
+
+What not to overread:
+The chart does not predict short-term price movement and does not create a buy/sell signal.
+
+Next check:
+Verify the same signal in the latest filing or provider source if it drives the thesis.
+
+"#
+    )
+}
+
 pub fn render_report(
     payload: &ProviderPayload,
     understanding: &CompanyUnderstanding,
@@ -21,6 +58,59 @@ pub fn render_report(
     } else {
         payload.company_profile.name.clone()
     };
+    let chart_manifest = [
+        chart_block(
+            1,
+            "Price / Benchmark Performance",
+            "Figure_01_price_vs_benchmark.png",
+            "PASS or DATA_GAP",
+        ),
+        chart_block(
+            2,
+            "Drawdown / Risk Path",
+            "Figure_02_drawdown.png",
+            "PASS or DATA_GAP",
+        ),
+        chart_block(
+            3,
+            "Financial Trend",
+            "Figure_03_financial_trend.png",
+            "PASS or DATA_GAP",
+        ),
+        chart_block(
+            4,
+            "Money Flow / Cash Flow Bridge",
+            "Figure_04_money_flow.png",
+            "PASS or DATA_GAP",
+        ),
+        chart_block(
+            5,
+            "Valuation Frame",
+            "Figure_05_valuation_frame.png",
+            "PASS or DATA_GAP",
+        ),
+    ]
+    .join("\n");
+    let financial_snapshot = table_rows(&[
+        (
+            "Research frame",
+            blueprint.asset_profile.clone(),
+            "frame",
+            "Controls which metrics matter",
+        ),
+        (
+            "Money source",
+            interpretation.where_money_comes_from.clone(),
+            "text",
+            "Shows whether operations or financing matter",
+        ),
+        (
+            "Money use",
+            interpretation.where_money_goes.clone(),
+            "text",
+            "Shows reinvestment and cash pressure",
+        ),
+    ]);
     format!(
         r#"# {ticker} Company Research Report
 
@@ -29,6 +119,9 @@ pub fn render_report(
 > Market: {market}  
 > Provider: {provider}  
 > Status: {status_value}  
+> AI Confidence: {confidence:?}  
+> Research Frame: {asset_profile}  
+> Human Review Required: {human_review}  
 > Note: This report is for first-pass research only. It is not investment advice.
 
 ## Table of Contents
@@ -44,7 +137,8 @@ pub fn render_report(
 9. Data Gaps and Unsupported Claims
 10. AI Self Review
 11. Next Checks
-12. Appendix: Locked Data
+12. Charts and Evidence
+13. Appendix: Locked Data
 
 ## 1. Report Status
 
@@ -52,12 +146,18 @@ pub fn render_report(
 |---|---|
 | Overall status | {status_value} |
 | Provider status | {provider_status} |
+| Visual lint | {visual_lint_status} |
 | AI mode | {ai_mode} |
 | AI calls | {ai_calls} |
 | Cache hits | {cache_hits} |
 | Human review required | {human_review} |
 
 The status separates locked data availability from interpretation confidence. A warning means the report can be useful as a screening memo, but the unsupported sections need human review.
+
+Table 1. Research status snapshot  
+Unit: status / text  
+Source: metadata/report_status.json  
+How to read this table: use it to decide whether this report is usable as a first-pass memo or needs manual review.
 
 ## 2. Company Identity
 
@@ -81,6 +181,15 @@ Profit pool:
 {profit_pool}
 
 ## 4. Money Flow: Where Money Comes From and Where It Goes
+
+Table 2. Money flow summary  
+Unit: text  
+Source: provider_payload.json and financial_interpretation.json  
+How to read this table: each row links a money-flow signal to why it matters.
+
+| Flow | Signal | Unit | Why it matters |
+|---|---|---|---|
+{financial_snapshot}
 
 **Where money comes from:** {money_from}
 
@@ -160,7 +269,16 @@ Wrong-framework risks:
 
 {next_checks}
 
-## 12. Appendix: Locked Data
+## 12. Charts and Evidence
+
+{chart_manifest}
+
+## 13. Appendix: Locked Data
+
+Table 3. Locked data coverage  
+Unit: count / text  
+Source: raw/provider_payload.json  
+How to read this table: it tells you which locked data exists before relying on interpretation.
 
 | Field | Value |
 |---|---|
@@ -180,6 +298,7 @@ Wrong-framework risks:
         provider = payload.provider,
         status_value = status.overall_status,
         provider_status = status.provider_status,
+        visual_lint_status = status.visual_lint_status,
         ai_mode = status.ai_mode,
         ai_calls = status.ai_calls,
         cache_hits = status.cache_hits,

@@ -1,0 +1,29 @@
+{
+  "company_identity": "Caterpillar Inc. is best treated as Insurance-like Screening based on the locked provider profile and financial context.",
+  "business_model": "The research frame is Insurance-like Screening. The report should explain how the company earns money before interpreting valuation.",
+  "revenue_engines": [
+    "premiums",
+    "investment income"
+  ],
+  "profit_pool": "Profit pool assessment should focus on the economics implied by Insurance-like Screening, not a generic template.",
+  "key_growth_drivers": [
+    "Underwriting and float"
+  ],
+  "key_risks": [
+    "combined ratio",
+    "reserve adequacy",
+    "catastrophe exposure"
+  ],
+  "not_this": [
+    "ordinary bank",
+    "industrial FCF story"
+  ],
+  "correct_research_frame": "Insurance-like Screening",
+  "wrong_frames_to_avoid": [
+    "generic mature compounder unless supported",
+    "target price model",
+    "buy/sell advice"
+  ],
+  "confidence": "LOW",
+  "human_review_required": true
+}

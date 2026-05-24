@@ -1,0 +1,30 @@
+{
+  "company_identity": "Alphabet Inc. is best treated as Platform Internet / Digital Ads / Cloud based on the locked provider profile and financial context.",
+  "business_model": "The research frame is Platform Internet / Digital Ads / Cloud. The report should explain how the company earns money before interpreting valuation.",
+  "revenue_engines": [
+    "digital advertising",
+    "cloud services",
+    "subscriptions and platforms"
+  ],
+  "profit_pool": "Profit pool assessment should focus on the economics implied by Platform Internet / Digital Ads / Cloud, not a generic template.",
+  "key_growth_drivers": [
+    "Mega-cap technology"
+  ],
+  "key_risks": [
+    "advertising cycle",
+    "cloud margin pressure",
+    "regulatory platform risk"
+  ],
+  "not_this": [
+    "bank",
+    "semiconductor manufacturer"
+  ],
+  "correct_research_frame": "Platform Internet / Digital Ads / Cloud",
+  "wrong_frames_to_avoid": [
+    "generic mature compounder unless supported",
+    "target price model",
+    "buy/sell advice"
+  ],
+  "confidence": "MEDIUM",
+  "human_review_required": false
+}

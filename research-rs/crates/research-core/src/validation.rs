@@ -102,5 +102,38 @@ pub fn report_status(
         ai_calls,
         cache_hits,
         provider_status,
+        visual_lint_status: "PASS".to_string(),
     }
+}
+
+pub fn visual_lint(
+    report: &str,
+    dashboard_exists: bool,
+    chart_manifest_exists: bool,
+) -> (String, Vec<String>) {
+    let mut failures = Vec::new();
+    if !report.starts_with('#') || !report.contains("> Status:") {
+        failures.push("report_has_status_block".to_string());
+    }
+    if !report.contains("## Table of Contents") {
+        failures.push("report_has_toc".to_string());
+    }
+    if !report.contains("What to look at:") {
+        failures.push("chart_explanations_present".to_string());
+    }
+    if report.contains("NaN") || report.contains("null") || report.contains("[METRIC_MISSING_RAW]")
+    {
+        failures.push("no_raw_nan_or_placeholder".to_string());
+    }
+    if !dashboard_exists {
+        failures.push("dashboard_exists".to_string());
+    }
+    if !chart_manifest_exists {
+        failures.push("chart_manifest_exists".to_string());
+    }
+    if detect_forbidden_advice(report) {
+        failures.push("no_forbidden_advice".to_string());
+    }
+    let status = if failures.is_empty() { "PASS" } else { "FAIL" }.to_string();
+    (status, failures)
 }

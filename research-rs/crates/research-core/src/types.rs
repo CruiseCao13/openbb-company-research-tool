@@ -152,6 +152,33 @@ pub struct ReportStatus {
     pub ai_calls: usize,
     pub cache_hits: usize,
     pub provider_status: String,
+    pub visual_lint_status: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UnitPolicy {
+    pub reporting_currency: String,
+    pub price_currency: String,
+    pub financial_statement_unit: String,
+    pub percentage_format: String,
+    pub multiple_format: String,
+    pub share_count_unit: String,
+    pub date_range: String,
+    pub provider_source: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PackManifest {
+    pub ticker: String,
+    pub run_id: String,
+    pub generated_at: String,
+    pub files: Vec<String>,
+    pub report_status: String,
+    pub ai_mode: String,
+    pub provider: String,
+    pub has_dashboard: bool,
+    pub has_charts: bool,
+    pub has_self_review: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,0 +1,42 @@
+{
+  "core_thesis": "The central research question is whether the Biotech / Pharma Research Frame frame is supported by locked data and company-specific evidence.",
+  "asset_profile": "Biotech / Pharma Research Frame",
+  "secondary_profile": "Pipeline and regulatory risk",
+  "must_analyze": [
+    "pipeline stage",
+    "clinical milestones",
+    "cash runway",
+    "R&D burn",
+    "dilution risk"
+  ],
+  "must_not_analyze_as_core": [
+    "ordinary PE",
+    "ordinary SaaS growth logic"
+  ],
+  "key_questions": [
+    "Which pipeline assets drive value?",
+    "How long can current cash fund R&D?",
+    "What regulatory milestones can change the thesis?"
+  ],
+  "red_flags": [
+    "trial failure",
+    "financing dilution",
+    "regulatory delay"
+  ],
+  "valuation_frame": "Use cash runway, R&D burn, partnership quality, regulatory milestones, and dilution risk.",
+  "data_gaps": [
+    "pipeline stage",
+    "trial status",
+    "FDA / EMA milestones"
+  ],
+  "next_checks": [
+    "Map candidates, indications, phase, and next milestone timing.",
+    "Check regulatory path and trial disclosure cadence.",
+    "Calculate cash runway and dilution pressure."
+  ],
+  "report_section_guidance": [
+    "Start with identity, then money flow, then valuation fit, then unsupported claims."
+  ],
+  "confidence": "LOW",
+  "human_review_required": true
+}

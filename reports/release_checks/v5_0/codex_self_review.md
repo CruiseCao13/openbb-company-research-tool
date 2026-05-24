@@ -55,6 +55,38 @@ charts were not sent to any external AI service.
 
 See `reports/release_checks/v5_0/display_review.md`.
 
+## Display and Formatting Review
+
+- Charts generated: Yes. AAPL generated five PNG charts plus chart manifest.
+- Figure numbering: Yes, `Figure_01` through `Figure_05`.
+- Chart explanations: Yes, each figure section includes what to look at, what it means, what not to overread, and next check.
+- Tables too wide: No known wide report tables in v5 output.
+- Units: `metadata/unit_policy.json` is generated for each run.
+- Dashboard openable: Yes, static HTML is generated for single runs and batch.
+- Folder structure: Clear v5 run folders with report/raw/metadata/audit/self_review/data/charts/pack/dashboard.
+- Template flavor: Reduced but not eliminated; local compact analyst remains less natural than future external AI.
+- Unsupported claims: Flagged in AI self-review instead of silently presented.
+- Raw NaN/null: Not present in report surface in the validation run.
+
+## Efficiency Review
+
+- AI calls total: 0 external paid calls.
+- AI calls avoided by cache: External AI is disabled; local compact fallback used.
+- Provider cache hits: Provider cache is path-based and avoids refetch unless `--force` is used.
+- Chart cache hits: Chart generation is deterministic; deeper digest-based chart cache remains future work.
+- Batch runtime: broad_30 validation completed in roughly one minute in this environment.
+- Slowest stage: provider fetch / yfinance response.
+- Repeated work found: yes, chart/provider digest skip tracking is still shallow.
+- Unnecessary generated files: release commit excludes cache and `research-rs/target`.
+
+## Honesty Review
+
+- Real provider calls: US/global yfinance-compatible bridge was called.
+- Provider fallback: A-share `600519.SH` degraded to screening/fallback behavior because full AKShare/Tushare/Baostock normalization is not complete.
+- Mock outputs: No fake successful provider data was created for A-share; fallback is explicit.
+- External AI called: No.
+- Local fallback boundary: The local compact analyst is deterministic and useful for regression, but it is not equivalent to full AI research judgment.
+
 ## Remaining Risks
 
 - Local compact analyst is deterministic and useful for regression, but it is
@@ -70,4 +102,3 @@ See `reports/release_checks/v5_0/display_review.md`.
 2. Finish A-share provider normalization.
 3. Add numeric claim tracing against locked provider payload.
 4. Expand v5 batch summaries with richer failure taxonomy.
-

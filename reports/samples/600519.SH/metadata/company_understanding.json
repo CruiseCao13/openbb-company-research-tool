@@ -1,0 +1,26 @@
+{
+  "company_identity": "600519.SH is best treated as Unknown / Data-Limited Screening based on the locked provider profile and financial context.",
+  "business_model": "The research frame is Unknown / Data-Limited Screening. The report should explain how the company earns money before interpreting valuation.",
+  "revenue_engines": [
+    "current provider data is insufficient to identify revenue engines"
+  ],
+  "profit_pool": "Profit pool assessment should focus on the economics implied by Unknown / Data-Limited Screening, not a generic template.",
+  "key_growth_drivers": [
+    "Framework not fully covered"
+  ],
+  "key_risks": [
+    "framework uncertainty",
+    "missing industry-specific data"
+  ],
+  "not_this": [
+    "confident complete industry research"
+  ],
+  "correct_research_frame": "Unknown / Data-Limited Screening",
+  "wrong_frames_to_avoid": [
+    "generic mature compounder unless supported",
+    "target price model",
+    "buy/sell advice"
+  ],
+  "confidence": "LOW",
+  "human_review_required": true
+}

@@ -21,6 +21,8 @@ reports/*
 !reports/README.md
 !reports/release_checks/
 !reports/release_checks/**
+!reports/samples/
+!reports/samples/**
 
 data/raw/*
 !data/raw/.gitkeep

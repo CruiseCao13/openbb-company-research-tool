@@ -11,3 +11,18 @@
 
 No display category is marked FAIL.
 
+## Chart / Table Review
+
+- Charts generated: Yes, via `providers/chart_provider.py`.
+- Chart numbering: PASS, files use `Figure_01...Figure_05`.
+- Chart explanations: PASS, Markdown includes What to look at / What it means / What not to overread / Next check blocks.
+- Table width: PASS, report tables are kept to four columns or fewer.
+- Table units and source notes: PASS for status, money-flow, and locked-data tables.
+- Raw NaN/null/placeholders: PASS in generated report surface.
+
+## Dashboard Review
+
+- Single-company dashboard exists.
+- Batch dashboard exists.
+- No external CDN or React build step is required.
+- Dark-mode first CSS is inline.
