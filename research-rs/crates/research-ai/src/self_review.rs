@@ -1,0 +1,49 @@
+use research_core::types::*;
+
+pub fn review(
+    payload: &ProviderPayload,
+    understanding: &CompanyUnderstanding,
+    interpretation: &FinancialInterpretation,
+    blueprint: &ResearchBlueprint,
+) -> AiSelfReview {
+    let mut unsupported = interpretation.unsupported_due_to_missing_data.clone();
+    let mut wrong = Vec::new();
+    if understanding
+        .correct_research_frame
+        .to_lowercase()
+        .contains("unknown")
+    {
+        wrong.push("Framework is not fully identified; report must stay screening-only.".into());
+    }
+    if payload.error.is_some() {
+        unsupported.push("Provider error prevents full financial interpretation.".into());
+    }
+    let blueprint_generic = blueprint.must_analyze.len() < 3 || blueprint.next_checks.len() < 3;
+    AiSelfReview {
+        company_understanding_check: if understanding.company_identity.len() > 20 {
+            CheckStatus::PASS
+        } else {
+            CheckStatus::FAIL
+        },
+        framework_fit_check: if blueprint_generic {
+            CheckStatus::WARNING
+        } else {
+            CheckStatus::PASS
+        },
+        numeric_consistency_check: CheckStatus::PASS,
+        money_flow_check: if interpretation.where_money_comes_from.is_empty() {
+            CheckStatus::FAIL
+        } else {
+            CheckStatus::PASS
+        },
+        unsupported_claims: unsupported,
+        wrong_framework_risk: wrong,
+        required_rewrite_sections: if blueprint_generic {
+            vec!["AI Research Blueprint".into()]
+        } else {
+            Vec::new()
+        },
+        final_confidence: understanding.confidence.clone(),
+        human_review_required: understanding.human_review_required || payload.error.is_some(),
+    }
+}

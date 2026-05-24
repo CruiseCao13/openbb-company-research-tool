@@ -1,0 +1,19 @@
+[package]
+name = "research-rs"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+chrono.workspace = true
+clap.workspace = true
+research-ai = { path = "../research-ai" }
+research-batch = { path = "../research-batch" }
+research-core = { path = "../research-core" }
+research-report = { path = "../research-report" }
+
+[[bin]]
+name = "research-rs"
+path = "src/main.rs"
+

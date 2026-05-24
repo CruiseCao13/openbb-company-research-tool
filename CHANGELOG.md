@@ -1,5 +1,30 @@
 # Changelog
 
+## v5.0.0
+
+Added:
+- Standalone Rust workspace for the v5 AI-led research engine.
+- Python provider bridge that writes locked `provider_payload.json` files.
+- Structured AI-layer artifacts: company understanding, financial interpretation,
+  research blueprint, and AI self-review.
+- Markdown report renderer, static HTML dashboard, run-folder packaging, and
+  batch dashboard generation.
+- Cross-industry `broad_30_probe` validation through the Rust batch command.
+- Local compact analyst fallback with explicit zero external AI call reporting.
+- Release self-review and display-review artifacts under
+  `reports/release_checks/v5_0/`.
+
+Changed:
+- v5 report generation starts with company understanding and research blueprint
+  before rendering the report.
+- The old Python v4 workflow remains available while the v5 path develops
+  independently.
+
+Known limitations:
+- External paid AI calls are not enabled in this foundation commit.
+- A-share provider adapters currently degrade to clear screening/fallback status
+  when local provider normalization is unavailable.
+
 ## v4.4.0
 
 ### Added

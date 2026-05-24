@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FinancialInterpretation",
+  "type": "object",
+  "required": ["revenue_explanation", "margin_explanation", "cash_flow_explanation", "where_money_comes_from", "where_money_goes", "capex_or_rnd_pressure", "debt_and_financing", "shareholder_return_quality", "valuation_method_fit", "unsupported_due_to_missing_data"]
+}
+

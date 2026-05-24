@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ResearchBlueprint",
+  "type": "object",
+  "required": ["core_thesis", "asset_profile", "secondary_profile", "must_analyze", "must_not_analyze_as_core", "key_questions", "red_flags", "valuation_frame", "data_gaps", "next_checks", "report_section_guidance", "confidence", "human_review_required"]
+}
+

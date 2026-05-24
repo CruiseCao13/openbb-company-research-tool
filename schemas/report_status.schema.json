@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ReportStatus",
+  "type": "object",
+  "required": ["overall_status", "provider_payload_valid", "company_understanding_present", "financial_interpretation_present", "research_blueprint_present", "ai_self_review_present", "money_flow_present", "human_review_required", "ai_mode", "ai_calls", "cache_hits", "provider_status"]
+}
+

@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AiSelfReview",
+  "type": "object",
+  "required": ["company_understanding_check", "framework_fit_check", "numeric_consistency_check", "money_flow_check", "unsupported_claims", "wrong_framework_risk", "required_rewrite_sections", "final_confidence", "human_review_required"]
+}
+

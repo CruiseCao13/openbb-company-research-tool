@@ -13,11 +13,14 @@ __pycache__/
 .mypy_cache/
 .pytest_cache/
 .ipynb_checkpoints/
+research-rs/target/
 
 # Generated outputs
 reports/*
 !reports/.gitkeep
 !reports/README.md
+!reports/release_checks/
+!reports/release_checks/**
 
 data/raw/*
 !data/raw/.gitkeep

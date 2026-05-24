@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CompanyUnderstanding",
+  "type": "object",
+  "required": ["company_identity", "business_model", "revenue_engines", "profit_pool", "key_growth_drivers", "key_risks", "not_this", "correct_research_frame", "wrong_frames_to_avoid", "confidence", "human_review_required"]
+}
+

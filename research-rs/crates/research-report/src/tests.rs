@@ -1,0 +1,94 @@
+use crate::markdown::render_report;
+use research_core::types::*;
+
+#[test]
+fn report_renderer_has_required_sections() {
+    let payload = ProviderPayload {
+        ticker: "AAPL".to_string(),
+        market: "US".to_string(),
+        provider: "fixture".to_string(),
+        company_profile: CompanyProfile {
+            name: "Apple Inc.".to_string(),
+            sector: "Technology".to_string(),
+            industry: "Consumer Electronics".to_string(),
+            currency: "USD".to_string(),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    let understanding = CompanyUnderstanding {
+        company_identity: "Apple identity".into(),
+        business_model: "Sells products and services.".into(),
+        revenue_engines: vec!["hardware".into()],
+        profit_pool: "Margins and ecosystem.".into(),
+        key_growth_drivers: vec!["services".into()],
+        key_risks: vec!["regulatory".into()],
+        not_this: vec!["bank".into()],
+        correct_research_frame: "Mature Compounder".into(),
+        wrong_frames_to_avoid: vec![],
+        confidence: Confidence::MEDIUM,
+        human_review_required: false,
+    };
+    let interpretation = FinancialInterpretation {
+        revenue_explanation: "Revenue explanation".into(),
+        margin_explanation: "Margin explanation".into(),
+        cash_flow_explanation: "Cash flow explanation".into(),
+        where_money_comes_from: "Operations".into(),
+        where_money_goes: "Capex and returns".into(),
+        capex_or_rnd_pressure: "Moderate".into(),
+        debt_and_financing: "Manageable".into(),
+        shareholder_return_quality: "Buybacks only if supported.".into(),
+        valuation_method_fit: "PE/FCF".into(),
+        unsupported_due_to_missing_data: vec![],
+    };
+    let blueprint = ResearchBlueprint {
+        core_thesis: "Core thesis is specific enough for report rendering.".into(),
+        asset_profile: "Mature Compounder".into(),
+        secondary_profile: "Consumer platform".into(),
+        must_analyze: vec!["margin durability".into()],
+        must_not_analyze_as_core: vec!["cash runway panic".into()],
+        key_questions: vec!["Can margins hold?".into()],
+        red_flags: vec!["regulatory".into()],
+        valuation_frame: "FCF and multiple risk".into(),
+        data_gaps: vec![],
+        next_checks: vec!["Check services mix.".into()],
+        report_section_guidance: vec![],
+        confidence: Confidence::MEDIUM,
+        human_review_required: false,
+    };
+    let review = AiSelfReview {
+        company_understanding_check: CheckStatus::PASS,
+        framework_fit_check: CheckStatus::PASS,
+        numeric_consistency_check: CheckStatus::PASS,
+        money_flow_check: CheckStatus::PASS,
+        unsupported_claims: vec![],
+        wrong_framework_risk: vec![],
+        required_rewrite_sections: vec![],
+        final_confidence: Confidence::MEDIUM,
+        human_review_required: false,
+    };
+    let status = ReportStatus {
+        overall_status: "PASS".into(),
+        provider_payload_valid: "PASS".into(),
+        company_understanding_present: "PASS".into(),
+        financial_interpretation_present: "PASS".into(),
+        research_blueprint_present: "PASS".into(),
+        ai_self_review_present: "PASS".into(),
+        money_flow_present: "PASS".into(),
+        human_review_required: false,
+        ai_mode: "compact".into(),
+        ai_calls: 0,
+        cache_hits: 0,
+        provider_status: "PASS".into(),
+    };
+    let report = render_report(
+        &payload,
+        &understanding,
+        &interpretation,
+        &blueprint,
+        &review,
+        &status,
+    );
+    assert!(report.contains("## 4. Money Flow"));
+    assert!(report.contains("## 12. Appendix: Locked Data"));
+}

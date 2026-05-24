@@ -1,0 +1,59 @@
+name: broad_30_probe_cross_industry
+description: 30-company cross-industry probe derived from broad_200 by round-robin
+  group sampling
+groups:
+  mature_compounder:
+  - AAPL
+  - MSFT
+  mega_cap_tech:
+  - GOOGL
+  - META
+  semiconductor_ai:
+  - NVDA
+  - AMD
+  semiconductor_turnaround:
+  - INTC
+  - MU
+  speculative_growth:
+  - RKLB
+  - ASTS
+  biotech_like:
+  - RXRX
+  pharma:
+  - LLY
+  medical_devices:
+  - ISRG
+  banks:
+  - JPM
+  brokers_exchanges:
+  - IBKR
+  insurance:
+  - BRK-B
+  reit:
+  - O
+  energy:
+  - XOM
+  materials_mining:
+  - FCX
+  industrials:
+  - CAT
+  aerospace_defense:
+  - BA
+  airlines_transport:
+  - DAL
+  shipping_logistics:
+  - ZIM
+  consumer_retail:
+  - NKE
+  restaurants:
+  - CMG
+  utilities:
+  - NEE
+  telecom_media:
+  - T
+  luxury_apparel:
+  - LVMUY
+  payments_fintech:
+  - PYPL
+  small_unknown:
+  - LUNR

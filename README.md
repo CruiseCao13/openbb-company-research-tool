@@ -1,5 +1,137 @@
 # openbb-company-research-tool
 
+## Rust-Powered AI-Led Company Research Engine
+
+v5.0 introduces a new standalone Rust workspace under `research-rs/`.
+The old Python workflow remains available as a fallback and reference path, but
+the new engine changes the order of responsibility:
+
+```text
+locked provider data
+-> company understanding
+-> financial interpretation
+-> research blueprint
+-> report rendering
+-> AI/self review + validator
+-> batch evaluation + training cases
+```
+
+The goal is not to make an AI stock picker. The goal is to generate a
+first-pass research memo that understands the company frame before it writes
+the report.
+
+### What It Does
+
+- Fetches provider data through Python adapters and writes a locked
+  `provider_payload.json`.
+- Uses the Rust engine to orchestrate run folders, validation, report rendering,
+  dashboard generation, packaging, and batch evaluation.
+- Uses a compact analyst layer to produce:
+  - `company_understanding.json`
+  - `financial_interpretation.json`
+  - `research_blueprint.json`
+  - `ai_self_review.json`
+- Generates readable Markdown reports and lightweight static HTML dashboards.
+- Runs cross-industry batch evaluation and writes training cases for failures.
+
+### What It Does Not Do
+
+- It does not give buy/sell/hold recommendations.
+- It does not provide target prices.
+- It does not predict short-term price movement.
+- It does not fabricate missing segment, pipeline, foundry, or regulatory facts.
+- It does not treat AI output as final truth without validator and human-review
+  status.
+
+### Quick Start
+
+Build and test the Rust engine:
+
+```bash
+. "$HOME/.cargo/env"
+cd research-rs
+cargo test
+cargo clippy --all-targets --all-features -- -D warnings
+cargo build --bin research-rs
+```
+
+Run one company:
+
+```bash
+research-rs/target/debug/research-rs run AAPL --market us --provider auto --ai compact --run-id v5_aapl_validation --pack --force
+```
+
+Run an A-share ticker. If the local A-share provider is unavailable, the run
+will produce a clear provider fallback instead of pretending full coverage:
+
+```bash
+research-rs/target/debug/research-rs run 600519.SH --market cn --provider auto --ai compact --run-id v5_600519_validation --pack --force
+```
+
+Run the v5 broad probe:
+
+```bash
+research-rs/target/debug/research-rs batch eval_sets/broad_30_probe.yaml --workers 2 --ai compact --run-id v5_broad_30_validation_clean --pack --force
+```
+
+### Folder Structure
+
+Each v5 run writes:
+
+```text
+reports/TICKER/runs/RUN_ID/
+  README.md
+  report/
+  raw/provider_payload.json
+  metadata/
+  ai/
+  audit/
+  self_review/
+  data/
+  charts/
+  pack/
+  dashboard.html
+```
+
+Start with `report/TICKER_research_report.md`, then inspect
+`dashboard.html`, `metadata/research_blueprint.json`,
+`self_review/ai_self_review.md`, and `audit/validator_report.md`.
+
+### Supported Markets
+
+- US/global: v5 currently uses the Python provider bridge with yfinance/OpenBB
+  compatibility.
+- China A-share: the v5 bridge detects AKShare/Tushare/Baostock direction, but
+  the current foundation is screening-only unless those adapters are available
+  and normalized locally.
+
+### AI and Credit Control
+
+The current v5 foundation uses a local compact analyst fallback by default.
+No external paid AI API call is made unless a future adapter explicitly enables
+one. Reports and batch summaries state this clearly.
+
+The compact analyst receives only provider summaries and company profile
+context, not full CSVs or charts. This keeps the system fast and credit-safe.
+
+### Limitations
+
+- The external AI client is not yet enabled in this branch; the v5 foundation
+  uses local compact analysis and says so in `codex_self_review.md`.
+- A-share adapters are present as provider bridge placeholders and may fall back
+  to clear provider warnings.
+- v5 is independent of the older Python v4 workflow; both coexist during the
+  transition.
+
+### Roadmap
+
+- Add a real external AI client with strict schema validation and cache keys.
+- Normalize AKShare/Tushare/Baostock financial statements into the provider
+  payload schema.
+- Expand validator checks for numeric claim tracing and unsupported claims.
+- Replace local compact analyst fallback with bounded AI where credentials and
+  provider quality allow it.
+
 A thesis-driven, asset-aware first-pass equity research workflow generator.
 
 A Python-based company research workflow for turning public market data into structured, archived, and reviewable research reports.

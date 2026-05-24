@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ProviderPayload",
+  "type": "object",
+  "required": ["ticker", "market", "provider", "fetched_at", "company_profile", "price_history", "income_statement", "balance_sheet", "cash_flow", "valuation_snapshot", "segments", "metadata"],
+  "properties": {
+    "ticker": { "type": "string" },
+    "market": { "type": "string" },
+    "provider": { "type": "string" },
+    "fetched_at": { "type": "string" },
+    "company_profile": { "type": "object" },
+    "price_history": { "type": "array" },
+    "income_statement": { "type": "array" },
+    "balance_sheet": { "type": "array" },
+    "cash_flow": { "type": "array" },
+    "valuation_snapshot": { "type": "object" },
+    "segments": { "type": "array" },
+    "metadata": { "type": "object" },
+    "error": { "type": "object" }
+  }
+}
+
