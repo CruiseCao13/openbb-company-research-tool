@@ -344,6 +344,247 @@ How to read this table: it tells you which locked data exists before relying on 
     )
 }
 
+pub fn render_report_zh(
+    payload: &ProviderPayload,
+    understanding: &CompanyUnderstanding,
+    interpretation: &FinancialInterpretation,
+    blueprint: &ResearchBlueprint,
+    review: &AiSelfReview,
+    status: &ReportStatus,
+) -> String {
+    let name = if payload.company_profile.name.is_empty() {
+        payload.ticker.clone()
+    } else {
+        payload.company_profile.name.clone()
+    };
+    format!(
+        r#"# {ticker} 公司研究报告
+
+> 状态：{status_value}  
+> AI 置信度：{confidence:?}  
+> 研究框架：{asset_profile}  
+> 是否需要人工复核：{human_review}  
+> 生成说明：本报告不是投资建议。
+
+## 目录
+
+1. 报告状态
+2. 公司身份
+3. 商业模式
+4. 资金流向：钱从哪里来，去了哪里
+5. 财报解释
+6. AI 研究蓝图
+7. 估值框架
+8. 风险与红旗
+9. 数据缺口与未验证判断
+10. AI 自我复核
+11. 下一步核查
+12. 图表与证据
+13. 附录：锁定数据
+
+## 1. 报告状态
+
+Table 1. 报告状态快照  
+单位：状态 / 文本  
+来源：metadata/report_status.json  
+How to read this table：先看是否需要人工复核，再看研究框架是否可信。
+
+| 项目 | 内容 |
+|---|---|
+| 公司 | {name} |
+| 总体状态 | {status_value} |
+| 数据源状态 | {provider_status} |
+| 视觉检查 | {visual_lint_status} |
+| AI 模式 | {ai_mode} |
+
+## 2. 公司身份
+
+{identity}
+
+它不应该被当成：
+
+{not_this}
+
+## 3. 商业模式
+
+{business_model}
+
+收入来源：
+
+{revenue_engines}
+
+## 4. 资金流向：钱从哪里来，去了哪里
+
+Table 2. 资金流摘要  
+单位：文本  
+来源：provider_payload.json 和 financial_interpretation.json  
+How to read this table：看经营造血、再投资、融资压力是否匹配公司画像。
+
+| 流向 | 信号 | 为什么重要 |
+|---|---|---|
+| 钱从哪里来 | {money_from} | 判断增长是否靠经营造血 |
+| 钱去了哪里 | {money_goes} | 判断现金是否被 capex、研发、债务或回报股东消耗 |
+
+## 5. 财报解释
+
+收入：{revenue_explanation}
+
+利润率：{margin_explanation}
+
+现金流：{cash_flow_explanation}
+
+## 6. AI 研究蓝图
+
+核心主线：{core_thesis}
+
+必须核查：
+
+{must_analyze}
+
+不能作为核心框架：
+
+{must_not}
+
+## 7. 估值框架
+
+{valuation}
+
+本报告不给目标价，不给买卖建议，也不预测短期股价。
+
+## 8. 风险与红旗
+
+{red_flags}
+
+## 9. 数据缺口与未验证判断
+
+{data_gaps}
+
+## 10. AI 自我复核
+
+| 检查 | 状态 |
+|---|---|
+| 公司理解 | {cu_check:?} |
+| 框架匹配 | {ff_check:?} |
+| 数字一致性 | {num_check:?} |
+| 资金流 | {money_check:?} |
+
+## 11. 下一步核查
+
+{next_checks}
+
+## 12. 图表与证据
+
+### Figure 1. 价格 / 基准表现
+
+![Figure 1](../charts/Figure_01_price_vs_benchmark.png)
+
+来源：provider_payload.json
+
+What to look at：看价格路径和时间范围。  
+What it means：它能帮助判断持有过程中的价格表现。  
+What not to overread：它不能证明未来会继续上涨或跑赢。  
+Next check：结合估值、现金流和业务数据复核。
+
+### Figure 2. 回撤 / 风险路径
+
+![Figure 2](../charts/Figure_02_drawdown.png)
+
+来源：provider_payload.json
+
+What to look at：看从阶段高点跌下来的幅度。  
+What it means：它反映持有过程中的账户压力。  
+What not to overread：回撤不是破产风险，也不是买卖信号。  
+Next check：结合基本面恶化或市场周期复核。
+
+### Figure 3. 财务趋势
+
+![Figure 3](../charts/Figure_03_financial_trend.png)
+
+来源：provider_payload.json
+
+What to look at：看收入或行业适配指标的方向。  
+What it means：它能提示增长或周期位置。  
+What not to overread：单一趋势不能替代完整财报分析。  
+Next check：查最新年报和分部数据。
+
+### Figure 4. 资金流 / 现金流桥
+
+![Figure 4](../charts/Figure_04_money_flow.png)
+
+来源：provider_payload.json
+
+What to look at：看经营现金流、资本开支和融资压力。  
+What it means：它帮助判断业务是否造血。  
+What not to overread：缺少项目时不能强行推断。  
+Next check：核查现金流量表明细。
+
+### Figure 5. 估值框架
+
+![Figure 5](../charts/Figure_05_valuation_frame.png)
+
+来源：provider_payload.json
+
+What to look at：看当前可用的估值入口。  
+What it means：它只说明市场如何定价部分指标。  
+What not to overread：估值倍数不是目标价。  
+Next check：确认该倍数是否适合当前资产类型。
+
+## 13. 附录：锁定数据
+
+Table 3. 锁定数据覆盖  
+单位：条数 / 文本  
+来源：raw/provider_payload.json  
+How to read this table：先看数据覆盖，再决定解释可信度。
+
+| 字段 | 内容 |
+|---|---|
+| Ticker | {ticker} |
+| Sector | {sector} |
+| Industry | {industry} |
+| Currency | {currency} |
+| Price rows | {price_count} |
+
+"#,
+        ticker = payload.ticker,
+        name = name,
+        status_value = status.overall_status,
+        provider_status = status.provider_status,
+        visual_lint_status = status.visual_lint_status,
+        ai_mode = status.ai_mode,
+        human_review = if status.human_review_required {
+            "是"
+        } else {
+            "否"
+        },
+        confidence = blueprint.confidence,
+        asset_profile = blueprint.asset_profile,
+        identity = understanding.company_identity,
+        not_this = bullet(&understanding.not_this),
+        business_model = understanding.business_model,
+        revenue_engines = bullet(&understanding.revenue_engines),
+        money_from = interpretation.where_money_comes_from,
+        money_goes = interpretation.where_money_goes,
+        revenue_explanation = interpretation.revenue_explanation,
+        margin_explanation = interpretation.margin_explanation,
+        cash_flow_explanation = interpretation.cash_flow_explanation,
+        core_thesis = blueprint.core_thesis,
+        must_analyze = bullet(&blueprint.must_analyze),
+        must_not = bullet(&blueprint.must_not_analyze_as_core),
+        valuation = blueprint.valuation_frame,
+        red_flags = bullet(&blueprint.red_flags),
+        data_gaps = bullet(&blueprint.data_gaps),
+        cu_check = review.company_understanding_check,
+        ff_check = review.framework_fit_check,
+        num_check = review.numeric_consistency_check,
+        money_check = review.money_flow_check,
+        next_checks = bullet(&blueprint.next_checks),
+        sector = payload.company_profile.sector,
+        industry = payload.company_profile.industry,
+        currency = payload.company_profile.currency,
+        price_count = payload.price_history.len(),
+    )
+}
+
 pub fn render_self_review_md(review: &AiSelfReview) -> String {
     format!(
         "# AI Self Review\n\n| Check | Status |\n|---|---|\n| Company understanding | {:?} |\n| Framework fit | {:?} |\n| Numeric consistency | {:?} |\n| Money flow | {:?} |\n| Final confidence | {:?} |\n| Human review required | {} |\n\n## Unsupported Claims\n\n{}\n\n## Wrong-Framework Risk\n\n{}\n",

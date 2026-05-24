@@ -4,10 +4,10 @@
 > Company: Caterpillar Inc.  
 > Market: US  
 > Provider: yfinance  
-> Status: WARNING  
-> AI Confidence: LOW  
-> Research Frame: Insurance-like Screening  
-> Human Review Required: true  
+> Status: PASS  
+> AI Confidence: MEDIUM  
+> Research Frame: Cyclical / Industrial Cycle  
+> Human Review Required: false  
 > Note: This report is for first-pass research only. It is not investment advice.
 
 ## Table of Contents
@@ -30,13 +30,13 @@
 
 | Item | Value |
 |---|---|
-| Overall status | WARNING |
+| Overall status | PASS |
 | Provider status | PASS |
 | Visual lint | PASS |
 | AI mode | compact |
 | AI calls | 0 |
 | Cache hits | 0 |
-| Human review required | true |
+| Human review required | false |
 
 The status separates locked data availability from interpretation confidence. A warning means the report can be useful as a screening memo, but the unsupported sections need human review.
 
@@ -47,28 +47,27 @@ How to read this table: use it to decide whether this report is usable as a firs
 
 ## 2. Company Identity
 
-**Identity:** Caterpillar Inc. is best treated as Insurance-like Screening based on the locked provider profile and financial context.
+**Identity:** Caterpillar Inc. is best treated as Cyclical / Industrial Cycle based on the locked provider profile and financial context.
 
-**Correct research frame:** Insurance-like Screening
+**Correct research frame:** Cyclical / Industrial Cycle
 
 **What this company is not:**  
-- ordinary bank
-- industrial FCF story
+- low PE means cheap
 
 
 ## 3. Business Model
 
-The research frame is Insurance-like Screening. The report should explain how the company earns money before interpreting valuation.
+The research frame is Cyclical / Industrial Cycle. The report should explain how the company earns money before interpreting valuation.
 
 Revenue engines currently identified:
 
-- premiums
-- investment income
+- commodity-sensitive revenue
+- equipment / project demand
 
 
 Profit pool:
 
-Profit pool assessment should focus on the economics implied by Insurance-like Screening, not a generic template.
+Profit pool assessment should focus on the economics implied by Cyclical / Industrial Cycle, not a generic template.
 
 ## 4. Money Flow: Where Money Comes From and Where It Goes
 
@@ -79,7 +78,7 @@ How to read this table: each row links a money-flow signal to why it matters.
 
 | Flow | Signal | Unit | Why it matters |
 |---|---|---|---|
-| Research frame | Insurance-like Screening | frame | Controls which metrics matter |
+| Research frame | Cyclical / Industrial Cycle | frame | Controls which metrics matter |
 | Money source | Money comes from operating revenue when available, operating cash flow if positive, and financing when operating cash is insufficient. | text | Shows whether operations or financing matter |
 | Money use | Money goes to operating costs, reinvestment, capex, and financing obligations when present. | text | Shows reinvestment and cash pressure |
 
@@ -94,7 +93,7 @@ This matters because growth is not automatically valuable. The report needs to d
 
 **Revenue:** Locked data includes latest revenue around 46111000000.0. The report can discuss revenue direction only within provider coverage.
 
-**Margins:** Margin interpretation must use the Insurance-like Screening frame and avoid cross-industry shortcuts.
+**Margins:** Margin interpretation must use the Cyclical / Industrial Cycle frame and avoid cross-industry shortcuts.
 
 **Cash flow:** Operating cash flow is 11739000000.0; capital expenditure is -4286000000.0. Free cash flow quality depends on the gap between operating cash generation and reinvestment needs.
 
@@ -106,11 +105,11 @@ This matters because growth is not automatically valuable. The report needs to d
 
 ## 6. AI Research Blueprint
 
-**Core thesis:** The central research question is whether the Insurance-like Screening frame is supported by locked data and company-specific evidence.
+**Core thesis:** The central research question is whether the Cyclical / Industrial Cycle frame is supported by locked data and company-specific evidence.
 
-**Asset profile:** Insurance-like Screening
+**Asset profile:** Cyclical / Industrial Cycle
 
-**Secondary profile:** Underwriting and float
+**Secondary profile:** Asset-heavy cycle
 
 Must analyze:
 
@@ -163,7 +162,7 @@ Unsupported claims flagged by AI self-review:
 | Framework fit | PASS |
 | Numeric consistency | PASS |
 | Money flow | PASS |
-| Final confidence | LOW |
+| Final confidence | MEDIUM |
 
 Wrong-framework risks:
 

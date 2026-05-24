@@ -6,8 +6,8 @@
 | Framework fit | PASS |
 | Numeric consistency | PASS |
 | Money flow | PASS |
-| Final confidence | LOW |
-| Human review required | true |
+| Final confidence | MEDIUM |
+| Human review required | false |
 
 ## Unsupported Claims
 

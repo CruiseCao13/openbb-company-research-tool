@@ -28,7 +28,7 @@
 
 Latest validation batch:
 
-`reports/batch_runs/v5_broad_30_validation_clean`
+`reports/batch_runs/v5_broad_30_p0_final`
 
 Summary:
 
@@ -63,6 +63,7 @@ See `reports/release_checks/v5_0/display_review.md`.
 - Tables too wide: No known wide report tables in v5 output.
 - Units: `metadata/unit_policy.json` is generated for each run.
 - Dashboard openable: Yes, static HTML is generated for single runs and batch.
+- PDF export: Yes, a dependency-free text-first PDF is generated for Markdown reports. It preserves chart explanations and source notes but does not embed PNG chart images.
 - Folder structure: Clear v5 run folders with report/raw/metadata/audit/self_review/data/charts/pack/dashboard.
 - Template flavor: Reduced but not eliminated; local compact analyst remains less natural than future external AI.
 - Unsupported claims: Flagged in AI self-review instead of silently presented.

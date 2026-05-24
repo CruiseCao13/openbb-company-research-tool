@@ -1,29 +1,28 @@
 {
-  "company_identity": "Caterpillar Inc. is best treated as Insurance-like Screening based on the locked provider profile and financial context.",
-  "business_model": "The research frame is Insurance-like Screening. The report should explain how the company earns money before interpreting valuation.",
+  "company_identity": "Caterpillar Inc. is best treated as Cyclical / Industrial Cycle based on the locked provider profile and financial context.",
+  "business_model": "The research frame is Cyclical / Industrial Cycle. The report should explain how the company earns money before interpreting valuation.",
   "revenue_engines": [
-    "premiums",
-    "investment income"
+    "commodity-sensitive revenue",
+    "equipment / project demand"
   ],
-  "profit_pool": "Profit pool assessment should focus on the economics implied by Insurance-like Screening, not a generic template.",
+  "profit_pool": "Profit pool assessment should focus on the economics implied by Cyclical / Industrial Cycle, not a generic template.",
   "key_growth_drivers": [
-    "Underwriting and float"
+    "Asset-heavy cycle"
   ],
   "key_risks": [
-    "combined ratio",
-    "reserve adequacy",
-    "catastrophe exposure"
+    "cycle peak earnings",
+    "normalized margin",
+    "capex cycle"
   ],
   "not_this": [
-    "ordinary bank",
-    "industrial FCF story"
+    "low PE means cheap"
   ],
-  "correct_research_frame": "Insurance-like Screening",
+  "correct_research_frame": "Cyclical / Industrial Cycle",
   "wrong_frames_to_avoid": [
     "generic mature compounder unless supported",
     "target price model",
     "buy/sell advice"
   ],
-  "confidence": "LOW",
-  "human_review_required": true
+  "confidence": "MEDIUM",
+  "human_review_required": false
 }

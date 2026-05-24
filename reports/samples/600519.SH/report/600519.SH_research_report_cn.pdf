@@ -1,0 +1,339 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R 5 0 R 7 0 R 9 0 R 11 0 R] /Count 5 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 1497 >>
+stream
+BT
+/F1 10 Tf
+50 760 Td (600519.SH ??????) Tj
+-50 -14 Td
+50 736 Td (???WARNING) Tj
+-50 -14 Td
+50 722 Td (AI ????LOW) Tj
+-50 -14 Td
+50 708 Td (?????Unknown / Data-Limited Screening) Tj
+-50 -14 Td
+50 694 Td (??????????) Tj
+-50 -14 Td
+50 680 Td (???????????????) Tj
+-50 -14 Td
+50 656 Td (??) Tj
+-50 -14 Td
+50 632 Td (1. ????) Tj
+-50 -14 Td
+50 618 Td (2. ????) Tj
+-50 -14 Td
+50 604 Td (3. ????) Tj
+-50 -14 Td
+50 590 Td (4. ???????????????) Tj
+-50 -14 Td
+50 576 Td (5. ????) Tj
+-50 -14 Td
+50 562 Td (6. AI ????) Tj
+-50 -14 Td
+50 548 Td (7. ????) Tj
+-50 -14 Td
+50 534 Td (8. ?????) Tj
+-50 -14 Td
+50 520 Td (9. ??????????) Tj
+-50 -14 Td
+50 506 Td (10. AI ????) Tj
+-50 -14 Td
+50 492 Td (11. ?????) Tj
+-50 -14 Td
+50 478 Td (12. ?????) Tj
+-50 -14 Td
+50 464 Td (13. ???????) Tj
+-50 -14 Td
+50 440 Td (1. ????) Tj
+-50 -14 Td
+50 416 Td (Table 1. ??????) Tj
+-50 -14 Td
+50 402 Td (????? / ??) Tj
+-50 -14 Td
+50 388 Td (???metadata/reportstatus.json) Tj
+-50 -14 Td
+50 374 Td (How to read this table???????????????????????) Tj
+-50 -14 Td
+50 350 Td (?? ??) Tj
+-50 -14 Td
+50 336 Td (--- ---) Tj
+-50 -14 Td
+50 322 Td (?? 600519.SH) Tj
+-50 -14 Td
+50 308 Td (???? WARNING) Tj
+-50 -14 Td
+50 294 Td (????? PROVIDERERROR) Tj
+-50 -14 Td
+50 280 Td (???? PASS) Tj
+-50 -14 Td
+50 266 Td (AI ?? compact) Tj
+-50 -14 Td
+50 242 Td (2. ????) Tj
+-50 -14 Td
+50 218 Td (600519.SH is best treated as Unknown / Data-Limited Screening based on the locked provider profile and financial co) Tj
+-50 -14 Td
+50 194 Td (????????) Tj
+-50 -14 Td
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Contents 6 0 R >>
+endobj
+6 0 obj
+<< /Length 1804 >>
+stream
+BT
+/F1 10 Tf
+50 750 Td (- confident complete industry research) Tj
+-50 -14 Td
+50 716 Td (3. ????) Tj
+-50 -14 Td
+50 692 Td (The research frame is Unknown / Data-Limited Screening. The report should explain how the company earns money befor) Tj
+-50 -14 Td
+50 668 Td (?????) Tj
+-50 -14 Td
+50 644 Td (- current provider data is insufficient to identify revenue engines) Tj
+-50 -14 Td
+50 610 Td (4. ???????????????) Tj
+-50 -14 Td
+50 586 Td (Table 2. ?????) Tj
+-50 -14 Td
+50 572 Td (?????) Tj
+-50 -14 Td
+50 558 Td (???providerpayload.json ? financialinterpretation.json) Tj
+-50 -14 Td
+50 544 Td (How to read this table????????????????????????) Tj
+-50 -14 Td
+50 520 Td (?? ?? ?????) Tj
+-50 -14 Td
+50 506 Td (--- --- ---) Tj
+-50 -14 Td
+50 492 Td (????? Money comes from operating revenue when available, operating cash flow if positive, and financing when operat) Tj
+-50 -14 Td
+50 478 Td (????? Money goes to operating costs, reinvestment, working capital, and financing obligations when present. ???????) Tj
+-50 -14 Td
+50 454 Td (5. ????) Tj
+-50 -14 Td
+50 430 Td (???Revenue is not available in locked provider data; revenue quality cannot be treated as verified evidence.) Tj
+-50 -14 Td
+50 406 Td (????Margin interpretation must use the Unknown / Data-Limited Screening frame and avoid cross-industry shortcuts.) Tj
+-50 -14 Td
+50 382 Td (????Cash flow data is incomplete; the report must flag cash generation limits instead of inferring quality.) Tj
+-50 -14 Td
+50 358 Td (6. AI ????) Tj
+-50 -14 Td
+50 334 Td (?????The central research question is whether the Unknown / Data-Limited Screening frame is supported by locked dat) Tj
+-50 -14 Td
+50 310 Td (?????) Tj
+-50 -14 Td
+50 286 Td (- business model) Tj
+-50 -14 Td
+50 272 Td (- money flow) Tj
+-50 -14 Td
+50 258 Td (- industry-specific drivers) Tj
+-50 -14 Td
+ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Contents 8 0 R >>
+endobj
+8 0 obj
+<< /Length 1233 >>
+stream
+BT
+/F1 10 Tf
+50 760 Td (?????????) Tj
+-50 -14 Td
+50 736 Td (- confident complete industry conclusion) Tj
+-50 -14 Td
+50 702 Td (7. ????) Tj
+-50 -14 Td
+50 678 Td (Screening-only until industry-specific valuation drivers are verified.) Tj
+-50 -14 Td
+50 654 Td (?????????????????????????) Tj
+-50 -14 Td
+50 630 Td (8. ?????) Tj
+-50 -14 Td
+50 606 Td (- framework uncertainty) Tj
+-50 -14 Td
+50 592 Td (- missing industry metrics) Tj
+-50 -14 Td
+50 558 Td (9. ??????????) Tj
+-50 -14 Td
+50 534 Td (- Provider payload has an error; numeric conclusions must stay screening-only.) Tj
+-50 -14 Td
+50 500 Td (10. AI ????) Tj
+-50 -14 Td
+50 476 Td (?? ??) Tj
+-50 -14 Td
+50 462 Td (--- ---) Tj
+-50 -14 Td
+50 448 Td (???? PASS) Tj
+-50 -14 Td
+50 434 Td (???? PASS) Tj
+-50 -14 Td
+50 420 Td (????? PASS) Tj
+-50 -14 Td
+50 406 Td (??? PASS) Tj
+-50 -14 Td
+50 382 Td (11. ?????) Tj
+-50 -14 Td
+50 358 Td (- Read the latest filing for revenue engines.) Tj
+-50 -14 Td
+50 344 Td (- Identify industry-specific KPIs.) Tj
+-50 -14 Td
+50 330 Td (- Decide which valuation method is actually suitable.) Tj
+-50 -14 Td
+50 296 Td (12. ?????) Tj
+-50 -14 Td
+50 272 Td (Figure 1. ?? / ????) Tj
+-50 -14 Td
+50 248 Td ([chart image referenced in Markdown report]) Tj
+-50 -14 Td
+ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Contents 10 0 R >>
+endobj
+10 0 obj
+<< /Length 1572 >>
+stream
+BT
+/F1 10 Tf
+50 760 Td (???providerpayload.json) Tj
+-50 -14 Td
+50 736 Td (What to look at????????????) Tj
+-50 -14 Td
+50 722 Td (What it means??????????????????) Tj
+-50 -14 Td
+50 708 Td (What not to overread?????????????????) Tj
+-50 -14 Td
+50 694 Td (Next check?????????????????) Tj
+-50 -14 Td
+50 670 Td (Figure 2. ?? / ????) Tj
+-50 -14 Td
+50 646 Td ([chart image referenced in Markdown report]) Tj
+-50 -14 Td
+50 622 Td (???providerpayload.json) Tj
+-50 -14 Td
+50 598 Td (What to look at??????????????) Tj
+-50 -14 Td
+50 584 Td (What it means???????????????) Tj
+-50 -14 Td
+50 570 Td (What not to overread??????????????????) Tj
+-50 -14 Td
+50 556 Td (Next check????????????????) Tj
+-50 -14 Td
+50 532 Td (Figure 3. ????) Tj
+-50 -14 Td
+50 508 Td ([chart image referenced in Markdown report]) Tj
+-50 -14 Td
+50 484 Td (???providerpayload.json) Tj
+-50 -14 Td
+50 460 Td (What to look at???????????????) Tj
+-50 -14 Td
+50 446 Td (What it means?????????????) Tj
+-50 -14 Td
+50 432 Td (What not to overread????????????????) Tj
+-50 -14 Td
+50 418 Td (Next check????????????) Tj
+-50 -14 Td
+50 394 Td (Figure 4. ??? / ????) Tj
+-50 -14 Td
+50 370 Td ([chart image referenced in Markdown report]) Tj
+-50 -14 Td
+50 346 Td (???providerpayload.json) Tj
+-50 -14 Td
+50 322 Td (What to look at??????????????????) Tj
+-50 -14 Td
+50 308 Td (What it means?????????????) Tj
+-50 -14 Td
+50 294 Td (What not to overread?????????????) Tj
+-50 -14 Td
+50 280 Td (Next check???????????) Tj
+-50 -14 Td
+50 256 Td (Figure 5. ????) Tj
+-50 -14 Td
+50 232 Td ([chart image referenced in Markdown report]) Tj
+-50 -14 Td
+ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Contents 12 0 R >>
+endobj
+12 0 obj
+<< /Length 775 >>
+stream
+BT
+/F1 10 Tf
+50 760 Td (???providerpayload.json) Tj
+-50 -14 Td
+50 736 Td (What to look at????????????) Tj
+-50 -14 Td
+50 722 Td (What it means????????????????) Tj
+-50 -14 Td
+50 708 Td (What not to overread???????????) Tj
+-50 -14 Td
+50 694 Td (Next check?????????????????) Tj
+-50 -14 Td
+50 670 Td (13. ???????) Tj
+-50 -14 Td
+50 646 Td (Table 3. ??????) Tj
+-50 -14 Td
+50 632 Td (????? / ??) Tj
+-50 -14 Td
+50 618 Td (???raw/providerpayload.json) Tj
+-50 -14 Td
+50 604 Td (How to read this table?????????????????) Tj
+-50 -14 Td
+50 580 Td (?? ??) Tj
+-50 -14 Td
+50 566 Td (--- ---) Tj
+-50 -14 Td
+50 552 Td (Ticker 600519.SH) Tj
+-50 -14 Td
+50 538 Td (Sector) Tj
+-50 -14 Td
+50 524 Td (Industry) Tj
+-50 -14 Td
+50 510 Td (Currency) Tj
+-50 -14 Td
+50 496 Td (Price rows 0) Tj
+-50 -14 Td
+ET
+endstream
+endobj
+xref
+0 13
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000146 00000 n 
+0000000321 00000 n 
+0000001870 00000 n 
+0000002045 00000 n 
+0000003901 00000 n 
+0000004076 00000 n 
+0000005361 00000 n 
+0000005537 00000 n 
+0000007162 00000 n 
+0000007339 00000 n 
+trailer
+<< /Size 13 /Root 1 0 R >>
+startxref
+8166
+%%EOF

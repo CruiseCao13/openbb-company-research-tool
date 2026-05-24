@@ -1,0 +1,10 @@
+{
+  "reporting_currency": "USD",
+  "price_currency": "USD",
+  "financial_statement_unit": "provider reported units; report displays compact human-readable values",
+  "percentage_format": "12.3%",
+  "multiple_format": "24.1x",
+  "share_count_unit": "shares",
+  "date_range": "provider payload range",
+  "provider_source": "yfinance"
+}

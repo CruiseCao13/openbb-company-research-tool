@@ -38,6 +38,8 @@ pub fn detect_forbidden_advice(text: &str) -> bool {
         "does not provide a target price",
         "not provide a target price",
         "not investment advice",
+        "do not use a target price",
+        "does not provide a target price, buy/sell recommendation",
         "not provide buy/sell",
         "not a buy/sell",
     ];
@@ -112,13 +114,14 @@ pub fn visual_lint(
     chart_manifest_exists: bool,
 ) -> (String, Vec<String>) {
     let mut failures = Vec::new();
-    if !report.starts_with('#') || !report.contains("> Status:") {
+    if !report.starts_with('#') || !(report.contains("> Status:") || report.contains("> 状态："))
+    {
         failures.push("report_has_status_block".to_string());
     }
-    if !report.contains("## Table of Contents") {
+    if !(report.contains("## Table of Contents") || report.contains("## 目录")) {
         failures.push("report_has_toc".to_string());
     }
-    if !report.contains("What to look at:") {
+    if !(report.contains("What to look at:") || report.contains("怎么看：")) {
         failures.push("chart_explanations_present".to_string());
     }
     if report.contains("NaN") || report.contains("null") || report.contains("[METRIC_MISSING_RAW]")

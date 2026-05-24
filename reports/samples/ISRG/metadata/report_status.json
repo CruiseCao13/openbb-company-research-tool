@@ -1,0 +1,15 @@
+{
+  "overall_status": "WARNING",
+  "provider_payload_valid": "PASS",
+  "company_understanding_present": "PASS",
+  "financial_interpretation_present": "PASS",
+  "research_blueprint_present": "PASS",
+  "ai_self_review_present": "PASS",
+  "money_flow_present": "PASS",
+  "human_review_required": true,
+  "ai_mode": "compact",
+  "ai_calls": 0,
+  "cache_hits": 0,
+  "provider_status": "PASS",
+  "visual_lint_status": "PASS"
+}

@@ -9,6 +9,10 @@ Added:
   research blueprint, and AI self-review.
 - Markdown report renderer, static HTML dashboard, run-folder packaging, and
   batch dashboard generation.
+- Core chart generation with figure numbering, chart explanations, and visual
+  lint output.
+- English/Chinese report selection through `--lang en|zh|both`.
+- Basic dependency-free PDF export for generated Markdown reports.
 - Cross-industry `broad_30_probe` validation through the Rust batch command.
 - Local compact analyst fallback with explicit zero external AI call reporting.
 - Release self-review and display-review artifacts under

@@ -1,0 +1,481 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R 5 0 R 7 0 R 9 0 R 11 0 R 13 0 R 15 0 R] /Count 7 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 1961 >>
+stream
+BT
+/F1 10 Tf
+50 760 Td (600519.SH Company Research Report) Tj
+-50 -14 Td
+50 736 Td (Version: v5.0) Tj
+-50 -14 Td
+50 722 Td (Company: 600519.SH) Tj
+-50 -14 Td
+50 708 Td (Market: CNA) Tj
+-50 -14 Td
+50 694 Td (Provider: auto) Tj
+-50 -14 Td
+50 680 Td (Status: WARNING) Tj
+-50 -14 Td
+50 666 Td (AI Confidence: LOW) Tj
+-50 -14 Td
+50 652 Td (Research Frame: Unknown / Data-Limited Screening) Tj
+-50 -14 Td
+50 638 Td (Human Review Required: true) Tj
+-50 -14 Td
+50 624 Td (Note: This report is for first-pass research only. It is not investment advice.) Tj
+-50 -14 Td
+50 600 Td (Table of Contents) Tj
+-50 -14 Td
+50 576 Td (1. Report Status) Tj
+-50 -14 Td
+50 562 Td (2. Company Identity) Tj
+-50 -14 Td
+50 548 Td (3. Business Model) Tj
+-50 -14 Td
+50 534 Td (4. Money Flow: Where Money Comes From and Where It Goes) Tj
+-50 -14 Td
+50 520 Td (5. Financial Statement Interpretation) Tj
+-50 -14 Td
+50 506 Td (6. AI Research Blueprint) Tj
+-50 -14 Td
+50 492 Td (7. Valuation Frame) Tj
+-50 -14 Td
+50 478 Td (8. Risks and Red Flags) Tj
+-50 -14 Td
+50 464 Td (9. Data Gaps and Unsupported Claims) Tj
+-50 -14 Td
+50 450 Td (10. AI Self Review) Tj
+-50 -14 Td
+50 436 Td (11. Next Checks) Tj
+-50 -14 Td
+50 422 Td (12. Charts and Evidence) Tj
+-50 -14 Td
+50 408 Td (13. Appendix: Locked Data) Tj
+-50 -14 Td
+50 384 Td (1. Report Status) Tj
+-50 -14 Td
+50 360 Td (Item Value) Tj
+-50 -14 Td
+50 346 Td (--- ---) Tj
+-50 -14 Td
+50 332 Td (Overall status WARNING) Tj
+-50 -14 Td
+50 318 Td (Provider status PROVIDERERROR) Tj
+-50 -14 Td
+50 304 Td (Visual lint PASS) Tj
+-50 -14 Td
+50 290 Td (AI mode compact) Tj
+-50 -14 Td
+50 276 Td (AI calls 0) Tj
+-50 -14 Td
+50 262 Td (Cache hits 0) Tj
+-50 -14 Td
+50 248 Td (Human review required true) Tj
+-50 -14 Td
+50 224 Td (The status separates locked data availability from interpretation confidence. A warning means the report can be use) Tj
+-50 -14 Td
+50 200 Td (Table 1. Research status snapshot) Tj
+-50 -14 Td
+50 186 Td (Unit: status / text) Tj
+-50 -14 Td
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Contents 6 0 R >>
+endobj
+6 0 obj
+<< /Length 2274 >>
+stream
+BT
+/F1 10 Tf
+50 760 Td (Source: metadata/reportstatus.json) Tj
+-50 -14 Td
+50 746 Td (How to read this table: use it to decide whether this report is usable as a first-pass memo or needs manual review.) Tj
+-50 -14 Td
+50 722 Td (2. Company Identity) Tj
+-50 -14 Td
+50 698 Td (Identity: 600519.SH is best treated as Unknown / Data-Limited Screening based on the locked provider profile and fi) Tj
+-50 -14 Td
+50 674 Td (Correct research frame: Unknown / Data-Limited Screening) Tj
+-50 -14 Td
+50 650 Td (What this company is not:) Tj
+-50 -14 Td
+50 636 Td (- confident complete industry research) Tj
+-50 -14 Td
+50 602 Td (3. Business Model) Tj
+-50 -14 Td
+50 578 Td (The research frame is Unknown / Data-Limited Screening. The report should explain how the company earns money befor) Tj
+-50 -14 Td
+50 554 Td (Revenue engines currently identified:) Tj
+-50 -14 Td
+50 530 Td (- current provider data is insufficient to identify revenue engines) Tj
+-50 -14 Td
+50 496 Td (Profit pool:) Tj
+-50 -14 Td
+50 472 Td (Profit pool assessment should focus on the economics implied by Unknown / Data-Limited Screening, not a generic tem) Tj
+-50 -14 Td
+50 448 Td (4. Money Flow: Where Money Comes From and Where It Goes) Tj
+-50 -14 Td
+50 424 Td (Table 2. Money flow summary) Tj
+-50 -14 Td
+50 410 Td (Unit: text) Tj
+-50 -14 Td
+50 396 Td (Source: providerpayload.json and financialinterpretation.json) Tj
+-50 -14 Td
+50 382 Td (How to read this table: each row links a money-flow signal to why it matters.) Tj
+-50 -14 Td
+50 358 Td (Flow Signal Unit Why it matters) Tj
+-50 -14 Td
+50 344 Td (--- --- --- ---) Tj
+-50 -14 Td
+50 330 Td (Research frame Unknown / Data-Limited Screening frame Controls which metrics matter) Tj
+-50 -14 Td
+50 316 Td (Money source Money comes from operating revenue when available, operating cash flow if positive, and financing when) Tj
+-50 -14 Td
+50 302 Td (Money use Money goes to operating costs, reinvestment, working capital, and financing obligations when present. tex) Tj
+-50 -14 Td
+50 268 Td (Where money comes from: Money comes from operating revenue when available, operating cash flow if positive, and fin) Tj
+-50 -14 Td
+50 244 Td (Where money goes: Money goes to operating costs, reinvestment, working capital, and financing obligations when pres) Tj
+-50 -14 Td
+ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Contents 8 0 R >>
+endobj
+8 0 obj
+<< /Length 1951 >>
+stream
+BT
+/F1 10 Tf
+50 760 Td (This matters because growth is not automatically valuable. The report needs to distinguish operating cash generatio) Tj
+-50 -14 Td
+50 736 Td (5. Financial Statement Interpretation) Tj
+-50 -14 Td
+50 712 Td (Revenue: Revenue is not available in locked provider data; revenue quality cannot be treated as verified evidence.) Tj
+-50 -14 Td
+50 688 Td (Margins: Margin interpretation must use the Unknown / Data-Limited Screening frame and avoid cross-industry shortcu) Tj
+-50 -14 Td
+50 664 Td (Cash flow: Cash flow data is incomplete; the report must flag cash generation limits instead of inferring quality.) Tj
+-50 -14 Td
+50 640 Td (Capex / R&D pressure: Reinvestment pressure should be judged against the company-specific frame, not a one-size-fit) Tj
+-50 -14 Td
+50 616 Td (Debt and financing: Debt and financing pressure are not fully visible in the compact payload.) Tj
+-50 -14 Td
+50 592 Td (Shareholder return quality: Buybacks and dividends are interpretation topics only when the locked data and company ) Tj
+-50 -14 Td
+50 568 Td (6. AI Research Blueprint) Tj
+-50 -14 Td
+50 544 Td (Core thesis: The central research question is whether the Unknown / Data-Limited Screening frame is supported by lo) Tj
+-50 -14 Td
+50 520 Td (Asset profile: Unknown / Data-Limited Screening) Tj
+-50 -14 Td
+50 496 Td (Secondary profile: Framework not fully covered) Tj
+-50 -14 Td
+50 472 Td (Must analyze:) Tj
+-50 -14 Td
+50 448 Td (- business model) Tj
+-50 -14 Td
+50 434 Td (- money flow) Tj
+-50 -14 Td
+50 420 Td (- industry-specific drivers) Tj
+-50 -14 Td
+50 386 Td (Must not analyze as core:) Tj
+-50 -14 Td
+50 362 Td (- confident complete industry conclusion) Tj
+-50 -14 Td
+50 328 Td (Key questions:) Tj
+-50 -14 Td
+50 304 Td (- What does this company actually sell?) Tj
+-50 -14 Td
+50 290 Td (- Which metrics are industry-specific?) Tj
+-50 -14 Td
+50 276 Td (- What data is missing?) Tj
+-50 -14 Td
+50 242 Td (7. Valuation Frame) Tj
+-50 -14 Td
+ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Contents 10 0 R >>
+endobj
+10 0 obj
+<< /Length 1611 >>
+stream
+BT
+/F1 10 Tf
+50 750 Td (Screening-only until industry-specific valuation drivers are verified.) Tj
+-50 -14 Td
+50 726 Td (The report does not provide a target price, buy/sell recommendation, or short-term price prediction.) Tj
+-50 -14 Td
+50 702 Td (8. Risks and Red Flags) Tj
+-50 -14 Td
+50 678 Td (- framework uncertainty) Tj
+-50 -14 Td
+50 664 Td (- missing industry metrics) Tj
+-50 -14 Td
+50 630 Td (9. Data Gaps and Unsupported Claims) Tj
+-50 -14 Td
+50 606 Td (Data gaps:) Tj
+-50 -14 Td
+50 582 Td (- Provider payload has an error; numeric conclusions must stay screening-only.) Tj
+-50 -14 Td
+50 548 Td (Unsupported claims flagged by AI self-review:) Tj
+-50 -14 Td
+50 524 Td (- Provider payload has an error; numeric conclusions must stay screening-only.) Tj
+-50 -14 Td
+50 510 Td (- Provider error prevents full financial interpretation.) Tj
+-50 -14 Td
+50 476 Td (10. AI Self Review) Tj
+-50 -14 Td
+50 452 Td (Check Status) Tj
+-50 -14 Td
+50 438 Td (--- ---) Tj
+-50 -14 Td
+50 424 Td (Company understanding PASS) Tj
+-50 -14 Td
+50 410 Td (Framework fit PASS) Tj
+-50 -14 Td
+50 396 Td (Numeric consistency PASS) Tj
+-50 -14 Td
+50 382 Td (Money flow PASS) Tj
+-50 -14 Td
+50 368 Td (Final confidence LOW) Tj
+-50 -14 Td
+50 344 Td (Wrong-framework risks:) Tj
+-50 -14 Td
+50 320 Td (- Framework is not fully identified; report must stay screening-only.) Tj
+-50 -14 Td
+50 286 Td (11. Next Checks) Tj
+-50 -14 Td
+50 262 Td (- Read the latest filing for revenue engines.) Tj
+-50 -14 Td
+50 248 Td (- Identify industry-specific KPIs.) Tj
+-50 -14 Td
+50 234 Td (- Decide which valuation method is actually suitable.) Tj
+-50 -14 Td
+ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Contents 12 0 R >>
+endobj
+12 0 obj
+<< /Length 1716 >>
+stream
+BT
+/F1 10 Tf
+50 740 Td (12. Charts and Evidence) Tj
+-50 -14 Td
+50 716 Td (Figure 1. Price / Benchmark Performance) Tj
+-50 -14 Td
+50 692 Td ([chart image referenced in Markdown report]) Tj
+-50 -14 Td
+50 668 Td (Source: providerpayload.json) Tj
+-50 -14 Td
+50 654 Td (Status: PASS or DATAGAP) Tj
+-50 -14 Td
+50 630 Td (What to look at:) Tj
+-50 -14 Td
+50 616 Td (This figure is evidence for the section's main question, not decoration.) Tj
+-50 -14 Td
+50 592 Td (What it means:) Tj
+-50 -14 Td
+50 578 Td (Read it together with the locked data and the research frame.) Tj
+-50 -14 Td
+50 554 Td (What not to overread:) Tj
+-50 -14 Td
+50 540 Td (The chart does not predict short-term price movement and does not create a buy/sell signal.) Tj
+-50 -14 Td
+50 516 Td (Next check:) Tj
+-50 -14 Td
+50 502 Td (Verify the same signal in the latest filing or provider source if it drives the thesis.) Tj
+-50 -14 Td
+50 468 Td (Figure 2. Drawdown / Risk Path) Tj
+-50 -14 Td
+50 444 Td ([chart image referenced in Markdown report]) Tj
+-50 -14 Td
+50 420 Td (Source: providerpayload.json) Tj
+-50 -14 Td
+50 406 Td (Status: PASS or DATAGAP) Tj
+-50 -14 Td
+50 382 Td (What to look at:) Tj
+-50 -14 Td
+50 368 Td (This figure is evidence for the section's main question, not decoration.) Tj
+-50 -14 Td
+50 344 Td (What it means:) Tj
+-50 -14 Td
+50 330 Td (Read it together with the locked data and the research frame.) Tj
+-50 -14 Td
+50 306 Td (What not to overread:) Tj
+-50 -14 Td
+50 292 Td (The chart does not predict short-term price movement and does not create a buy/sell signal.) Tj
+-50 -14 Td
+50 268 Td (Next check:) Tj
+-50 -14 Td
+50 254 Td (Verify the same signal in the latest filing or provider source if it drives the thesis.) Tj
+-50 -14 Td
+ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Contents 14 0 R >>
+endobj
+14 0 obj
+<< /Length 1783 >>
+stream
+BT
+/F1 10 Tf
+50 760 Td (Figure 3. Financial Trend) Tj
+-50 -14 Td
+50 736 Td ([chart image referenced in Markdown report]) Tj
+-50 -14 Td
+50 712 Td (Source: providerpayload.json) Tj
+-50 -14 Td
+50 698 Td (Status: PASS or DATAGAP) Tj
+-50 -14 Td
+50 674 Td (What to look at:) Tj
+-50 -14 Td
+50 660 Td (This figure is evidence for the section's main question, not decoration.) Tj
+-50 -14 Td
+50 636 Td (What it means:) Tj
+-50 -14 Td
+50 622 Td (Read it together with the locked data and the research frame.) Tj
+-50 -14 Td
+50 598 Td (What not to overread:) Tj
+-50 -14 Td
+50 584 Td (The chart does not predict short-term price movement and does not create a buy/sell signal.) Tj
+-50 -14 Td
+50 560 Td (Next check:) Tj
+-50 -14 Td
+50 546 Td (Verify the same signal in the latest filing or provider source if it drives the thesis.) Tj
+-50 -14 Td
+50 512 Td (Figure 4. Money Flow / Cash Flow Bridge) Tj
+-50 -14 Td
+50 488 Td ([chart image referenced in Markdown report]) Tj
+-50 -14 Td
+50 464 Td (Source: providerpayload.json) Tj
+-50 -14 Td
+50 450 Td (Status: PASS or DATAGAP) Tj
+-50 -14 Td
+50 426 Td (What to look at:) Tj
+-50 -14 Td
+50 412 Td (This figure is evidence for the section's main question, not decoration.) Tj
+-50 -14 Td
+50 388 Td (What it means:) Tj
+-50 -14 Td
+50 374 Td (Read it together with the locked data and the research frame.) Tj
+-50 -14 Td
+50 350 Td (What not to overread:) Tj
+-50 -14 Td
+50 336 Td (The chart does not predict short-term price movement and does not create a buy/sell signal.) Tj
+-50 -14 Td
+50 312 Td (Next check:) Tj
+-50 -14 Td
+50 298 Td (Verify the same signal in the latest filing or provider source if it drives the thesis.) Tj
+-50 -14 Td
+50 264 Td (Figure 5. Valuation Frame) Tj
+-50 -14 Td
+50 240 Td ([chart image referenced in Markdown report]) Tj
+-50 -14 Td
+ET
+endstream
+endobj
+15 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >> >> /Contents 16 0 R >>
+endobj
+16 0 obj
+<< /Length 1432 >>
+stream
+BT
+/F1 10 Tf
+50 760 Td (Source: providerpayload.json) Tj
+-50 -14 Td
+50 746 Td (Status: PASS or DATAGAP) Tj
+-50 -14 Td
+50 722 Td (What to look at:) Tj
+-50 -14 Td
+50 708 Td (This figure is evidence for the section's main question, not decoration.) Tj
+-50 -14 Td
+50 684 Td (What it means:) Tj
+-50 -14 Td
+50 670 Td (Read it together with the locked data and the research frame.) Tj
+-50 -14 Td
+50 646 Td (What not to overread:) Tj
+-50 -14 Td
+50 632 Td (The chart does not predict short-term price movement and does not create a buy/sell signal.) Tj
+-50 -14 Td
+50 608 Td (Next check:) Tj
+-50 -14 Td
+50 594 Td (Verify the same signal in the latest filing or provider source if it drives the thesis.) Tj
+-50 -14 Td
+50 550 Td (13. Appendix: Locked Data) Tj
+-50 -14 Td
+50 526 Td (Table 3. Locked data coverage) Tj
+-50 -14 Td
+50 512 Td (Unit: count / text) Tj
+-50 -14 Td
+50 498 Td (Source: raw/providerpayload.json) Tj
+-50 -14 Td
+50 484 Td (How to read this table: it tells you which locked data exists before relying on interpretation.) Tj
+-50 -14 Td
+50 460 Td (Field Value) Tj
+-50 -14 Td
+50 446 Td (--- ---) Tj
+-50 -14 Td
+50 432 Td (Ticker 600519.SH) Tj
+-50 -14 Td
+50 418 Td (Sector) Tj
+-50 -14 Td
+50 404 Td (Industry) Tj
+-50 -14 Td
+50 390 Td (Currency) Tj
+-50 -14 Td
+50 376 Td (Price points 0) Tj
+-50 -14 Td
+50 362 Td (Income rows 0) Tj
+-50 -14 Td
+50 348 Td (Balance sheet rows 0) Tj
+-50 -14 Td
+50 334 Td (Cash-flow rows 0) Tj
+-50 -14 Td
+ET
+endstream
+endobj
+xref
+0 17
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000160 00000 n 
+0000000335 00000 n 
+0000002348 00000 n 
+0000002523 00000 n 
+0000004849 00000 n 
+0000005024 00000 n 
+0000007027 00000 n 
+0000007203 00000 n 
+0000008867 00000 n 
+0000009044 00000 n 
+0000010813 00000 n 
+0000010990 00000 n 
+0000012826 00000 n 
+0000013003 00000 n 
+trailer
+<< /Size 17 /Root 1 0 R >>
+startxref
+14488
+%%EOF

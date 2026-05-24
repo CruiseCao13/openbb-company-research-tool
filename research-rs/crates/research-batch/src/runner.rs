@@ -12,7 +12,7 @@ use research_core::types::*;
 use research_core::validation::{report_status, validate_ai_json, validate_provider_payload};
 use research_report::dashboard::render_batch_dashboard;
 use research_report::pack::pack_run;
-use research_report::renderer::render_run;
+use research_report::renderer::{render_run, RenderRunInput};
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone)]
@@ -63,6 +63,7 @@ pub fn run_batch(options: &BatchRunOptions) -> Result<PathBuf> {
             root: "reports".to_string(),
             force: options.force,
             pack: options.pack,
+            lang: "en".to_string(),
         };
         let folder = RunFolder::new(&ctx);
         folder.create()?;
@@ -91,15 +92,16 @@ pub fn run_batch(options: &BatchRunOptions) -> Result<PathBuf> {
             ai_calls,
             cache_hits,
         );
-        render_run(
-            &folder,
-            &payload,
-            &understanding,
-            &interpretation,
-            &blueprint,
-            &review,
-            &status,
-        )?;
+        render_run(RenderRunInput {
+            folder: &folder,
+            payload: &payload,
+            understanding: &understanding,
+            interpretation: &interpretation,
+            blueprint: &blueprint,
+            review: &review,
+            status: &status,
+            lang: "en",
+        })?;
         if options.pack {
             let _ = pack_run(&folder, &ticker);
         }

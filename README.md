@@ -31,7 +31,8 @@ the report.
   - `financial_interpretation.json`
   - `research_blueprint.json`
   - `ai_self_review.json`
-- Generates readable Markdown reports and lightweight static HTML dashboards.
+- Generates readable English/Chinese Markdown reports, lightweight static HTML
+  dashboards, core chart evidence, and basic PDF exports.
 - Runs cross-industry batch evaluation and writes training cases for failures.
 
 ### What It Does Not Do
@@ -58,14 +59,14 @@ cargo build --bin research-rs
 Run one company:
 
 ```bash
-research-rs/target/debug/research-rs run AAPL --market us --provider auto --ai compact --run-id v5_aapl_validation --pack --force
+research-rs/target/debug/research-rs run AAPL --market us --provider auto --ai compact --lang both --run-id v5_aapl_validation --pack --force
 ```
 
 Run an A-share ticker. If the local A-share provider is unavailable, the run
 will produce a clear provider fallback instead of pretending full coverage:
 
 ```bash
-research-rs/target/debug/research-rs run 600519.SH --market cn --provider auto --ai compact --run-id v5_600519_validation --pack --force
+research-rs/target/debug/research-rs run 600519.SH --market cn --provider auto --ai compact --lang both --run-id v5_600519_validation --pack --force
 ```
 
 Run the v5 broad probe:
@@ -96,6 +97,9 @@ reports/TICKER/runs/RUN_ID/
 Start with `report/TICKER_research_report.md`, then inspect
 `dashboard.html`, `metadata/research_blueprint.json`,
 `self_review/ai_self_review.md`, and `audit/validator_report.md`.
+Use `--lang en`, `--lang zh`, or `--lang both` for report language selection.
+When the lightweight PDF exporter is available, matching `.pdf` files are
+written next to the Markdown reports.
 
 ### Example Outputs
 
@@ -108,8 +112,9 @@ Sample v5 report packs are checked in under `reports/samples/`:
 - `reports/samples/AMD/`
 - `reports/samples/600519.SH/`
 
-Each sample includes a Markdown report, dashboard, company understanding JSON,
-research blueprint JSON, AI self-review, validator report, and pack zip.
+Each sample includes a Markdown report, dashboard, core chart files, company
+understanding JSON, research blueprint JSON, AI self-review, validator report,
+visual lint report, and pack zip.
 
 ### Supported Markets
 

@@ -1,0 +1,32 @@
+{
+  "ticker": "600519.SH",
+  "market": "CN_A",
+  "provider": "auto",
+  "fetched_at": "2026-05-24T20:38:21.613521+00:00",
+  "company_profile": {
+    "name": "600519.SH",
+    "sector": "",
+    "industry": "",
+    "description": "",
+    "exchange": "",
+    "currency": ""
+  },
+  "price_history": [],
+  "income_statement": [],
+  "balance_sheet": [],
+  "cash_flow": [],
+  "valuation_snapshot": {},
+  "segments": [],
+  "metadata": {
+    "data_quality_warnings": [
+      "A-share provider adapter is unavailable or screening-only in this environment."
+    ],
+    "source": "auto",
+    "provider_version": "v5-provider-bridge"
+  },
+  "error": {
+    "error_type": "ProviderUnavailable",
+    "error_message": "A-share provider adapter is unavailable or screening-only in this environment.",
+    "stage": "provider_fetch"
+  }
+}

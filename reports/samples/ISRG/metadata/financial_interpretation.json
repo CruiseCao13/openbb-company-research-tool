@@ -1,0 +1,12 @@
+{
+  "revenue_explanation": "Locked data includes latest revenue around 3422400000.0. The report can discuss revenue direction only within provider coverage.",
+  "margin_explanation": "Margin interpretation must use the Biotech / Pharma Research Frame frame and avoid cross-industry shortcuts.",
+  "cash_flow_explanation": "Operating cash flow is 3030500000.0; capital expenditure is -539800000.0. Free cash flow quality depends on the gap between operating cash generation and reinvestment needs.",
+  "where_money_comes_from": "Money comes from operating revenue when available, operating cash flow if positive, and financing when operating cash is insufficient.",
+  "where_money_goes": "Money goes to operating costs, reinvestment, R&D, capex, and financing obligations when present.",
+  "capex_or_rnd_pressure": "R&D burn and runway matter more than ordinary PE.",
+  "debt_and_financing": "Debt and financing pressure are not fully visible in the compact payload.",
+  "shareholder_return_quality": "Buybacks and dividends are interpretation topics only when the locked data and company frame support them.",
+  "valuation_method_fit": "Valuation should fit Biotech / Pharma Research Frame. The report must not force PE, PS, or FCF yield when they do not explain the asset.",
+  "unsupported_due_to_missing_data": []
+}

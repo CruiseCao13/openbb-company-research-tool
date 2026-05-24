@@ -1,0 +1,37 @@
+[
+  {
+    "figure": 1,
+    "title": "Price / Benchmark Performance",
+    "file": "Figure_01_price_vs_benchmark.png",
+    "status": "PASS",
+    "source": "provider_payload.json"
+  },
+  {
+    "figure": 2,
+    "title": "Drawdown / Risk Path",
+    "file": "Figure_02_drawdown.png",
+    "status": "PASS",
+    "source": "provider_payload.json"
+  },
+  {
+    "figure": 3,
+    "title": "Financial Trend",
+    "file": "Figure_03_financial_trend.png",
+    "status": "PASS",
+    "source": "provider_payload.json"
+  },
+  {
+    "figure": 4,
+    "title": "Money Flow / Cash Flow Bridge",
+    "file": "Figure_04_money_flow.png",
+    "status": "PASS",
+    "source": "provider_payload.json"
+  },
+  {
+    "figure": 5,
+    "title": "Valuation Frame",
+    "file": "Figure_05_valuation_frame.png",
+    "status": "PASS",
+    "source": "provider_payload.json"
+  }
+]

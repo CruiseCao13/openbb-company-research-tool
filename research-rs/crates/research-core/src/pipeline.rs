@@ -7,7 +7,7 @@ use crate::validation::{report_status, validate_ai_json, validate_provider_paylo
 use anyhow::Result;
 use research_ai::run_local_compact_analyst;
 use research_report::pack::pack_run;
-use research_report::renderer::render_run;
+use research_report::renderer::{render_run, RenderRunInput};
 
 #[derive(Debug, Clone)]
 pub struct PipelineResult {
@@ -45,7 +45,16 @@ pub fn run_pipeline(ctx: &RunContext, config: &EngineConfig) -> Result<PipelineR
         ai_calls,
         cache_hits,
     );
-    render_run(&folder, &payload, &understanding, &interpretation, &blueprint, &review, &status)?;
+    render_run(RenderRunInput {
+        folder: &folder,
+        payload: &payload,
+        understanding: &understanding,
+        interpretation: &interpretation,
+        blueprint: &blueprint,
+        review: &review,
+        status: &status,
+        lang: &ctx.lang,
+    })?;
     let pack_path = if ctx.pack {
         Some(pack_run(&folder, &ctx.ticker)?.to_string_lossy().to_string())
     } else {
@@ -58,4 +67,3 @@ pub fn run_pipeline(ctx: &RunContext, config: &EngineConfig) -> Result<PipelineR
         pack_path,
     })
 }
-

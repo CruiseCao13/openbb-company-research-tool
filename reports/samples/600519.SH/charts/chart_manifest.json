@@ -1,0 +1,42 @@
+[
+  {
+    "figure": 1,
+    "title": "Price / Benchmark Performance",
+    "file": "Figure_01_price_vs_benchmark.md",
+    "status": "DATA_GAP",
+    "source": "provider_payload.json",
+    "reason": "not enough price history"
+  },
+  {
+    "figure": 2,
+    "title": "Drawdown / Risk Path",
+    "file": "Figure_02_drawdown.md",
+    "status": "DATA_GAP",
+    "source": "provider_payload.json",
+    "reason": "not enough valid price history"
+  },
+  {
+    "figure": 3,
+    "title": "Financial Trend",
+    "file": "Figure_03_financial_trend.md",
+    "status": "DATA_GAP",
+    "source": "provider_payload.json",
+    "reason": "revenue trend not available"
+  },
+  {
+    "figure": 4,
+    "title": "Money Flow / Cash Flow Bridge",
+    "file": "Figure_04_money_flow.md",
+    "status": "DATA_GAP",
+    "source": "provider_payload.json",
+    "reason": "cash-flow bridge data not available"
+  },
+  {
+    "figure": 5,
+    "title": "Valuation Frame",
+    "file": "Figure_05_valuation_frame.md",
+    "status": "DATA_GAP",
+    "source": "provider_payload.json",
+    "reason": "valuation multiples are not available or not meaningful"
+  }
+]

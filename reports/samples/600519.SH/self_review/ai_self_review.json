@@ -1,0 +1,16 @@
+{
+  "company_understanding_check": "PASS",
+  "framework_fit_check": "PASS",
+  "numeric_consistency_check": "PASS",
+  "money_flow_check": "PASS",
+  "unsupported_claims": [
+    "Provider payload has an error; numeric conclusions must stay screening-only.",
+    "Provider error prevents full financial interpretation."
+  ],
+  "wrong_framework_risk": [
+    "Framework is not fully identified; report must stay screening-only."
+  ],
+  "required_rewrite_sections": [],
+  "final_confidence": "LOW",
+  "human_review_required": true
+}

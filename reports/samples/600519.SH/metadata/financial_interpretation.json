@@ -1,0 +1,14 @@
+{
+  "revenue_explanation": "Revenue is not available in locked provider data; revenue quality cannot be treated as verified evidence.",
+  "margin_explanation": "Margin interpretation must use the Unknown / Data-Limited Screening frame and avoid cross-industry shortcuts.",
+  "cash_flow_explanation": "Cash flow data is incomplete; the report must flag cash generation limits instead of inferring quality.",
+  "where_money_comes_from": "Money comes from operating revenue when available, operating cash flow if positive, and financing when operating cash is insufficient.",
+  "where_money_goes": "Money goes to operating costs, reinvestment, working capital, and financing obligations when present.",
+  "capex_or_rnd_pressure": "Reinvestment pressure should be judged against the company-specific frame, not a one-size-fits-all metric.",
+  "debt_and_financing": "Debt and financing pressure are not fully visible in the compact payload.",
+  "shareholder_return_quality": "Buybacks and dividends are interpretation topics only when the locked data and company frame support them.",
+  "valuation_method_fit": "Valuation should fit Unknown / Data-Limited Screening. The report must not force PE, PS, or FCF yield when they do not explain the asset.",
+  "unsupported_due_to_missing_data": [
+    "Provider payload has an error; numeric conclusions must stay screening-only."
+  ]
+}

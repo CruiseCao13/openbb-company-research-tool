@@ -1,0 +1,11 @@
+{
+  "company_understanding_check": "PASS",
+  "framework_fit_check": "PASS",
+  "numeric_consistency_check": "PASS",
+  "money_flow_check": "PASS",
+  "unsupported_claims": [],
+  "wrong_framework_risk": [],
+  "required_rewrite_sections": [],
+  "final_confidence": "LOW",
+  "human_review_required": true
+}

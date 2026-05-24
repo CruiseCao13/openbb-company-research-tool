@@ -7,6 +7,7 @@
 | Folder UX | PASS | Run folders contain report, raw, metadata, ai, audit, self_review, data, charts, pack, README, and dashboard. |
 | Batch UX | PASS | The batch run writes batch_summary.md, failures.md, warnings.md, profile_distribution.md, credit_usage_estimate.md, company_matrix.csv, and dashboard.html. |
 | HTML Dashboard | PASS | Static HTML dashboards are generated for single-company and batch runs. |
+| PDF Export | PASS | A basic dependency-free PDF export is generated next to Markdown reports. |
 | Language Quality | WARNING | The current local compact analyst is clear and bounded, but it is still less nuanced than the planned external AI analyst. |
 
 No display category is marked FAIL.
@@ -19,6 +20,7 @@ No display category is marked FAIL.
 - Table width: PASS, report tables are kept to four columns or fewer.
 - Table units and source notes: PASS for status, money-flow, and locked-data tables.
 - Raw NaN/null/placeholders: PASS in generated report surface.
+- PDF export: PASS for AAPL and 600519.SH validation runs; the current exporter is text-first and does not embed PNG chart images.
 
 ## Dashboard Review
 

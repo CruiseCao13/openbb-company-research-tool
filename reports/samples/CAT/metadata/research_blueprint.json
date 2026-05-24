@@ -1,7 +1,7 @@
 {
-  "core_thesis": "The central research question is whether the Insurance-like Screening frame is supported by locked data and company-specific evidence.",
-  "asset_profile": "Insurance-like Screening",
-  "secondary_profile": "Underwriting and float",
+  "core_thesis": "The central research question is whether the Cyclical / Industrial Cycle frame is supported by locked data and company-specific evidence.",
+  "asset_profile": "Cyclical / Industrial Cycle",
+  "secondary_profile": "Asset-heavy cycle",
   "must_analyze": [
     "business model",
     "money flow",
@@ -29,6 +29,6 @@
   "report_section_guidance": [
     "Start with identity, then money flow, then valuation fit, then unsupported claims."
   ],
-  "confidence": "LOW",
-  "human_review_required": true
+  "confidence": "MEDIUM",
+  "human_review_required": false
 }

@@ -1,0 +1,4602 @@
+{
+  "ticker": "ISRG",
+  "market": "US",
+  "provider": "yfinance",
+  "fetched_at": "2026-05-24T20:36:11.969418+00:00",
+  "company_profile": {
+    "name": "Intuitive Surgical, Inc.",
+    "sector": "Healthcare",
+    "industry": "Medical Instruments & Supplies",
+    "description": "Intuitive Surgical, Inc. develops, manufactures, and markets products that enable physicians and healthcare providers to enhance the quality of and access to minimally invasive care in the United States and internationally. It offers the da Vinci Surgical System that enables surgical procedures using a minimally invasive approach; and Ion endoluminal system, which extends its commercial offerings beyond surgery into diagnostic endoluminal procedures enabling minimally invasive biopsies in the lung. The company also provides a suite of stapling, energy, and core instrumentation for its multi-port da Vinci surgical systems; progressive learning pathways to support the use of its technology; infrastructure of customer service and support specialists, a complement of services to its customers, including installation, repair, maintenance, 24/7 technical support, and proactive system health monitoring; and integrated digital capabilities providing connected offerings, streamlining performance for hospitals with program-enhancing insights. It sells its products through direct sales organizations, such as capital and clinical sales teams. Intuitive Surgical, Inc. was incorporated in 1995 and is headquartered in Sunnyvale, California.",
+    "exchange": "NMS",
+    "currency": "USD"
+  },
+  "price_history": [
+    {
+      "date": "2025-05-12",
+      "close": 561.4299926757812,
+      "volume": 2037100.0
+    },
+    {
+      "date": "2025-05-13",
+      "close": 563.9500122070312,
+      "volume": 1529300.0
+    },
+    {
+      "date": "2025-05-14",
+      "close": 565.9400024414062,
+      "volume": 1409700.0
+    },
+    {
+      "date": "2025-05-15",
+      "close": 560.280029296875,
+      "volume": 1794600.0
+    },
+    {
+      "date": "2025-05-16",
+      "close": 563.5999755859375,
+      "volume": 1422900.0
+    },
+    {
+      "date": "2025-05-19",
+      "close": 561.6300048828125,
+      "volume": 1420400.0
+    },
+    {
+      "date": "2025-05-20",
+      "close": 557.1599731445312,
+      "volume": 1234600.0
+    },
+    {
+      "date": "2025-05-21",
+      "close": 547.0700073242188,
+      "volume": 1507800.0
+    },
+    {
+      "date": "2025-05-22",
+      "close": 542.6699829101562,
+      "volume": 1129100.0
+    },
+    {
+      "date": "2025-05-23",
+      "close": 539.5399780273438,
+      "volume": 1138500.0
+    },
+    {
+      "date": "2025-05-27",
+      "close": 550.1900024414062,
+      "volume": 1244600.0
+    },
+    {
+      "date": "2025-05-28",
+      "close": 552.4099731445312,
+      "volume": 1012100.0
+    },
+    {
+      "date": "2025-05-29",
+      "close": 555.75,
+      "volume": 1139200.0
+    },
+    {
+      "date": "2025-05-30",
+      "close": 552.3400268554688,
+      "volume": 2091000.0
+    },
+    {
+      "date": "2025-06-02",
+      "close": 553.2899780273438,
+      "volume": 1059400.0
+    },
+    {
+      "date": "2025-06-03",
+      "close": 551.8499755859375,
+      "volume": 1714400.0
+    },
+    {
+      "date": "2025-06-04",
+      "close": 557.9500122070312,
+      "volume": 1147200.0
+    },
+    {
+      "date": "2025-06-05",
+      "close": 558.0599975585938,
+      "volume": 1243400.0
+    },
+    {
+      "date": "2025-06-06",
+      "close": 557.0800170898438,
+      "volume": 1104200.0
+    },
+    {
+      "date": "2025-06-09",
+      "close": 526.1500244140625,
+      "volume": 4806200.0
+    },
+    {
+      "date": "2025-06-10",
+      "close": 529.5999755859375,
+      "volume": 2027600.0
+    },
+    {
+      "date": "2025-06-11",
+      "close": 522.4099731445312,
+      "volume": 1676800.0
+    },
+    {
+      "date": "2025-06-12",
+      "close": 513.0,
+      "volume": 2392800.0
+    },
+    {
+      "date": "2025-06-13",
+      "close": 512.1799926757812,
+      "volume": 2183000.0
+    },
+    {
+      "date": "2025-06-16",
+      "close": 519.0399780273438,
+      "volume": 1514600.0
+    },
+    {
+      "date": "2025-06-17",
+      "close": 512.1099853515625,
+      "volume": 1506000.0
+    },
+    {
+      "date": "2025-06-18",
+      "close": 509.489990234375,
+      "volume": 1173800.0
+    },
+    {
+      "date": "2025-06-20",
+      "close": 509.3599853515625,
+      "volume": 2829900.0
+    },
+    {
+      "date": "2025-06-23",
+      "close": 515.0900268554688,
+      "volume": 1218500.0
+    },
+    {
+      "date": "2025-06-24",
+      "close": 523.0800170898438,
+      "volume": 1593600.0
+    },
+    {
+      "date": "2025-06-25",
+      "close": 521.6300048828125,
+      "volume": 1178000.0
+    },
+    {
+      "date": "2025-06-26",
+      "close": 534.1900024414062,
+      "volume": 1966300.0
+    },
+    {
+      "date": "2025-06-27",
+      "close": 533.7100219726562,
+      "volume": 2016500.0
+    },
+    {
+      "date": "2025-06-30",
+      "close": 543.4099731445312,
+      "volume": 1584100.0
+    },
+    {
+      "date": "2025-07-01",
+      "close": 537.989990234375,
+      "volume": 1649300.0
+    },
+    {
+      "date": "2025-07-02",
+      "close": 540.5999755859375,
+      "volume": 1487500.0
+    },
+    {
+      "date": "2025-07-03",
+      "close": 544.469970703125,
+      "volume": 704800.0
+    },
+    {
+      "date": "2025-07-07",
+      "close": 534.7100219726562,
+      "volume": 1191600.0
+    },
+    {
+      "date": "2025-07-08",
+      "close": 527.2999877929688,
+      "volume": 1608700.0
+    },
+    {
+      "date": "2025-07-09",
+      "close": 528.1300048828125,
+      "volume": 1380900.0
+    },
+    {
+      "date": "2025-07-10",
+      "close": 526.0499877929688,
+      "volume": 1424600.0
+    },
+    {
+      "date": "2025-07-11",
+      "close": 512.0599975585938,
+      "volume": 2951300.0
+    },
+    {
+      "date": "2025-07-14",
+      "close": 516.4400024414062,
+      "volume": 2082700.0
+    },
+    {
+      "date": "2025-07-15",
+      "close": 512.22998046875,
+      "volume": 1674300.0
+    },
+    {
+      "date": "2025-07-16",
+      "close": 512.6400146484375,
+      "volume": 1863700.0
+    },
+    {
+      "date": "2025-07-17",
+      "close": 516.1599731445312,
+      "volume": 2003500.0
+    },
+    {
+      "date": "2025-07-18",
+      "close": 518.6199951171875,
+      "volume": 1904100.0
+    },
+    {
+      "date": "2025-07-21",
+      "close": 516.1199951171875,
+      "volume": 1639700.0
+    },
+    {
+      "date": "2025-07-22",
+      "close": 511.0,
+      "volume": 2416700.0
+    },
+    {
+      "date": "2025-07-23",
+      "close": 501.9500122070313,
+      "volume": 4659900.0
+    },
+    {
+      "date": "2025-07-24",
+      "close": 488.6099853515625,
+      "volume": 2608000.0
+    },
+    {
+      "date": "2025-07-25",
+      "close": 495.8599853515625,
+      "volume": 1871100.0
+    },
+    {
+      "date": "2025-07-28",
+      "close": 493.9500122070313,
+      "volume": 2473700.0
+    },
+    {
+      "date": "2025-07-29",
+      "close": 496.8699951171875,
+      "volume": 1831100.0
+    },
+    {
+      "date": "2025-07-30",
+      "close": 500.510009765625,
+      "volume": 1758800.0
+    },
+    {
+      "date": "2025-07-31",
+      "close": 481.0899963378906,
+      "volume": 2602200.0
+    },
+    {
+      "date": "2025-08-01",
+      "close": 483.1199951171875,
+      "volume": 2982900.0
+    },
+    {
+      "date": "2025-08-04",
+      "close": 483.3599853515625,
+      "volume": 2493500.0
+    },
+    {
+      "date": "2025-08-05",
+      "close": 477.0,
+      "volume": 2610100.0
+    },
+    {
+      "date": "2025-08-06",
+      "close": 474.05999755859375,
+      "volume": 2191700.0
+    },
+    {
+      "date": "2025-08-07",
+      "close": 469.80999755859375,
+      "volume": 1777900.0
+    },
+    {
+      "date": "2025-08-08",
+      "close": 470.0799865722656,
+      "volume": 1446200.0
+    },
+    {
+      "date": "2025-08-11",
+      "close": 471.8500061035156,
+      "volume": 1418200.0
+    },
+    {
+      "date": "2025-08-12",
+      "close": 478.19000244140625,
+      "volume": 1529500.0
+    },
+    {
+      "date": "2025-08-13",
+      "close": 482.3500061035156,
+      "volume": 1740200.0
+    },
+    {
+      "date": "2025-08-14",
+      "close": 477.0799865722656,
+      "volume": 1894900.0
+    },
+    {
+      "date": "2025-08-15",
+      "close": 480.260009765625,
+      "volume": 1436500.0
+    },
+    {
+      "date": "2025-08-18",
+      "close": 481.2799987792969,
+      "volume": 1640700.0
+    },
+    {
+      "date": "2025-08-19",
+      "close": 479.2000122070313,
+      "volume": 1884900.0
+    },
+    {
+      "date": "2025-08-20",
+      "close": 480.4500122070313,
+      "volume": 1409300.0
+    },
+    {
+      "date": "2025-08-21",
+      "close": 469.8800048828125,
+      "volume": 2465300.0
+    },
+    {
+      "date": "2025-08-22",
+      "close": 476.1600036621094,
+      "volume": 2023900.0
+    },
+    {
+      "date": "2025-08-25",
+      "close": 468.44000244140625,
+      "volume": 1662300.0
+    },
+    {
+      "date": "2025-08-26",
+      "close": 474.260009765625,
+      "volume": 2931100.0
+    },
+    {
+      "date": "2025-08-27",
+      "close": 471.1499938964844,
+      "volume": 1618700.0
+    },
+    {
+      "date": "2025-08-28",
+      "close": 473.8399963378906,
+      "volume": 1548900.0
+    },
+    {
+      "date": "2025-08-29",
+      "close": 473.2999877929687,
+      "volume": 1654200.0
+    },
+    {
+      "date": "2025-09-02",
+      "close": 469.0700073242187,
+      "volume": 2230400.0
+    },
+    {
+      "date": "2025-09-03",
+      "close": 441.1799926757813,
+      "volume": 5051700.0
+    },
+    {
+      "date": "2025-09-04",
+      "close": 454.5199890136719,
+      "volume": 3939600.0
+    },
+    {
+      "date": "2025-09-05",
+      "close": 466.8599853515625,
+      "volume": 2623800.0
+    },
+    {
+      "date": "2025-09-08",
+      "close": 470.0,
+      "volume": 1936500.0
+    },
+    {
+      "date": "2025-09-09",
+      "close": 467.5400085449219,
+      "volume": 1489400.0
+    },
+    {
+      "date": "2025-09-10",
+      "close": 449.9800109863281,
+      "volume": 2560300.0
+    },
+    {
+      "date": "2025-09-11",
+      "close": 455.8500061035156,
+      "volume": 2182300.0
+    },
+    {
+      "date": "2025-09-12",
+      "close": 449.6799926757813,
+      "volume": 2219100.0
+    },
+    {
+      "date": "2025-09-15",
+      "close": 433.989990234375,
+      "volume": 3474800.0
+    },
+    {
+      "date": "2025-09-16",
+      "close": 434.5,
+      "volume": 2940500.0
+    },
+    {
+      "date": "2025-09-17",
+      "close": 433.6600036621094,
+      "volume": 1638200.0
+    },
+    {
+      "date": "2025-09-18",
+      "close": 435.8299865722656,
+      "volume": 1980600.0
+    },
+    {
+      "date": "2025-09-19",
+      "close": 438.7200012207031,
+      "volume": 3780700.0
+    },
+    {
+      "date": "2025-09-22",
+      "close": 444.5499877929687,
+      "volume": 2653100.0
+    },
+    {
+      "date": "2025-09-23",
+      "close": 447.75,
+      "volume": 2241500.0
+    },
+    {
+      "date": "2025-09-24",
+      "close": 443.989990234375,
+      "volume": 2437200.0
+    },
+    {
+      "date": "2025-09-25",
+      "close": 438.1199951171875,
+      "volume": 3129000.0
+    },
+    {
+      "date": "2025-09-26",
+      "close": 441.1199951171875,
+      "volume": 1940500.0
+    },
+    {
+      "date": "2025-09-29",
+      "close": 439.2200012207031,
+      "volume": 3024400.0
+    },
+    {
+      "date": "2025-09-30",
+      "close": 447.2300109863281,
+      "volume": 2134200.0
+    },
+    {
+      "date": "2025-10-01",
+      "close": 438.0400085449219,
+      "volume": 2502300.0
+    },
+    {
+      "date": "2025-10-02",
+      "close": 443.010009765625,
+      "volume": 1910800.0
+    },
+    {
+      "date": "2025-10-03",
+      "close": 452.3500061035156,
+      "volume": 2197700.0
+    },
+    {
+      "date": "2025-10-06",
+      "close": 449.69000244140625,
+      "volume": 2478900.0
+    },
+    {
+      "date": "2025-10-07",
+      "close": 440.94000244140625,
+      "volume": 1917500.0
+    },
+    {
+      "date": "2025-10-08",
+      "close": 448.0899963378906,
+      "volume": 1767300.0
+    },
+    {
+      "date": "2025-10-09",
+      "close": 443.760009765625,
+      "volume": 1583800.0
+    },
+    {
+      "date": "2025-10-10",
+      "close": 429.5899963378906,
+      "volume": 2773400.0
+    },
+    {
+      "date": "2025-10-13",
+      "close": 435.7300109863281,
+      "volume": 1863200.0
+    },
+    {
+      "date": "2025-10-14",
+      "close": 436.3900146484375,
+      "volume": 2085700.0
+    },
+    {
+      "date": "2025-10-15",
+      "close": 435.6099853515625,
+      "volume": 1910700.0
+    },
+    {
+      "date": "2025-10-16",
+      "close": 434.6199951171875,
+      "volume": 1966400.0
+    },
+    {
+      "date": "2025-10-17",
+      "close": 446.1300048828125,
+      "volume": 2209200.0
+    },
+    {
+      "date": "2025-10-20",
+      "close": 458.4700012207031,
+      "volume": 3410000.0
+    },
+    {
+      "date": "2025-10-21",
+      "close": 462.739990234375,
+      "volume": 4779600.0
+    },
+    {
+      "date": "2025-10-22",
+      "close": 527.030029296875,
+      "volume": 8347500.0
+    },
+    {
+      "date": "2025-10-23",
+      "close": 551.2999877929688,
+      "volume": 4011300.0
+    },
+    {
+      "date": "2025-10-24",
+      "close": 546.510009765625,
+      "volume": 2692300.0
+    },
+    {
+      "date": "2025-10-27",
+      "close": 551.25,
+      "volume": 2135500.0
+    },
+    {
+      "date": "2025-10-28",
+      "close": 545.3900146484375,
+      "volume": 1586400.0
+    },
+    {
+      "date": "2025-10-29",
+      "close": 537.5900268554688,
+      "volume": 1721800.0
+    },
+    {
+      "date": "2025-10-30",
+      "close": 530.02001953125,
+      "volume": 1777000.0
+    },
+    {
+      "date": "2025-10-31",
+      "close": 534.280029296875,
+      "volume": 1757600.0
+    },
+    {
+      "date": "2025-11-03",
+      "close": 544.2100219726562,
+      "volume": 2075000.0
+    },
+    {
+      "date": "2025-11-04",
+      "close": 538.8200073242188,
+      "volume": 1780200.0
+    },
+    {
+      "date": "2025-11-05",
+      "close": 548.5499877929688,
+      "volume": 2863400.0
+    },
+    {
+      "date": "2025-11-06",
+      "close": 547.780029296875,
+      "volume": 2052500.0
+    },
+    {
+      "date": "2025-11-07",
+      "close": 560.0,
+      "volume": 2712200.0
+    },
+    {
+      "date": "2025-11-10",
+      "close": 576.2000122070312,
+      "volume": 3070200.0
+    },
+    {
+      "date": "2025-11-11",
+      "close": 572.1699829101562,
+      "volume": 1609700.0
+    },
+    {
+      "date": "2025-11-12",
+      "close": 572.4500122070312,
+      "volume": 1633200.0
+    },
+    {
+      "date": "2025-11-13",
+      "close": 565.510009765625,
+      "volume": 2116700.0
+    },
+    {
+      "date": "2025-11-14",
+      "close": 549.510009765625,
+      "volume": 1879900.0
+    },
+    {
+      "date": "2025-11-17",
+      "close": 546.7100219726562,
+      "volume": 1470200.0
+    },
+    {
+      "date": "2025-11-18",
+      "close": 546.77001953125,
+      "volume": 2297400.0
+    },
+    {
+      "date": "2025-11-19",
+      "close": 564.6400146484375,
+      "volume": 2440600.0
+    },
+    {
+      "date": "2025-11-20",
+      "close": 552.22998046875,
+      "volume": 1909000.0
+    },
+    {
+      "date": "2025-11-21",
+      "close": 561.6099853515625,
+      "volume": 2622300.0
+    },
+    {
+      "date": "2025-11-24",
+      "close": 568.47998046875,
+      "volume": 2399900.0
+    },
+    {
+      "date": "2025-11-25",
+      "close": 578.8699951171875,
+      "volume": 1684800.0
+    },
+    {
+      "date": "2025-11-26",
+      "close": 574.22998046875,
+      "volume": 1158900.0
+    },
+    {
+      "date": "2025-11-28",
+      "close": 573.47998046875,
+      "volume": 1003900.0
+    },
+    {
+      "date": "2025-12-01",
+      "close": 567.3699951171875,
+      "volume": 1206100.0
+    },
+    {
+      "date": "2025-12-02",
+      "close": 567.719970703125,
+      "volume": 1748800.0
+    },
+    {
+      "date": "2025-12-03",
+      "close": 569.7100219726562,
+      "volume": 1090600.0
+    },
+    {
+      "date": "2025-12-04",
+      "close": 568.6300048828125,
+      "volume": 1147800.0
+    },
+    {
+      "date": "2025-12-05",
+      "close": 575.3400268554688,
+      "volume": 1096600.0
+    },
+    {
+      "date": "2025-12-08",
+      "close": 566.8900146484375,
+      "volume": 1298500.0
+    },
+    {
+      "date": "2025-12-09",
+      "close": 558.1300048828125,
+      "volume": 1230000.0
+    },
+    {
+      "date": "2025-12-10",
+      "close": 555.9199829101562,
+      "volume": 1562900.0
+    },
+    {
+      "date": "2025-12-11",
+      "close": 547.3599853515625,
+      "volume": 1573800.0
+    },
+    {
+      "date": "2025-12-12",
+      "close": 542.3200073242188,
+      "volume": 2116200.0
+    },
+    {
+      "date": "2025-12-15",
+      "close": 559.52001953125,
+      "volume": 2928100.0
+    },
+    {
+      "date": "2025-12-16",
+      "close": 554.5800170898438,
+      "volume": 1959400.0
+    },
+    {
+      "date": "2025-12-17",
+      "close": 556.8599853515625,
+      "volume": 1705500.0
+    },
+    {
+      "date": "2025-12-18",
+      "close": 561.8900146484375,
+      "volume": 1545600.0
+    },
+    {
+      "date": "2025-12-19",
+      "close": 572.469970703125,
+      "volume": 4065300.0
+    },
+    {
+      "date": "2025-12-22",
+      "close": 579.8300170898438,
+      "volume": 1453000.0
+    },
+    {
+      "date": "2025-12-23",
+      "close": 577.3400268554688,
+      "volume": 1282800.0
+    },
+    {
+      "date": "2025-12-24",
+      "close": 577.1500244140625,
+      "volume": 355200.0
+    },
+    {
+      "date": "2025-12-26",
+      "close": 577.8099975585938,
+      "volume": 494800.0
+    },
+    {
+      "date": "2025-12-29",
+      "close": 575.4000244140625,
+      "volume": 695100.0
+    },
+    {
+      "date": "2025-12-30",
+      "close": 572.6300048828125,
+      "volume": 724900.0
+    },
+    {
+      "date": "2025-12-31",
+      "close": 566.3599853515625,
+      "volume": 992500.0
+    },
+    {
+      "date": "2026-01-02",
+      "close": 561.97998046875,
+      "volume": 1298000.0
+    },
+    {
+      "date": "2026-01-05",
+      "close": 566.3800048828125,
+      "volume": 1395000.0
+    },
+    {
+      "date": "2026-01-06",
+      "close": 592.8499755859375,
+      "volume": 2629500.0
+    },
+    {
+      "date": "2026-01-07",
+      "close": 592.27001953125,
+      "volume": 1863500.0
+    },
+    {
+      "date": "2026-01-08",
+      "close": 585.0800170898438,
+      "volume": 1491200.0
+    },
+    {
+      "date": "2026-01-09",
+      "close": 586.239990234375,
+      "volume": 1490700.0
+    },
+    {
+      "date": "2026-01-12",
+      "close": 572.75,
+      "volume": 1826000.0
+    },
+    {
+      "date": "2026-01-13",
+      "close": 561.8200073242188,
+      "volume": 1515800.0
+    },
+    {
+      "date": "2026-01-14",
+      "close": 546.760009765625,
+      "volume": 3602100.0
+    },
+    {
+      "date": "2026-01-15",
+      "close": 541.3400268554688,
+      "volume": 1909000.0
+    },
+    {
+      "date": "2026-01-16",
+      "close": 535.0,
+      "volume": 3015500.0
+    },
+    {
+      "date": "2026-01-20",
+      "close": 527.4400024414062,
+      "volume": 2149700.0
+    },
+    {
+      "date": "2026-01-21",
+      "close": 523.6900024414062,
+      "volume": 2033900.0
+    },
+    {
+      "date": "2026-01-22",
+      "close": 525.8099975585938,
+      "volume": 2911800.0
+    },
+    {
+      "date": "2026-01-23",
+      "close": 523.989990234375,
+      "volume": 2799100.0
+    },
+    {
+      "date": "2026-01-26",
+      "close": 528.8099975585938,
+      "volume": 2565100.0
+    },
+    {
+      "date": "2026-01-27",
+      "close": 525.0399780273438,
+      "volume": 1503500.0
+    },
+    {
+      "date": "2026-01-28",
+      "close": 522.0399780273438,
+      "volume": 1851300.0
+    },
+    {
+      "date": "2026-01-29",
+      "close": 507.5499877929687,
+      "volume": 2167100.0
+    },
+    {
+      "date": "2026-01-30",
+      "close": 504.2200012207031,
+      "volume": 1698300.0
+    },
+    {
+      "date": "2026-02-02",
+      "close": 496.7300109863281,
+      "volume": 2133900.0
+    },
+    {
+      "date": "2026-02-03",
+      "close": 478.8800048828125,
+      "volume": 3796500.0
+    },
+    {
+      "date": "2026-02-04",
+      "close": 478.489990234375,
+      "volume": 3405300.0
+    },
+    {
+      "date": "2026-02-05",
+      "close": 476.3200073242187,
+      "volume": 2912000.0
+    },
+    {
+      "date": "2026-02-06",
+      "close": 488.1499938964844,
+      "volume": 2521100.0
+    },
+    {
+      "date": "2026-02-09",
+      "close": 492.8399963378906,
+      "volume": 2207800.0
+    },
+    {
+      "date": "2026-02-10",
+      "close": 495.1499938964844,
+      "volume": 1813100.0
+    },
+    {
+      "date": "2026-02-11",
+      "close": 496.1199951171875,
+      "volume": 1933700.0
+    },
+    {
+      "date": "2026-02-12",
+      "close": 478.6000061035156,
+      "volume": 2966500.0
+    },
+    {
+      "date": "2026-02-13",
+      "close": 485.8399963378906,
+      "volume": 1984300.0
+    },
+    {
+      "date": "2026-02-17",
+      "close": 493.3500061035156,
+      "volume": 1583200.0
+    },
+    {
+      "date": "2026-02-18",
+      "close": 500.760009765625,
+      "volume": 1464300.0
+    },
+    {
+      "date": "2026-02-19",
+      "close": 499.5299987792969,
+      "volume": 1434200.0
+    },
+    {
+      "date": "2026-02-20",
+      "close": 504.0499877929687,
+      "volume": 1553600.0
+    },
+    {
+      "date": "2026-02-23",
+      "close": 492.1000061035156,
+      "volume": 1764900.0
+    },
+    {
+      "date": "2026-02-24",
+      "close": 494.0199890136719,
+      "volume": 1404500.0
+    },
+    {
+      "date": "2026-02-25",
+      "close": 506.1700134277344,
+      "volume": 2062000.0
+    },
+    {
+      "date": "2026-02-26",
+      "close": 506.8800048828125,
+      "volume": 1570300.0
+    },
+    {
+      "date": "2026-02-27",
+      "close": 503.510009765625,
+      "volume": 1634200.0
+    },
+    {
+      "date": "2026-03-02",
+      "close": 496.25,
+      "volume": 1743200.0
+    },
+    {
+      "date": "2026-03-03",
+      "close": 497.4200134277344,
+      "volume": 1841100.0
+    },
+    {
+      "date": "2026-03-04",
+      "close": 501.1799926757813,
+      "volume": 1501000.0
+    },
+    {
+      "date": "2026-03-05",
+      "close": 496.7000122070313,
+      "volume": 1541200.0
+    },
+    {
+      "date": "2026-03-06",
+      "close": 490.1600036621094,
+      "volume": 2088000.0
+    },
+    {
+      "date": "2026-03-09",
+      "close": 493.55999755859375,
+      "volume": 1651600.0
+    },
+    {
+      "date": "2026-03-10",
+      "close": 485.8500061035156,
+      "volume": 1547200.0
+    },
+    {
+      "date": "2026-03-11",
+      "close": 492.8699951171875,
+      "volume": 1537900.0
+    },
+    {
+      "date": "2026-03-12",
+      "close": 479.2699890136719,
+      "volume": 1805200.0
+    },
+    {
+      "date": "2026-03-13",
+      "close": 472.1600036621094,
+      "volume": 2489800.0
+    },
+    {
+      "date": "2026-03-16",
+      "close": 483.4599914550781,
+      "volume": 1297400.0
+    },
+    {
+      "date": "2026-03-17",
+      "close": 482.760009765625,
+      "volume": 1057200.0
+    },
+    {
+      "date": "2026-03-18",
+      "close": 477.7300109863281,
+      "volume": 1483400.0
+    },
+    {
+      "date": "2026-03-19",
+      "close": 479.9299926757813,
+      "volume": 1258500.0
+    },
+    {
+      "date": "2026-03-20",
+      "close": 477.9700012207031,
+      "volume": 2227600.0
+    },
+    {
+      "date": "2026-03-23",
+      "close": 478.0400085449219,
+      "volume": 1501700.0
+    },
+    {
+      "date": "2026-03-24",
+      "close": 471.9100036621094,
+      "volume": 1332700.0
+    },
+    {
+      "date": "2026-03-25",
+      "close": 469.9800109863281,
+      "volume": 1428200.0
+    },
+    {
+      "date": "2026-03-26",
+      "close": 468.5499877929687,
+      "volume": 1605500.0
+    },
+    {
+      "date": "2026-03-27",
+      "close": 452.6600036621094,
+      "volume": 2107200.0
+    },
+    {
+      "date": "2026-03-30",
+      "close": 452.7799987792969,
+      "volume": 2195600.0
+    },
+    {
+      "date": "2026-03-31",
+      "close": 460.989990234375,
+      "volume": 1960300.0
+    },
+    {
+      "date": "2026-04-01",
+      "close": 464.4500122070313,
+      "volume": 1427200.0
+    },
+    {
+      "date": "2026-04-02",
+      "close": 452.0700073242187,
+      "volume": 1647800.0
+    },
+    {
+      "date": "2026-04-06",
+      "close": 452.5799865722656,
+      "volume": 1152300.0
+    },
+    {
+      "date": "2026-04-07",
+      "close": 452.9500122070313,
+      "volume": 1796800.0
+    },
+    {
+      "date": "2026-04-08",
+      "close": 462.2799987792969,
+      "volume": 2253900.0
+    },
+    {
+      "date": "2026-04-09",
+      "close": 454.94000244140625,
+      "volume": 1551500.0
+    },
+    {
+      "date": "2026-04-10",
+      "close": 450.6199951171875,
+      "volume": 1466300.0
+    },
+    {
+      "date": "2026-04-13",
+      "close": 458.9599914550781,
+      "volume": 1691000.0
+    },
+    {
+      "date": "2026-04-14",
+      "close": 467.2200012207031,
+      "volume": 1973600.0
+    },
+    {
+      "date": "2026-04-15",
+      "close": 468.3599853515625,
+      "volume": 1935100.0
+    },
+    {
+      "date": "2026-04-16",
+      "close": 458.0799865722656,
+      "volume": 2209600.0
+    },
+    {
+      "date": "2026-04-17",
+      "close": 469.2099914550781,
+      "volume": 2720700.0
+    },
+    {
+      "date": "2026-04-20",
+      "close": 465.6000061035156,
+      "volume": 2442700.0
+    },
+    {
+      "date": "2026-04-21",
+      "close": 451.2900085449219,
+      "volume": 3379600.0
+    },
+    {
+      "date": "2026-04-22",
+      "close": 483.6199951171875,
+      "volume": 4437800.0
+    },
+    {
+      "date": "2026-04-23",
+      "close": 478.8200073242187,
+      "volume": 2889700.0
+    },
+    {
+      "date": "2026-04-24",
+      "close": 482.2200012207031,
+      "volume": 2655200.0
+    },
+    {
+      "date": "2026-04-27",
+      "close": 470.989990234375,
+      "volume": 2028000.0
+    },
+    {
+      "date": "2026-04-28",
+      "close": 466.6400146484375,
+      "volume": 1836400.0
+    },
+    {
+      "date": "2026-04-29",
+      "close": 453.8299865722656,
+      "volume": 2059300.0
+    },
+    {
+      "date": "2026-04-30",
+      "close": 457.6099853515625,
+      "volume": 2000300.0
+    },
+    {
+      "date": "2026-05-01",
+      "close": 457.7799987792969,
+      "volume": 1461900.0
+    },
+    {
+      "date": "2026-05-04",
+      "close": 452.3500061035156,
+      "volume": 1797600.0
+    },
+    {
+      "date": "2026-05-05",
+      "close": 451.3800048828125,
+      "volume": 2952300.0
+    },
+    {
+      "date": "2026-05-06",
+      "close": 451.7300109863281,
+      "volume": 1982700.0
+    },
+    {
+      "date": "2026-05-07",
+      "close": 453.489990234375,
+      "volume": 1563000.0
+    },
+    {
+      "date": "2026-05-08",
+      "close": 450.05999755859375,
+      "volume": 2402300.0
+    },
+    {
+      "date": "2026-05-11",
+      "close": 420.05999755859375,
+      "volume": 4032900.0
+    },
+    {
+      "date": "2026-05-12",
+      "close": 431.8699951171875,
+      "volume": 2351600.0
+    },
+    {
+      "date": "2026-05-13",
+      "close": 432.2699890136719,
+      "volume": 1996700.0
+    },
+    {
+      "date": "2026-05-14",
+      "close": 428.05999755859375,
+      "volume": 2171900.0
+    },
+    {
+      "date": "2026-05-15",
+      "close": 421.1199951171875,
+      "volume": 2375100.0
+    },
+    {
+      "date": "2026-05-18",
+      "close": 439.9200134277344,
+      "volume": 2119600.0
+    },
+    {
+      "date": "2026-05-19",
+      "close": 441.5799865722656,
+      "volume": 2799100.0
+    },
+    {
+      "date": "2026-05-20",
+      "close": 449.0299987792969,
+      "volume": 1737900.0
+    },
+    {
+      "date": "2026-05-21",
+      "close": 439.7999877929687,
+      "volume": 2088400.0
+    },
+    {
+      "date": "2026-05-22",
+      "close": 438.1000061035156,
+      "volume": 2009100.0
+    }
+  ],
+  "income_statement": [
+    {
+      "period": "2025-12-31",
+      "metric": "Tax Effect Of Unusual Items",
+      "value": 0.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Tax Effect Of Unusual Items",
+      "value": 0.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Tax Effect Of Unusual Items",
+      "value": 0.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Tax Effect Of Unusual Items",
+      "value": 0.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Tax Rate For Calcs",
+      "value": 0.131,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Tax Rate For Calcs",
+      "value": 0.126,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Tax Rate For Calcs",
+      "value": 0.072,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Tax Rate For Calcs",
+      "value": 0.163,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Normalized EBITDA",
+      "value": 3622600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Normalized EBITDA",
+      "value": 2848600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Normalized EBITDA",
+      "value": 2221600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Normalized EBITDA",
+      "value": 1942900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Net Income From Continuing Operation Net Minority Interest",
+      "value": 2856000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Net Income From Continuing Operation Net Minority Interest",
+      "value": 2322600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Net Income From Continuing Operation Net Minority Interest",
+      "value": 1798000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Net Income From Continuing Operation Net Minority Interest",
+      "value": 1322300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Reconciled Depreciation",
+      "value": 677100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Reconciled Depreciation",
+      "value": 499700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Reconciled Depreciation",
+      "value": 454800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Reconciled Depreciation",
+      "value": 365800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Reconciled Cost Of Revenue",
+      "value": 3422400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Reconciled Cost Of Revenue",
+      "value": 2717900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Reconciled Cost Of Revenue",
+      "value": 2394600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Reconciled Cost Of Revenue",
+      "value": 2026200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "EBITDA",
+      "value": 3622600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "EBITDA",
+      "value": 2848600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "EBITDA",
+      "value": 2221600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "EBITDA",
+      "value": 1942900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "EBIT",
+      "value": 2945500000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "EBIT",
+      "value": 2348900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "EBIT",
+      "value": 1766800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "EBIT",
+      "value": 1577100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Net Interest Income",
+      "value": 365900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Net Interest Income",
+      "value": 324900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Net Interest Income",
+      "value": 192100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Net Interest Income",
+      "value": 29700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Interest Income",
+      "value": 365900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Interest Income",
+      "value": 324900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Interest Income",
+      "value": 192100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Interest Income",
+      "value": 29700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Normalized Income",
+      "value": 2856000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Normalized Income",
+      "value": 2322600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Normalized Income",
+      "value": 1798000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Normalized Income",
+      "value": 1322300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Net Income From Continuing And Discontinued Operation",
+      "value": 2856000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Net Income From Continuing And Discontinued Operation",
+      "value": 2322600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Net Income From Continuing And Discontinued Operation",
+      "value": 1798000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Net Income From Continuing And Discontinued Operation",
+      "value": 1322300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Total Expenses",
+      "value": 7119200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Total Expenses",
+      "value": 6003200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Total Expenses",
+      "value": 5357300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Total Expenses",
+      "value": 4645100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Total Operating Income As Reported",
+      "value": 2945500000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Total Operating Income As Reported",
+      "value": 2348900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Total Operating Income As Reported",
+      "value": 1766800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Total Operating Income As Reported",
+      "value": 1577100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Diluted Average Shares",
+      "value": 362700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Diluted Average Shares",
+      "value": 362000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Diluted Average Shares",
+      "value": 357400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Diluted Average Shares",
+      "value": 362000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Basic Average Shares",
+      "value": 356900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Basic Average Shares",
+      "value": 355200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Basic Average Shares",
+      "value": 351200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Basic Average Shares",
+      "value": 355700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Diluted EPS",
+      "value": 7.87,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Diluted EPS",
+      "value": 6.42,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Diluted EPS",
+      "value": 5.03,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Diluted EPS",
+      "value": 3.65,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Basic EPS",
+      "value": 8.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Basic EPS",
+      "value": 6.54,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Basic EPS",
+      "value": 5.12,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Basic EPS",
+      "value": 3.72,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Diluted NI Availto Com Stockholders",
+      "value": 2856000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Diluted NI Availto Com Stockholders",
+      "value": 2322600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Diluted NI Availto Com Stockholders",
+      "value": 1798000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Diluted NI Availto Com Stockholders",
+      "value": 1322300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Net Income Common Stockholders",
+      "value": 2856000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Net Income Common Stockholders",
+      "value": 2322600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Net Income Common Stockholders",
+      "value": 1798000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Net Income Common Stockholders",
+      "value": 1322300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Net Income",
+      "value": 2856000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Net Income",
+      "value": 2322600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Net Income",
+      "value": 1798000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Net Income",
+      "value": 1322300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Minority Interests",
+      "value": -20600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Minority Interests",
+      "value": -14900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Minority Interests",
+      "value": -19300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Minority Interests",
+      "value": -22100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Net Income Including Noncontrolling Interests",
+      "value": 2876600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Net Income Including Noncontrolling Interests",
+      "value": 2337500000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Net Income Including Noncontrolling Interests",
+      "value": 1817300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Net Income Including Noncontrolling Interests",
+      "value": 1344400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Net Income Continuous Operations",
+      "value": 2876600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Net Income Continuous Operations",
+      "value": 2337500000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Net Income Continuous Operations",
+      "value": 1817300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Net Income Continuous Operations",
+      "value": 1344400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Tax Provision",
+      "value": 434800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Tax Provision",
+      "value": 336300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Tax Provision",
+      "value": 141600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Tax Provision",
+      "value": 262400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Pretax Income",
+      "value": 3311400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Pretax Income",
+      "value": 2673800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Pretax Income",
+      "value": 1958900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Pretax Income",
+      "value": 1606800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Net Non Operating Interest Income Expense",
+      "value": 365900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Net Non Operating Interest Income Expense",
+      "value": 324900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Net Non Operating Interest Income Expense",
+      "value": 192100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Net Non Operating Interest Income Expense",
+      "value": 29700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Interest Income Non Operating",
+      "value": 365900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Interest Income Non Operating",
+      "value": 324900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Interest Income Non Operating",
+      "value": 192100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Interest Income Non Operating",
+      "value": 29700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Operating Income",
+      "value": 2945500000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Operating Income",
+      "value": 2348900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Operating Income",
+      "value": 1766800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Operating Income",
+      "value": 1577100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Operating Expense",
+      "value": 3696800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Operating Expense",
+      "value": 3285300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Operating Expense",
+      "value": 2962700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Operating Expense",
+      "value": 2618900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Research And Development",
+      "value": 1311800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Research And Development",
+      "value": 1145300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Research And Development",
+      "value": 998800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Research And Development",
+      "value": 879000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Selling General And Administration",
+      "value": 2385000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Selling General And Administration",
+      "value": 2140000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Selling General And Administration",
+      "value": 1963900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Selling General And Administration",
+      "value": 1739900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Gross Profit",
+      "value": 6642300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Gross Profit",
+      "value": 5634200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Gross Profit",
+      "value": 4729500000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Gross Profit",
+      "value": 4196000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Cost Of Revenue",
+      "value": 3422400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Cost Of Revenue",
+      "value": 2717900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Cost Of Revenue",
+      "value": 2394600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Cost Of Revenue",
+      "value": 2026200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Total Revenue",
+      "value": 10064700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Total Revenue",
+      "value": 8352100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Total Revenue",
+      "value": 7124100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Total Revenue",
+      "value": 6222200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Operating Revenue",
+      "value": 10064700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Operating Revenue",
+      "value": 8352100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Operating Revenue",
+      "value": 7124100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Operating Revenue",
+      "value": 6222200000.0,
+      "unit": "USD"
+    }
+  ],
+  "balance_sheet": [
+    {
+      "period": "2025-12-31",
+      "metric": "Ordinary Shares Number",
+      "value": 355100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Ordinary Shares Number",
+      "value": 356600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Ordinary Shares Number",
+      "value": 352299592.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Ordinary Shares Number",
+      "value": 350000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Ordinary Shares Number",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Share Issued",
+      "value": 355100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Share Issued",
+      "value": 356600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Share Issued",
+      "value": 352299592.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Share Issued",
+      "value": 350000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Share Issued",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Total Debt",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Total Debt",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Total Debt",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Total Debt",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Total Debt",
+      "value": 87000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Tangible Book Value",
+      "value": 17442600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Tangible Book Value",
+      "value": 16063200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Tangible Book Value",
+      "value": 12919800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Tangible Book Value",
+      "value": 10643600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Tangible Book Value",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Invested Capital",
+      "value": 17824000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Invested Capital",
+      "value": 16433700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Invested Capital",
+      "value": 13307600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Invested Capital",
+      "value": 11041900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Invested Capital",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Working Capital",
+      "value": 7773300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Working Capital",
+      "value": 5365700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Working Capital",
+      "value": 6229300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Working Capital",
+      "value": 4830900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Working Capital",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Net Tangible Assets",
+      "value": 17442600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Net Tangible Assets",
+      "value": 16063200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Net Tangible Assets",
+      "value": 12919800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Net Tangible Assets",
+      "value": 10643600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Net Tangible Assets",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Capital Lease Obligations",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Capital Lease Obligations",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Capital Lease Obligations",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Capital Lease Obligations",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Capital Lease Obligations",
+      "value": 87000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Common Stock Equity",
+      "value": 17824000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Common Stock Equity",
+      "value": 16433700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Common Stock Equity",
+      "value": 13307600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Common Stock Equity",
+      "value": 11041900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Common Stock Equity",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Total Capitalization",
+      "value": 17824000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Total Capitalization",
+      "value": 16433700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Total Capitalization",
+      "value": 13307600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Total Capitalization",
+      "value": 11041900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Total Capitalization",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Total Equity Gross Minority Interest",
+      "value": 17941700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Total Equity Gross Minority Interest",
+      "value": 16529600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Total Equity Gross Minority Interest",
+      "value": 13397300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Total Equity Gross Minority Interest",
+      "value": 11112600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Total Equity Gross Minority Interest",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Minority Interest",
+      "value": 117700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Minority Interest",
+      "value": 95900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Minority Interest",
+      "value": 89700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Minority Interest",
+      "value": 70700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Minority Interest",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Stockholders Equity",
+      "value": 17824000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Stockholders Equity",
+      "value": 16433700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Stockholders Equity",
+      "value": 13307600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Stockholders Equity",
+      "value": 11041900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Stockholders Equity",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Gains Losses Not Affecting Retained Earnings",
+      "value": 43300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Gains Losses Not Affecting Retained Earnings",
+      "value": -51300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Gains Losses Not Affecting Retained Earnings",
+      "value": -12200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Gains Losses Not Affecting Retained Earnings",
+      "value": -162500000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Gains Losses Not Affecting Retained Earnings",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Other Equity Adjustments",
+      "value": 43300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Other Equity Adjustments",
+      "value": -51300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Other Equity Adjustments",
+      "value": -12200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Other Equity Adjustments",
+      "value": -162500000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Other Equity Adjustments",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Retained Earnings",
+      "value": 7011800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Retained Earnings",
+      "value": 6803300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Retained Earnings",
+      "value": 4743000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Retained Earnings",
+      "value": 3500100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Retained Earnings",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Additional Paid In Capital",
+      "value": 10768500000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Additional Paid In Capital",
+      "value": 9681300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Additional Paid In Capital",
+      "value": 8576400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Additional Paid In Capital",
+      "value": 7703900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Additional Paid In Capital",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Capital Stock",
+      "value": 400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Capital Stock",
+      "value": 400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Capital Stock",
+      "value": 400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Capital Stock",
+      "value": 400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Capital Stock",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Common Stock",
+      "value": 400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Common Stock",
+      "value": 400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Common Stock",
+      "value": 400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Common Stock",
+      "value": 400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Common Stock",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Preferred Stock",
+      "value": 0.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Preferred Stock",
+      "value": 0.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Preferred Stock",
+      "value": 0.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Preferred Stock",
+      "value": 0.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Preferred Stock",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Total Liabilities Net Minority Interest",
+      "value": 2517000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Total Liabilities Net Minority Interest",
+      "value": 2213600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Total Liabilities Net Minority Interest",
+      "value": 2044200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Total Liabilities Net Minority Interest",
+      "value": 1861400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Total Liabilities Net Minority Interest",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Total Non Current Liabilities Net Minority Interest",
+      "value": 510800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Total Non Current Liabilities Net Minority Interest",
+      "value": 468300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Total Non Current Liabilities Net Minority Interest",
+      "value": 385500000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Total Non Current Liabilities Net Minority Interest",
+      "value": 439300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Total Non Current Liabilities Net Minority Interest",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Other Non Current Liabilities",
+      "value": 225800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Other Non Current Liabilities",
+      "value": 175200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Other Non Current Liabilities",
+      "value": 106100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Other Non Current Liabilities",
+      "value": 110300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Other Non Current Liabilities",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Tradeand Other Payables Non Current",
+      "value": 193600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Tradeand Other Payables Non Current",
+      "value": 239000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Tradeand Other Payables Non Current",
+      "value": 233800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Tradeand Other Payables Non Current",
+      "value": 288000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Tradeand Other Payables Non Current",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Non Current Deferred Liabilities",
+      "value": 91400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Non Current Deferred Liabilities",
+      "value": 54100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Non Current Deferred Liabilities",
+      "value": 45600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Non Current Deferred Liabilities",
+      "value": 41000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Non Current Deferred Liabilities",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Non Current Deferred Revenue",
+      "value": 91400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Non Current Deferred Revenue",
+      "value": 54100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Non Current Deferred Revenue",
+      "value": 45600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Non Current Deferred Revenue",
+      "value": 41000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Non Current Deferred Revenue",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Long Term Debt And Capital Lease Obligation",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Long Term Debt And Capital Lease Obligation",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Long Term Debt And Capital Lease Obligation",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Long Term Debt And Capital Lease Obligation",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Long Term Debt And Capital Lease Obligation",
+      "value": 87000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Long Term Capital Lease Obligation",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Long Term Capital Lease Obligation",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Long Term Capital Lease Obligation",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Long Term Capital Lease Obligation",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Long Term Capital Lease Obligation",
+      "value": 87000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Current Liabilities",
+      "value": 2006200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Current Liabilities",
+      "value": 1745300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Current Liabilities",
+      "value": 1658700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Current Liabilities",
+      "value": 1422100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Current Liabilities",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Current Deferred Liabilities",
+      "value": 506700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Current Deferred Liabilities",
+      "value": 468800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Current Deferred Liabilities",
+      "value": 446100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Current Deferred Liabilities",
+      "value": 397300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Current Deferred Liabilities",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Current Deferred Revenue",
+      "value": 506700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Current Deferred Revenue",
+      "value": 468800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Current Deferred Revenue",
+      "value": 446100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Current Deferred Revenue",
+      "value": 397300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Current Deferred Revenue",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Pensionand Other Post Retirement Benefit Plans Current",
+      "value": 648400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Pensionand Other Post Retirement Benefit Plans Current",
+      "value": 535600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Pensionand Other Post Retirement Benefit Plans Current",
+      "value": 436400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Pensionand Other Post Retirement Benefit Plans Current",
+      "value": 401600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Pensionand Other Post Retirement Benefit Plans Current",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Payables And Accrued Expenses",
+      "value": 851100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Payables And Accrued Expenses",
+      "value": 740900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Payables And Accrued Expenses",
+      "value": 776200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Payables And Accrued Expenses",
+      "value": 623200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Payables And Accrued Expenses",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Current Accrued Expenses",
+      "value": 470600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Current Accrued Expenses",
+      "value": 393100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Current Accrued Expenses",
+      "value": 476100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Current Accrued Expenses",
+      "value": 380100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Current Accrued Expenses",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Payables",
+      "value": 380500000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Payables",
+      "value": 347800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Payables",
+      "value": 300100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Payables",
+      "value": 243100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Payables",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Total Tax Payable",
+      "value": 125400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Total Tax Payable",
+      "value": 154400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Total Tax Payable",
+      "value": 111400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Total Tax Payable",
+      "value": 96100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Total Tax Payable",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Accounts Payable",
+      "value": 255100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Accounts Payable",
+      "value": 193400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Accounts Payable",
+      "value": 188700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Accounts Payable",
+      "value": 147000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Accounts Payable",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Total Assets",
+      "value": 20458700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Total Assets",
+      "value": 18743200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Total Assets",
+      "value": 15441500000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Total Assets",
+      "value": 12974000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Total Assets",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Total Non Current Assets",
+      "value": 10679200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Total Non Current Assets",
+      "value": 11632200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Total Non Current Assets",
+      "value": 7553500000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Total Non Current Assets",
+      "value": 6721000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Total Non Current Assets",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Other Non Current Assets",
+      "value": 837600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Other Non Current Assets",
+      "value": 750900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Other Non Current Assets",
+      "value": 597600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Other Non Current Assets",
+      "value": 660300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Other Non Current Assets",
+      "value": null,
+      "unit": "USD"
+    }
+  ],
+  "cash_flow": [
+    {
+      "period": "2025-12-31",
+      "metric": "Free Cash Flow",
+      "value": 2490700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Free Cash Flow",
+      "value": 1303800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Free Cash Flow",
+      "value": 749600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Free Cash Flow",
+      "value": 958400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Free Cash Flow",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Repurchase Of Capital Stock",
+      "value": -2295300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Repurchase Of Capital Stock",
+      "value": 0.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Repurchase Of Capital Stock",
+      "value": -416300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Repurchase Of Capital Stock",
+      "value": -2607400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Repurchase Of Capital Stock",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Capital Expenditure",
+      "value": -539800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Capital Expenditure",
+      "value": -1111200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Capital Expenditure",
+      "value": -1064200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Capital Expenditure",
+      "value": -532400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Capital Expenditure",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Income Tax Paid Supplemental Data",
+      "value": 537900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Income Tax Paid Supplemental Data",
+      "value": 466500000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Income Tax Paid Supplemental Data",
+      "value": 447800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Income Tax Paid Supplemental Data",
+      "value": 444200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Income Tax Paid Supplemental Data",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "End Cash Position",
+      "value": 3407400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "End Cash Position",
+      "value": 2062400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "End Cash Position",
+      "value": 2770100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "End Cash Position",
+      "value": 1600700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "End Cash Position",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Beginning Cash Position",
+      "value": 2062400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Beginning Cash Position",
+      "value": 2770100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Beginning Cash Position",
+      "value": 1600700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Beginning Cash Position",
+      "value": 1306000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Beginning Cash Position",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Effect Of Exchange Rate Changes",
+      "value": 12800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Effect Of Exchange Rate Changes",
+      "value": -800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Effect Of Exchange Rate Changes",
+      "value": 3300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Effect Of Exchange Rate Changes",
+      "value": 5400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Effect Of Exchange Rate Changes",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Changes In Cash",
+      "value": 1332200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Changes In Cash",
+      "value": -706900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Changes In Cash",
+      "value": 1166100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Changes In Cash",
+      "value": 289300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Changes In Cash",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Financing Cash Flow",
+      "value": -2364100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Financing Cash Flow",
+      "value": 150900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Financing Cash Flow",
+      "value": -287600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Financing Cash Flow",
+      "value": -2572300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Financing Cash Flow",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Cash Flow From Continuing Financing Activities",
+      "value": -2364100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Cash Flow From Continuing Financing Activities",
+      "value": 150900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Cash Flow From Continuing Financing Activities",
+      "value": -287600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Cash Flow From Continuing Financing Activities",
+      "value": -2572300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Cash Flow From Continuing Financing Activities",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Net Other Financing Charges",
+      "value": -419100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Net Other Financing Charges",
+      "value": -278500000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Net Other Financing Charges",
+      "value": -167600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Net Other Financing Charges",
+      "value": -198700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Net Other Financing Charges",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Proceeds From Stock Option Exercised",
+      "value": 350300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Proceeds From Stock Option Exercised",
+      "value": 429400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Proceeds From Stock Option Exercised",
+      "value": 296300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Proceeds From Stock Option Exercised",
+      "value": 233800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Proceeds From Stock Option Exercised",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Net Common Stock Issuance",
+      "value": -2295300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Net Common Stock Issuance",
+      "value": 0.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Net Common Stock Issuance",
+      "value": -416300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Net Common Stock Issuance",
+      "value": -2607400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Net Common Stock Issuance",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Common Stock Payments",
+      "value": -2295300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Common Stock Payments",
+      "value": 0.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Common Stock Payments",
+      "value": -416300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Common Stock Payments",
+      "value": -2607400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Common Stock Payments",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Investing Cash Flow",
+      "value": 665800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Investing Cash Flow",
+      "value": -3272800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Investing Cash Flow",
+      "value": -360100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Investing Cash Flow",
+      "value": 1370800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Investing Cash Flow",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Cash Flow From Continuing Investing Activities",
+      "value": 665800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Cash Flow From Continuing Investing Activities",
+      "value": -3272800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Cash Flow From Continuing Investing Activities",
+      "value": -360100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Cash Flow From Continuing Investing Activities",
+      "value": 1370800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Cash Flow From Continuing Investing Activities",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Net Investment Purchase And Sale",
+      "value": 1219500000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Net Investment Purchase And Sale",
+      "value": -2160600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Net Investment Purchase And Sale",
+      "value": 713000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Net Investment Purchase And Sale",
+      "value": 1916000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Net Investment Purchase And Sale",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Sale Of Investment",
+      "value": 2435400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Sale Of Investment",
+      "value": 2979000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Sale Of Investment",
+      "value": 2920400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Sale Of Investment",
+      "value": 3315500000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Sale Of Investment",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Purchase Of Investment",
+      "value": -1215900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Purchase Of Investment",
+      "value": -5139600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Purchase Of Investment",
+      "value": -2207400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Purchase Of Investment",
+      "value": -1399500000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Purchase Of Investment",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Net Business Purchase And Sale",
+      "value": -13900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Net Business Purchase And Sale",
+      "value": -1000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Net Business Purchase And Sale",
+      "value": -8900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Net Business Purchase And Sale",
+      "value": -12800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Net Business Purchase And Sale",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Purchase Of Business",
+      "value": -13900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Purchase Of Business",
+      "value": -1000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Purchase Of Business",
+      "value": -8900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Purchase Of Business",
+      "value": -12800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Purchase Of Business",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Net PPE Purchase And Sale",
+      "value": -539800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Net PPE Purchase And Sale",
+      "value": -1111200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Net PPE Purchase And Sale",
+      "value": -1064200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Net PPE Purchase And Sale",
+      "value": -532400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Net PPE Purchase And Sale",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Purchase Of PPE",
+      "value": -539800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Purchase Of PPE",
+      "value": -1111200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Purchase Of PPE",
+      "value": -1064200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Purchase Of PPE",
+      "value": -532400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Purchase Of PPE",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Operating Cash Flow",
+      "value": 3030500000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Operating Cash Flow",
+      "value": 2415000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Operating Cash Flow",
+      "value": 1813800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Operating Cash Flow",
+      "value": 1490800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Operating Cash Flow",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Cash Flow From Continuing Operating Activities",
+      "value": 3030500000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Cash Flow From Continuing Operating Activities",
+      "value": 2415000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Cash Flow From Continuing Operating Activities",
+      "value": 1813800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Cash Flow From Continuing Operating Activities",
+      "value": 1490800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Cash Flow From Continuing Operating Activities",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Change In Working Capital",
+      "value": -1272300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Change In Working Capital",
+      "value": -919300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Change In Working Capital",
+      "value": -777600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Change In Working Capital",
+      "value": -619100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Change In Working Capital",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Change In Other Working Capital",
+      "value": 187900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Change In Other Working Capital",
+      "value": 130500000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Change In Other Working Capital",
+      "value": 88200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Change In Other Working Capital",
+      "value": 73000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Change In Other Working Capital",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Change In Other Current Liabilities",
+      "value": 34100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Change In Other Current Liabilities",
+      "value": 108300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Change In Other Current Liabilities",
+      "value": -32900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Change In Other Current Liabilities",
+      "value": 121700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Change In Other Current Liabilities",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Change In Payables And Accrued Expense",
+      "value": 57900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Change In Payables And Accrued Expense",
+      "value": -400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Change In Payables And Accrued Expense",
+      "value": 41700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Change In Payables And Accrued Expense",
+      "value": 21300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Change In Payables And Accrued Expense",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Change In Payable",
+      "value": 57900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Change In Payable",
+      "value": -400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Change In Payable",
+      "value": 41700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Change In Payable",
+      "value": 21300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Change In Payable",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Change In Account Payable",
+      "value": 57900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Change In Account Payable",
+      "value": -400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Change In Account Payable",
+      "value": 41700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Change In Account Payable",
+      "value": 21300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Change In Account Payable",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Change In Prepaid Assets",
+      "value": -187100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Change In Prepaid Assets",
+      "value": -231800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Change In Prepaid Assets",
+      "value": 24200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Change In Prepaid Assets",
+      "value": -129200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Change In Prepaid Assets",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Change In Inventory",
+      "value": -1063400000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Change In Inventory",
+      "value": -830000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Change In Inventory",
+      "value": -712500000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Change In Inventory",
+      "value": -546600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Change In Inventory",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Change In Receivables",
+      "value": -301700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Change In Receivables",
+      "value": -95900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Change In Receivables",
+      "value": -186300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Change In Receivables",
+      "value": -159300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Change In Receivables",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Changes In Account Receivables",
+      "value": -301700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Changes In Account Receivables",
+      "value": -95900000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Changes In Account Receivables",
+      "value": -186300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Changes In Account Receivables",
+      "value": -159300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Changes In Account Receivables",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Other Non Cash Items",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Other Non Cash Items",
+      "value": 37700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Other Non Cash Items",
+      "value": 33000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Other Non Cash Items",
+      "value": 26600000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Other Non Cash Items",
+      "value": 22000000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Stock Based Compensation",
+      "value": 788200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Stock Based Compensation",
+      "value": 676800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Stock Based Compensation",
+      "value": 592800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Stock Based Compensation",
+      "value": 513200000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Stock Based Compensation",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Deferred Tax",
+      "value": 19100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Deferred Tax",
+      "value": -135300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Deferred Tax",
+      "value": -280800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Deferred Tax",
+      "value": -185300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Deferred Tax",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Deferred Income Tax",
+      "value": 19100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Deferred Income Tax",
+      "value": -135300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Deferred Income Tax",
+      "value": -280800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Deferred Income Tax",
+      "value": -185300000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Deferred Income Tax",
+      "value": null,
+      "unit": "USD"
+    },
+    {
+      "period": "2025-12-31",
+      "metric": "Depreciation Amortization Depletion",
+      "value": 677100000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2024-12-31",
+      "metric": "Depreciation Amortization Depletion",
+      "value": 499700000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2023-12-31",
+      "metric": "Depreciation Amortization Depletion",
+      "value": 454800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2022-12-31",
+      "metric": "Depreciation Amortization Depletion",
+      "value": 365800000.0,
+      "unit": "USD"
+    },
+    {
+      "period": "2021-12-31",
+      "metric": "Depreciation Amortization Depletion",
+      "value": null,
+      "unit": "USD"
+    }
+  ],
+  "valuation_snapshot": {
+    "enterpriseToEbitda": 38.801,
+    "enterpriseToRevenue": 14.247,
+    "forwardPE": 37.161007,
+    "marketCap": 155158740992,
+    "priceToBook": 8.885148,
+    "priceToSalesTrailing12Months": 14.662377,
+    "trailingPE": 53.167477
+  },
+  "segments": [],
+  "metadata": {
+    "data_quality_warnings": [],
+    "source": "yfinance",
+    "provider_version": "v5-provider-bridge"
+  },
+  "error": null
+}

@@ -1,20 +1,32 @@
 use crate::dashboard::render_company_dashboard;
-use crate::markdown::{render_report, render_self_review_md};
+use crate::markdown::{render_report, render_report_zh, render_self_review_md};
 use anyhow::Result;
 use research_core::io::{write_if_changed, write_json};
 use research_core::run_folder::RunFolder;
 use research_core::types::*;
+use research_core::validation::visual_lint;
 use std::process::Command;
 
-pub fn render_run(
-    folder: &RunFolder,
-    payload: &ProviderPayload,
-    understanding: &CompanyUnderstanding,
-    interpretation: &FinancialInterpretation,
-    blueprint: &ResearchBlueprint,
-    review: &AiSelfReview,
-    status: &ReportStatus,
-) -> Result<()> {
+pub struct RenderRunInput<'a> {
+    pub folder: &'a RunFolder,
+    pub payload: &'a ProviderPayload,
+    pub understanding: &'a CompanyUnderstanding,
+    pub interpretation: &'a FinancialInterpretation,
+    pub blueprint: &'a ResearchBlueprint,
+    pub review: &'a AiSelfReview,
+    pub status: &'a ReportStatus,
+    pub lang: &'a str,
+}
+
+pub fn render_run(input: RenderRunInput<'_>) -> Result<()> {
+    let folder = input.folder;
+    let payload = input.payload;
+    let understanding = input.understanding;
+    let interpretation = input.interpretation;
+    let blueprint = input.blueprint;
+    let review = input.review;
+    let status = input.status;
+    let lang = input.lang;
     write_json(
         &folder.metadata.join("company_understanding.json"),
         understanding,
@@ -51,12 +63,42 @@ pub fn render_run(
         review,
         status,
     );
-    write_if_changed(
-        &folder
-            .report
-            .join(format!("{}_research_report.md", payload.ticker)),
-        &report,
-    )?;
+    let english_report_path = folder
+        .report
+        .join(format!("{}_research_report.md", payload.ticker));
+    let chinese_report_path = folder
+        .report
+        .join(format!("{}_research_report_cn.md", payload.ticker));
+    let mut primary_report = report.clone();
+    if lang == "en" || lang == "both" {
+        write_if_changed(&english_report_path, &report)?;
+        export_pdf(
+            &english_report_path,
+            &folder
+                .report
+                .join(format!("{}_research_report.pdf", payload.ticker)),
+        )?;
+    }
+    if lang == "zh" || lang == "both" {
+        let zh_report = render_report_zh(
+            payload,
+            understanding,
+            interpretation,
+            blueprint,
+            review,
+            status,
+        );
+        if lang == "zh" {
+            primary_report = zh_report.clone();
+        }
+        write_if_changed(&chinese_report_path, &zh_report)?;
+        export_pdf(
+            &chinese_report_path,
+            &folder
+                .report
+                .join(format!("{}_research_report_cn.pdf", payload.ticker)),
+        )?;
+    }
     let dashboard =
         render_company_dashboard(payload, understanding, interpretation, blueprint, status);
     write_if_changed(&folder.root.join("dashboard.html"), &dashboard)?;
@@ -76,11 +118,36 @@ pub fn render_run(
         &folder.audit.join("lint_report.md"),
         "# Lint Report\n\nDeterministic report lint completed.\n",
     )?;
+    let (visual_status, visual_failures) = visual_lint(
+        &primary_report,
+        folder.root.join("dashboard.html").exists(),
+        folder.charts.join("chart_manifest.json").exists(),
+    );
+    let visual_details = if visual_failures.is_empty() {
+        "All P0 display checks passed.".to_string()
+    } else {
+        visual_failures
+            .iter()
+            .map(|failure| format!("- {}", failure))
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
     write_if_changed(
         &folder.audit.join("visual_lint_report.md"),
-        "# Visual Lint Report\n\nStatus: PASS\n\nChecks:\n- report_has_status_block\n- report_has_toc\n- chart_links_valid\n- chart_explanations_present\n- table_width_valid\n- no_raw_nan\n- no_raw_placeholder\n- dashboard_exists\n",
+        &format!(
+            "# Visual Lint Report\n\nStatus: {}\n\n## Checks\n\n{}\n\n## Scope\n\n- Markdown status block\n- Table of contents\n- Chart explanation blocks\n- Raw placeholder / NaN scan\n- Dashboard existence\n- Chart manifest existence\n- Forbidden advice scan\n",
+            visual_status, visual_details
+        ),
     )?;
-    write_if_changed(&folder.root.join("README.md"), &format!("# {} v5 Research Run\n\nStart here:\n\n1. report/{}_research_report.md\n2. dashboard.html\n3. metadata/research_blueprint.json\n4. self_review/ai_self_review.md\n5. audit/validator_report.md\n", payload.ticker, payload.ticker))?;
+    if visual_status == "FAIL" {
+        anyhow::bail!("visual lint failed: {}", visual_failures.join(", "));
+    }
+    let report_entry = if lang == "zh" {
+        format!("report/{}_research_report_cn.md", payload.ticker)
+    } else {
+        format!("report/{}_research_report.md", payload.ticker)
+    };
+    write_if_changed(&folder.root.join("README.md"), &format!("# {} v5 Research Run\n\nStart here:\n\n1. {}\n2. dashboard.html\n3. metadata/research_blueprint.json\n4. self_review/ai_self_review.md\n5. audit/validator_report.md\n6. audit/visual_lint_report.md\n\nPDF exports live in `report/` when the lightweight exporter is available.\n", payload.ticker, report_entry))?;
     Ok(())
 }
 
@@ -103,6 +170,35 @@ fn generate_charts(folder: &RunFolder) -> Result<()> {
             write_if_changed(
                 &folder.charts.join("Figure_01_data_gap.md"),
                 "# Chart Generation Failed\n\nStatus: WARNING\n\nSource: provider_payload.json\n",
+            )?;
+            Ok(())
+        }
+    }
+}
+
+fn export_pdf(markdown_path: &std::path::Path, pdf_path: &std::path::Path) -> Result<()> {
+    let python = if std::path::Path::new(".venv/bin/python").exists() {
+        ".venv/bin/python"
+    } else {
+        "python3"
+    };
+    let status = Command::new(python)
+        .arg("providers/pdf_export.py")
+        .arg("--markdown")
+        .arg(markdown_path)
+        .arg("--out")
+        .arg(pdf_path)
+        .status();
+    match status {
+        Ok(s) if s.success() && pdf_path.exists() => Ok(()),
+        _ => {
+            let fallback_path = markdown_path
+                .parent()
+                .unwrap_or_else(|| std::path::Path::new("."))
+                .join("pdf_export_unavailable.md");
+            write_if_changed(
+                &fallback_path,
+                "# PDF Export Unavailable\n\nThe basic PDF exporter failed. Markdown and HTML outputs remain authoritative.\n",
             )?;
             Ok(())
         }

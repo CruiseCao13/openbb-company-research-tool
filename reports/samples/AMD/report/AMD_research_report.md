@@ -6,7 +6,7 @@
 > Provider: yfinance  
 > Status: PASS  
 > AI Confidence: MEDIUM  
-> Research Frame: Capital-Intensive Semiconductor Turnaround  
+> Research Frame: AI Semiconductor / Data Center Growth Compounder  
 > Human Review Required: false  
 > Note: This report is for first-pass research only. It is not investment advice.
 
@@ -47,29 +47,29 @@ How to read this table: use it to decide whether this report is usable as a firs
 
 ## 2. Company Identity
 
-**Identity:** Advanced Micro Devices, Inc. is best treated as Capital-Intensive Semiconductor Turnaround based on the locked provider profile and financial context.
+**Identity:** Advanced Micro Devices, Inc. is best treated as AI Semiconductor / Data Center Growth Compounder based on the locked provider profile and financial context.
 
-**Correct research frame:** Capital-Intensive Semiconductor Turnaround
+**Correct research frame:** AI Semiconductor / Data Center Growth Compounder
 
 **What this company is not:**  
-- ordinary mature compounder
-- software-only platform
+- financial company
+- foundry turnaround unless manufacturing evidence exists
 
 
 ## 3. Business Model
 
-The research frame is Capital-Intensive Semiconductor Turnaround. The report should explain how the company earns money before interpreting valuation.
+The research frame is AI Semiconductor / Data Center Growth Compounder. The report should explain how the company earns money before interpreting valuation.
 
 Revenue engines currently identified:
 
-- processors
-- foundry or manufacturing services
-- data center / client computing
+- accelerators
+- data center chips
+- networking / platform ecosystem
 
 
 Profit pool:
 
-Profit pool assessment should focus on the economics implied by Capital-Intensive Semiconductor Turnaround, not a generic template.
+Profit pool assessment should focus on the economics implied by AI Semiconductor / Data Center Growth Compounder, not a generic template.
 
 ## 4. Money Flow: Where Money Comes From and Where It Goes
 
@@ -80,7 +80,7 @@ How to read this table: each row links a money-flow signal to why it matters.
 
 | Flow | Signal | Unit | Why it matters |
 |---|---|---|---|
-| Research frame | Capital-Intensive Semiconductor Turnaround | frame | Controls which metrics matter |
+| Research frame | AI Semiconductor / Data Center Growth Compounder | frame | Controls which metrics matter |
 | Money source | Money comes from operating revenue when available, operating cash flow if positive, and financing when operating cash is insufficient. | text | Shows whether operations or financing matter |
 | Money use | Money goes to operating costs, reinvestment, capex, and financing obligations when present. | text | Shows reinvestment and cash pressure |
 
@@ -95,7 +95,7 @@ This matters because growth is not automatically valuable. The report needs to d
 
 **Revenue:** Locked data includes latest revenue around 15706000000.0. The report can discuss revenue direction only within provider coverage.
 
-**Margins:** Margin interpretation must use the Capital-Intensive Semiconductor Turnaround frame and avoid cross-industry shortcuts.
+**Margins:** Margin interpretation must use the AI Semiconductor / Data Center Growth Compounder frame and avoid cross-industry shortcuts.
 
 **Cash flow:** Operating cash flow is 7709000000.0; capital expenditure is -974000000.0. Free cash flow quality depends on the gap between operating cash generation and reinvestment needs.
 
@@ -107,11 +107,11 @@ This matters because growth is not automatically valuable. The report needs to d
 
 ## 6. AI Research Blueprint
 
-**Core thesis:** The central research question is whether the Capital-Intensive Semiconductor Turnaround frame is supported by locked data and company-specific evidence.
+**Core thesis:** The central research question is whether the AI Semiconductor / Data Center Growth Compounder frame is supported by locked data and company-specific evidence.
 
-**Asset profile:** Capital-Intensive Semiconductor Turnaround
+**Asset profile:** AI Semiconductor / Data Center Growth Compounder
 
-**Secondary profile:** Technology manufacturing
+**Secondary profile:** Semiconductor AI platform
 
 Must analyze:
 

@@ -1,25 +1,25 @@
 {
-  "company_identity": "Advanced Micro Devices, Inc. is best treated as Capital-Intensive Semiconductor Turnaround based on the locked provider profile and financial context.",
-  "business_model": "The research frame is Capital-Intensive Semiconductor Turnaround. The report should explain how the company earns money before interpreting valuation.",
+  "company_identity": "Advanced Micro Devices, Inc. is best treated as AI Semiconductor / Data Center Growth Compounder based on the locked provider profile and financial context.",
+  "business_model": "The research frame is AI Semiconductor / Data Center Growth Compounder. The report should explain how the company earns money before interpreting valuation.",
   "revenue_engines": [
-    "processors",
-    "foundry or manufacturing services",
-    "data center / client computing"
+    "accelerators",
+    "data center chips",
+    "networking / platform ecosystem"
   ],
-  "profit_pool": "Profit pool assessment should focus on the economics implied by Capital-Intensive Semiconductor Turnaround, not a generic template.",
+  "profit_pool": "Profit pool assessment should focus on the economics implied by AI Semiconductor / Data Center Growth Compounder, not a generic template.",
   "key_growth_drivers": [
-    "Technology manufacturing"
+    "Semiconductor AI platform"
   ],
   "key_risks": [
-    "capex burden",
-    "gross margin recovery",
-    "process-node execution"
+    "hyperscaler capex cycle",
+    "export controls",
+    "valuation premium risk"
   ],
   "not_this": [
-    "ordinary mature compounder",
-    "software-only platform"
+    "financial company",
+    "foundry turnaround unless manufacturing evidence exists"
   ],
-  "correct_research_frame": "Capital-Intensive Semiconductor Turnaround",
+  "correct_research_frame": "AI Semiconductor / Data Center Growth Compounder",
   "wrong_frames_to_avoid": [
     "generic mature compounder unless supported",
     "target price model",

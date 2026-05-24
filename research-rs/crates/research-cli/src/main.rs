@@ -11,7 +11,7 @@ use research_core::validation::{
     detect_forbidden_advice, report_status, validate_ai_json, validate_provider_payload,
 };
 use research_report::pack::pack_run;
-use research_report::renderer::render_run;
+use research_report::renderer::{render_run, RenderRunInput};
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -41,6 +41,8 @@ struct RunArgs {
     provider: String,
     #[arg(long, default_value = "compact")]
     ai: String,
+    #[arg(long, default_value = "en")]
+    lang: String,
     #[arg(long)]
     run_id: Option<String>,
     #[arg(long)]
@@ -97,6 +99,7 @@ fn run_one(args: &RunArgs, render: bool) -> Result<()> {
         root: "reports".to_string(),
         force: args.force,
         pack: args.pack,
+        lang: args.lang.clone(),
     };
     let folder = RunFolder::new(&ctx);
     folder.create()?;
@@ -135,15 +138,16 @@ fn run_one(args: &RunArgs, render: bool) -> Result<()> {
     );
 
     if render {
-        render_run(
-            &folder,
-            &payload,
-            &understanding,
-            &interpretation,
-            &blueprint,
-            &review,
-            &status,
-        )?;
+        render_run(RenderRunInput {
+            folder: &folder,
+            payload: &payload,
+            understanding: &understanding,
+            interpretation: &interpretation,
+            blueprint: &blueprint,
+            review: &review,
+            status: &status,
+            lang: &args.lang,
+        })?;
         println!("[6/9] Rendering report                    done");
         println!(
             "[7/9] AI self review                      {}",
