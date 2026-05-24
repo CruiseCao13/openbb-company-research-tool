@@ -120,6 +120,11 @@ pub fn render_report(
 > Provider: {provider}  
 > Status: {status_value}  
 > AI Confidence: {confidence:?}  
+> AI Source: {ai_source}
+> External AI Used: {external_ai_used}
+> Local Mock Used: {local_mock_used}
+> AI Calls: {new_external_ai_calls}
+> Cache Hits: {ai_cache_hits}
 > Research Frame: {asset_profile}  
 > Human Review Required: {human_review}  
 > Note: This report is for first-pass research only. It is not investment advice.
@@ -149,6 +154,10 @@ pub fn render_report(
 | Visual lint | {visual_lint_status} |
 | PDF export | {pdf_export_status} |
 | AI mode | {ai_mode} |
+| AI source | {ai_source} |
+| External AI used | {external_ai_used} |
+| Local mock used | {local_mock_used} |
+| New external AI calls | {new_external_ai_calls} |
 | AI calls | {ai_calls} |
 | Cache hits | {cache_hits} |
 | Human review required | {human_review} |
@@ -302,6 +311,19 @@ How to read this table: it tells you which locked data exists before relying on 
         visual_lint_status = status.visual_lint_status,
         pdf_export_status = status.pdf_export_status,
         ai_mode = status.ai_mode,
+        ai_source = understanding.ai_provenance.source,
+        external_ai_used = understanding.ai_provenance.external_ai_used,
+        local_mock_used = understanding.ai_provenance.local_mock_used,
+        new_external_ai_calls = if understanding.ai_provenance.new_external_ai_call {
+            1
+        } else {
+            0
+        },
+        ai_cache_hits = if understanding.ai_provenance.cache_hit {
+            1
+        } else {
+            0
+        },
         ai_calls = status.ai_calls,
         cache_hits = status.cache_hits,
         human_review = status.human_review_required,
@@ -364,6 +386,11 @@ pub fn render_report_zh(
 
 > 状态：{status_value}  
 > AI 置信度：{confidence:?}  
+> AI 来源：{ai_source}
+> 是否使用外部 OpenAI API：{external_ai_used}
+> 是否使用本地 fallback：{local_mock_used}
+> 新外部 AI 调用：{new_external_ai_calls}
+> AI 缓存命中：{ai_cache_hits}
 > 研究框架：{asset_profile}  
 > 是否需要人工复核：{human_review}  
 > 生成说明：本报告不是投资建议。
@@ -399,6 +426,11 @@ How to read this table：先看是否需要人工复核，再看研究框架是�
 | 视觉检查 | {visual_lint_status} |
 | PDF 导出 | {pdf_export_status} |
 | AI 模式 | {ai_mode} |
+| AI 来源 | {ai_source} |
+| 使用外部 OpenAI API | {external_ai_used} |
+| 使用本地 fallback | {local_mock_used} |
+| 新外部 AI 调用 | {new_external_ai_calls} |
+| AI 缓存命中 | {ai_cache_hits} |
 
 ## 2. 公司身份
 
@@ -561,6 +593,19 @@ How to read this table：先看数据覆盖，再决定解释可信度。
             "否"
         },
         confidence = blueprint.confidence,
+        ai_source = understanding.ai_provenance.source,
+        external_ai_used = understanding.ai_provenance.external_ai_used,
+        local_mock_used = understanding.ai_provenance.local_mock_used,
+        new_external_ai_calls = if understanding.ai_provenance.new_external_ai_call {
+            1
+        } else {
+            0
+        },
+        ai_cache_hits = if understanding.ai_provenance.cache_hit {
+            1
+        } else {
+            0
+        },
         asset_profile = blueprint.asset_profile,
         identity = understanding.company_identity,
         not_this = bullet(&understanding.not_this),

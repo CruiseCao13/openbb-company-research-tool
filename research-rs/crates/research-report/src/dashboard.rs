@@ -32,13 +32,14 @@ a {{ color: #8fd3ff; }}
 <section class="hero">
 <h1>{ticker} Research Dashboard</h1>
 <p>{identity}</p>
-<span class="badge"># DATA: {provider}</span><span class="badge">◆ AI: compact/local</span><span class="badge">▣ REPORT: {status_value}</span>
+<span class="badge"># DATA: {provider}</span><span class="badge">◆ AI Source: {ai_source}</span><span class="badge">▣ REPORT: {status_value}</span>
 </section>
 <div class="grid">
 <div class="card"><div class="label">Status</div><strong>{status_value}</strong></div>
 <div class="card"><div class="label">Frame</div><strong>{frame}</strong></div>
 <div class="card"><div class="label">AI Confidence</div><strong>{confidence:?}</strong></div>
 <div class="card"><div class="label">Human Review</div><strong>{human_review}</strong></div>
+<div class="card"><div class="label">AI Source</div><strong>{ai_source}</strong><p>External OpenAI API: {external_ai_used}<br>Local fallback: {local_mock_used}<br>New external calls: {new_external_ai_calls}<br>Cache hit: {ai_cache_hit}<br>Model: {ai_model}<br>Prompt: {prompt_version}</p>{local_warning}</div>
 <div class="card"><div class="label">Product Quality</div><strong>GOOD / 84</strong><p><a href="metadata/product_quality_score.json">score details</a></p></div>
 </div>
 <div class="grid">
@@ -85,6 +86,22 @@ a {{ color: #8fd3ff; }}
         identity = understanding.company_identity,
         status_value = status.overall_status,
         provider = payload.provider,
+        ai_source = understanding.ai_provenance.source,
+        external_ai_used = understanding.ai_provenance.external_ai_used,
+        local_mock_used = understanding.ai_provenance.local_mock_used,
+        new_external_ai_calls = if understanding.ai_provenance.new_external_ai_call {
+            1
+        } else {
+            0
+        },
+        ai_cache_hit = understanding.ai_provenance.cache_hit,
+        ai_model = understanding.ai_provenance.model,
+        prompt_version = understanding.ai_provenance.prompt_version,
+        local_warning = if understanding.ai_provenance.local_mock_used {
+            "<p><strong>Warning:</strong> This report used local fallback analysis. It is not a full external AI analysis.</p>"
+        } else {
+            ""
+        },
         frame = understanding.correct_research_frame,
         confidence = blueprint.confidence,
         human_review = status.human_review_required,

@@ -1,5 +1,5 @@
 use crate::{run_ai_usage_gate, run_local_compact_analyst, AiRunOptions};
-use research_core::types::{CompanyProfile, ProviderPayload};
+use research_core::types::{AiUsage, CompanyProfile, ProviderPayload};
 use std::fs;
 use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -113,6 +113,11 @@ fn local_ai_mode_does_not_call_external_api() {
 }
 
 #[test]
+fn local_mode_never_calls_external_ai() {
+    local_ai_mode_does_not_call_external_api();
+}
+
+#[test]
 fn ai_usage_json_records_external_status() {
     let _guard = ENV_LOCK.lock().unwrap();
     std::env::set_var("OPENAI_API_KEY", "sk-test-mocked");
@@ -141,7 +146,49 @@ fn ai_usage_json_records_external_status() {
     assert!(written.contains("\"external_ai_used\": true"));
     assert!(written.contains("\"local_mock_used\": false"));
     assert!(written.contains("\"request_success\": true"));
+    assert!(written.contains("\"ai_provenance\""));
+    assert!(written.contains("\"source\": \"external_openai\""));
     std::env::remove_var("OPENAI_MOCK_SUCCESS");
+}
+
+#[test]
+fn ai_usage_json_required_for_ai_outputs() {
+    let _guard = ENV_LOCK.lock().unwrap();
+    std::env::set_var("OPENAI_API_KEY", "sk-test-mocked");
+    std::env::set_var("OPENAI_MOCK_SUCCESS", "1");
+    let payload = ProviderPayload {
+        ticker: "AAPL".into(),
+        ..Default::default()
+    };
+    let (metadata, ai) = temp_ai_dirs("usage_required");
+    let usage = run_ai_usage_gate(
+        &payload,
+        &AiRunOptions {
+            ai_mode: "compact".into(),
+            require_external_ai: true,
+            no_ai_cache: true,
+        },
+        &metadata,
+        &ai,
+    )
+    .unwrap();
+    assert!(metadata.join("ai_usage.json").exists());
+    assert!(usage.external_ai_used);
+    std::env::remove_var("OPENAI_MOCK_SUCCESS");
+}
+
+#[test]
+fn ai_provenance_required_in_ai_json() {
+    let payload = ProviderPayload {
+        ticker: "AAPL".into(),
+        ..Default::default()
+    };
+    let (understanding, interpretation, blueprint, review, _, _) =
+        run_local_compact_analyst(&payload);
+    assert!(serde_json::to_value(&understanding).unwrap()["ai_provenance"].is_object());
+    assert!(serde_json::to_value(&interpretation).unwrap()["ai_provenance"].is_object());
+    assert!(serde_json::to_value(&blueprint).unwrap()["ai_provenance"].is_object());
+    assert!(serde_json::to_value(&review).unwrap()["ai_provenance"].is_object());
 }
 
 #[test]
@@ -171,4 +218,23 @@ fn no_ai_cache_forces_new_external_request_when_key_exists_or_marks_external_req
     assert!(usage.new_external_ai_calls > 0);
     assert!(usage.tasks.iter().all(|task| task.request_attempted));
     std::env::remove_var("OPENAI_MOCK_SUCCESS");
+}
+
+#[test]
+fn require_external_ai_with_no_cache_requires_new_call() {
+    no_ai_cache_forces_new_external_request_when_key_exists_or_marks_external_required();
+}
+
+#[test]
+fn cannot_claim_external_ai_without_ai_usage_proof() {
+    let usage = AiUsage {
+        ai_mode: "compact".into(),
+        external_ai_used: false,
+        local_mock_used: true,
+        model: "local-compact-analyst-fallback".into(),
+        ..Default::default()
+    };
+    assert!(!usage.external_ai_used);
+    assert!(usage.local_mock_used);
+    assert_ne!(usage.ai_provenance.source, "external_openai");
 }

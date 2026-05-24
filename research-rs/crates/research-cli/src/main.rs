@@ -1,7 +1,9 @@
 use anyhow::Result;
 use chrono::Local;
 use clap::{Parser, Subcommand};
-use research_ai::{run_ai_usage_gate, run_local_compact_analyst, AiRunOptions};
+use research_ai::{
+    provenance_for_task, run_ai_usage_gate, run_local_compact_analyst, AiRunOptions,
+};
 use research_batch::quality::{run_quality, QualityRunOptions};
 use research_batch::runner::{run_batch, BatchRunOptions};
 use research_core::config::EngineConfig;
@@ -231,7 +233,7 @@ fn run_one(args: &RunArgs, render: bool) -> Result<()> {
     });
 
     let stage_timer = Instant::now();
-    println!("[3/9] AI company understanding            done  local");
+    println!("[3/9] AI company understanding            ...");
     let ai_usage = run_ai_usage_gate(
         &payload,
         &AiRunOptions {
@@ -242,8 +244,44 @@ fn run_one(args: &RunArgs, render: bool) -> Result<()> {
         &folder.metadata,
         &folder.ai,
     )?;
-    let (understanding, interpretation, blueprint, review, _local_ai_calls, cache_hits) =
-        run_local_compact_analyst(&payload);
+    let ai_stage_label = if ai_usage.new_external_ai_calls > 0 {
+        "done  external_openai"
+    } else if ai_usage.cache_hits > 0 {
+        "done  cache"
+    } else if ai_usage.local_mock_used {
+        "done  local_mock"
+    } else {
+        "skipped"
+    };
+    println!("[3/9] AI company understanding            {ai_stage_label}");
+    let (
+        mut understanding,
+        mut interpretation,
+        mut blueprint,
+        mut review,
+        _local_ai_calls,
+        cache_hits,
+    ) = run_local_compact_analyst(&payload);
+    understanding.ai_provenance = provenance_for_task(
+        &ai_usage,
+        "company_understanding",
+        &serde_json::to_string(&understanding).unwrap_or_default(),
+    );
+    interpretation.ai_provenance = provenance_for_task(
+        &ai_usage,
+        "financial_interpretation",
+        &serde_json::to_string(&interpretation).unwrap_or_default(),
+    );
+    blueprint.ai_provenance = provenance_for_task(
+        &ai_usage,
+        "research_blueprint",
+        &serde_json::to_string(&blueprint).unwrap_or_default(),
+    );
+    review.ai_provenance = provenance_for_task(
+        &ai_usage,
+        "self_review",
+        &serde_json::to_string(&review).unwrap_or_default(),
+    );
     write_schema_validation_report(
         &folder,
         &[
@@ -390,7 +428,12 @@ fn run_one(args: &RunArgs, render: bool) -> Result<()> {
         println!("Human Review: {}", status.human_review_required);
         print!(
             "{}",
-            ai_terminal_summary(&args.ai, args.require_external_ai, &ai_usage)
+            ai_terminal_summary(
+                &args.ai,
+                args.require_external_ai,
+                args.no_ai_cache,
+                &ai_usage
+            )
         );
         println!(
             "Report: {}",
@@ -432,14 +475,21 @@ fn run_one(args: &RunArgs, render: bool) -> Result<()> {
     Ok(())
 }
 
-fn ai_terminal_summary(ai_mode: &str, require_external_ai: bool, usage: &AiUsage) -> String {
+fn ai_terminal_summary(
+    ai_mode: &str,
+    require_external_ai: bool,
+    no_ai_cache: bool,
+    usage: &AiUsage,
+) -> String {
     let mut text = format!(
-        "AI Mode: {ai_mode}\nRequire External AI: {require_external_ai}\nExternal AI Used: {}\nLocal Mock Used: {}\nAI Calls: {}\nCache Hits: {}\nModel: {}\n",
+        "AI Mode: {ai_mode}\nRequire External AI: {require_external_ai}\nNo AI Cache: {no_ai_cache}\nExternal AI Used: {}\nLocal Mock Used: {}\nNew External AI Calls: {}\nAI Calls: {}\nCache Hits: {}\nModel: {}\nAI Source: {}\n",
         usage.external_ai_used,
         usage.local_mock_used,
         usage.new_external_ai_calls,
+        usage.new_external_ai_calls,
         usage.cache_hits,
-        usage.model
+        usage.model,
+        usage.ai_provenance.source
     );
     if !usage.external_ai_used {
         text.push_str("Warning: External OpenAI API was not used.\n");
@@ -623,11 +673,12 @@ mod tests {
             model: "gpt-4.1-mini".into(),
             ..Default::default()
         };
-        let summary = ai_terminal_summary("compact", true, &usage);
+        let summary = ai_terminal_summary("compact", true, true, &usage);
         assert!(summary.contains("AI Mode: compact"));
         assert!(summary.contains("Require External AI: true"));
         assert!(summary.contains("External AI Used: true"));
         assert!(summary.contains("Local Mock Used: false"));
+        assert!(summary.contains("New External AI Calls: 4"));
         assert!(summary.contains("AI Calls: 4"));
         assert!(summary.contains("Cache Hits: 0"));
     }

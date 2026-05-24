@@ -95,3 +95,22 @@ fn content_quality_detects_missing_report() {
         .contains(&"generated_report_missing".to_string()));
     assert_eq!(review.grade, "FAIL");
 }
+
+#[test]
+fn batch_summary_counts_external_vs_local_ai() {
+    let source = include_str!("runner.rs");
+    assert!(source.contains("External AI calls"));
+    assert!(source.contains("New external AI calls"));
+    assert!(source.contains("Local fallback reports"));
+    assert!(source.contains("Cache-hit AI reports"));
+    assert!(source.contains("Reports with no AI"));
+}
+
+#[test]
+fn codex_self_review_records_ai_provenance() {
+    let review = include_str!("../../../../reports/release_checks/v5_0/codex_self_review.md");
+    assert!(review.contains("AI Provenance Review"));
+    assert!(review.contains("External OpenAI API used"));
+    assert!(review.contains("Local fallback used"));
+    assert!(review.contains("New external API calls"));
+}

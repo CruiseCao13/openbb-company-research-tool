@@ -3,7 +3,9 @@ use crate::lint::lint_status;
 use crate::training_case::TrainingCase;
 use anyhow::Result;
 use chrono::Local;
-use research_ai::{run_ai_usage_gate, run_local_compact_analyst, AiRunOptions};
+use research_ai::{
+    provenance_for_task, run_ai_usage_gate, run_local_compact_analyst, AiRunOptions,
+};
 use research_core::config::EngineConfig;
 use research_core::io::{ensure_dir, write_if_changed};
 use research_core::normalizer::write_normalized_outputs;
@@ -45,6 +47,7 @@ struct Row {
     external_ai_calls: usize,
     ai_cache_hits: usize,
     local_mock_used: bool,
+    no_ai_used: bool,
 }
 
 pub fn run_batch(options: &BatchRunOptions) -> Result<PathBuf> {
@@ -107,8 +110,34 @@ pub fn run_batch(options: &BatchRunOptions) -> Result<PathBuf> {
             &folder.metadata,
             &folder.ai,
         )?;
-        let (understanding, interpretation, blueprint, review, _local_ai_calls, cache_hits) =
-            run_local_compact_analyst(&payload);
+        let (
+            mut understanding,
+            mut interpretation,
+            mut blueprint,
+            mut review,
+            _local_ai_calls,
+            cache_hits,
+        ) = run_local_compact_analyst(&payload);
+        understanding.ai_provenance = provenance_for_task(
+            &ai_usage,
+            "company_understanding",
+            &serde_json::to_string(&understanding).unwrap_or_default(),
+        );
+        interpretation.ai_provenance = provenance_for_task(
+            &ai_usage,
+            "financial_interpretation",
+            &serde_json::to_string(&interpretation).unwrap_or_default(),
+        );
+        blueprint.ai_provenance = provenance_for_task(
+            &ai_usage,
+            "research_blueprint",
+            &serde_json::to_string(&blueprint).unwrap_or_default(),
+        );
+        review.ai_provenance = provenance_for_task(
+            &ai_usage,
+            "self_review",
+            &serde_json::to_string(&review).unwrap_or_default(),
+        );
         write_schema_validation_report(
             &folder,
             &[
@@ -268,6 +297,7 @@ pub fn run_batch(options: &BatchRunOptions) -> Result<PathBuf> {
             external_ai_calls: ai_usage.new_external_ai_calls,
             ai_cache_hits: ai_usage.cache_hits,
             local_mock_used: ai_usage.local_mock_used,
+            no_ai_used: options.ai_mode == "off",
         });
     }
 
@@ -299,6 +329,8 @@ fn write_batch_outputs(
     let external_ai_calls: usize = rows.iter().map(|r| r.external_ai_calls).sum();
     let ai_cache_hits: usize = rows.iter().map(|r| r.ai_cache_hits).sum();
     let local_fallback_count = rows.iter().filter(|r| r.local_mock_used).count();
+    let cache_hit_reports = rows.iter().filter(|r| r.ai_cache_hits > 0).count();
+    let no_ai_reports = rows.iter().filter(|r| r.no_ai_used).count();
     let avg_ms = if total == 0 {
         0
     } else {
@@ -311,7 +343,7 @@ fn write_batch_outputs(
         .unwrap_or_else(|| "n/a".into());
     let generated = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
     let mut summary = format!(
-        "# v5 Batch Evaluation Report\n\n> Eval Set: {name}  \n> Generated: {generated}  \n> AI Mode: compact/local fallback  \n> External AI Calls: {external_ai_calls}\n\n## 1. Executive Summary\n\nThis batch validates the v5 AI-led Rust research pipeline. Provider failures are isolated per ticker, and local compact analyst fallback is explicitly tracked when no external AI is called.\n\n## 2. Status Dashboard\n\n| Metric | Value |\n|---|---:|\n| Total tickers | {total} |\n| PASS | {pass} |\n| WARNING | {warning} |\n| FAIL | {fail} |\n| Training cases generated | {training_count} |\n| External AI calls | {external_ai_calls} |\n| Local fallback count | {local_fallback_count} |\n| AI cache hits | {ai_cache_hits} |\n| Workers requested | {workers} |\n| Avg runtime per ticker | {avg_ms} ms |\n| Slowest ticker | {slowest} |\n\n## 3. Company Matrix\n\n| Ticker | Status | Research Frame | Runtime | Failed Checks |\n|---|---|---|---:|---|\n"
+        "# v5 Batch Evaluation Report\n\n> Eval Set: {name}  \n> Generated: {generated}  \n> AI Mode: compact/local fallback  \n> External AI Calls: {external_ai_calls}\n\n## 1. Executive Summary\n\nThis batch validates the v5 AI-led Rust research pipeline. Provider failures are isolated per ticker, and local compact analyst fallback is explicitly tracked when no external AI is called.\n\n## 2. Status Dashboard\n\n| Metric | Value |\n|---|---:|\n| Total tickers | {total} |\n| PASS | {pass} |\n| WARNING | {warning} |\n| FAIL | {fail} |\n| Training cases generated | {training_count} |\n| External AI calls | {external_ai_calls} |\n| New external AI calls | {external_ai_calls} |\n| Local fallback reports | {local_fallback_count} |\n| Cache-hit AI reports | {cache_hit_reports} |\n| Reports with no AI | {no_ai_reports} |\n| AI cache hits | {ai_cache_hits} |\n| Workers requested | {workers} |\n| Avg runtime per ticker | {avg_ms} ms |\n| Slowest ticker | {slowest} |\n\n## 3. AI Provenance Summary\n\n- External OpenAI API calls are counted separately from local fallback and cache hits.\n- Reports with local fallback are not full external AI analyses.\n- Full reports, raw CSV files, and charts are not sent to AI in batch mode.\n\n## 4. Company Matrix\n\n| Ticker | Status | Research Frame | Runtime | Failed Checks |\n|---|---|---|---:|---|\n"
     );
     for r in rows {
         summary.push_str(&format!(
@@ -323,7 +355,7 @@ fn write_batch_outputs(
             r.failed_checks.join(", ")
         ));
     }
-    summary.push_str("\n## 4. Next Recommended Fixes\n\n1. Review WARNING and FAIL rows first.\n2. Convert recurring failures into regression tests.\n3. Run broad batches only after this matrix stays clean.\n");
+    summary.push_str("\n## 5. Next Recommended Fixes\n\n1. Review WARNING and FAIL rows first.\n2. Convert recurring failures into regression tests.\n3. Run broad batches only after this matrix stays clean.\n");
     write_if_changed(&root.join("batch_summary.md"), &summary)?;
 
     let failures = rows.iter().filter(|r| r.status == "FAIL").map(|r| {
@@ -370,7 +402,7 @@ fn write_batch_outputs(
     write_if_changed(
         &root.join("credit_usage_estimate.md"),
         &format!(
-            "# Credit Usage Estimate\n\n- External API calls: {external_ai_calls}\n- Local fallback count: {local_fallback_count}\n- AI cache hits: {ai_cache_hits}\n- Full reports sent to AI: No\n- CSV / charts sent to AI: No\n- Broad 200/500 live run: No\n"
+            "# Credit Usage Estimate\n\n- External API calls: {external_ai_calls}\n- New external AI calls: {external_ai_calls}\n- Local fallback count: {local_fallback_count}\n- Cache-hit AI reports: {cache_hit_reports}\n- Reports with no AI: {no_ai_reports}\n- AI cache hits: {ai_cache_hits}\n- Full reports sent to AI: No\n- Full raw data sent to AI: No\n- CSV / charts sent to AI: No\n- Broad 200/500 live run: No\n\nIf local fallback count is greater than zero, those rows are not real external OpenAI analyses.\n"
         ),
     )?;
     write_if_changed(&root.join("executive_dashboard.md"), &summary)?;
@@ -384,7 +416,10 @@ fn write_batch_outputs(
         "fail": fail,
         "training_cases_generated": training_count,
         "external_ai_calls": external_ai_calls,
+        "new_external_ai_calls": external_ai_calls,
         "local_fallback_count": local_fallback_count,
+        "cache_hit_ai_reports": cache_hit_reports,
+        "no_ai_reports": no_ai_reports,
         "ai_cache_hits": ai_cache_hits,
         "workers_requested": workers,
         "avg_runtime_per_ticker_ms": avg_ms,

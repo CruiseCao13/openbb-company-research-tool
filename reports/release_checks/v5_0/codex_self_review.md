@@ -14,7 +14,7 @@
 
 ## What Was Not Built
 
-- External paid AI calls are not enabled in this implementation.
+- External OpenAI calls are implemented behind `--ai compact|full`; real calls require `OPENAI_API_KEY`. Committed validation artifacts in this environment used local fallback or mocked external success only.
 - OpenBB direct normalization remains in the existing Python v4 workflow; the v5 provider bridge currently uses yfinance-compatible data for US/global tickers.
 - AKShare/Tushare/Baostock are represented through the provider bridge but A-share normalization is still screening/fallback-only in this environment.
 
@@ -76,6 +76,20 @@ charts were not sent to any external AI service.
   - mocked external success with `OPENAI_MOCK_SUCCESS=1`: external_ai_used=true, local_mock_used=false, ai_calls=4, cache_hits=0.
 - API usage visible in OpenAI Platform: only when a real `OPENAI_API_KEY` is set and `OPENAI_MOCK_SUCCESS` is not used. This environment had no key, so no paid usage should appear.
 - Important boundary: when `external_ai_used=false`, the system must not claim a real external AI analyst ran.
+
+## AI Provenance Review
+
+- Did this run use the external OpenAI API? No for committed validation artifacts in this environment.
+- Was OPENAI_API_KEY present? No in this Codex shell during validation. The CLI only reports `OPENAI_API_KEY set: yes/no` and never prints the key.
+- Which tasks used external API? None in committed artifacts. A mocked external gate test covered company_understanding, financial_interpretation, research_blueprint, and self_review with `OPENAI_MOCK_SUCCESS=1`.
+- Which tasks used local fallback? Company understanding, financial interpretation, research blueprint, and self-review in local validation runs.
+- Which tasks used cache? Cache hits are recorded per task in `metadata/ai_usage.json`; committed validation does not claim cache-hit responses are new external calls.
+- New external API calls: 0 real paid calls in committed validation artifacts.
+- Was `--require-external-ai` tested? Yes. Missing key fails without local fallback; mocked external success records external provenance.
+- Was `--no-ai-cache` tested? Yes. It forces fresh mocked external requests in the unit/manual gate and records cache_hits=0.
+- Can the user verify usage on OpenAI Platform? Yes when a real `OPENAI_API_KEY` is inherited by the shell and `OPENAI_MOCK_SUCCESS` is not set. This environment did not perform paid calls, so OpenAI Platform usage should remain 0.
+- If API usage is 0, why? The Codex shell did not have `OPENAI_API_KEY`; local fallback and mocked test calls were used. Reports with `source=local_mock` are local fallback analysis, not real external OpenAI analysis.
+- Provenance rule: every AI JSON artifact must include `ai_provenance`; `metadata/ai_usage.json` is the final authority for external/local/cache status.
 
 ## Content Quality Review
 

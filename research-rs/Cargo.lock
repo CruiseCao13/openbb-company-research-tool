@@ -808,6 +808,7 @@ name = "research-ai"
 version = "5.0.0"
 dependencies = [
  "anyhow",
+ "chrono",
  "research-core",
  "serde",
  "serde_json",
@@ -863,6 +864,7 @@ dependencies = [
  "research-batch",
  "research-core",
  "research-report",
+ "serde_json",
 ]
 
 [[package]]

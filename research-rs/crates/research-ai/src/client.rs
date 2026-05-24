@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Result};
 use research_core::cache::digest_str;
 use research_core::io::{ensure_dir, write_if_changed, write_json};
-use research_core::types::{AiTaskUsage, AiUsage, ProviderPayload, SCHEMA_VERSION};
+use research_core::types::{AiProvenance, AiTaskUsage, AiUsage, ProviderPayload, SCHEMA_VERSION};
 use serde_json::json;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -91,6 +91,84 @@ fn estimate_tokens(text: &str) -> usize {
     (text.len() / 4).max(1)
 }
 
+fn source_for(task: &AiTaskUsage) -> String {
+    if task.external_ai_used && task.cache_hit {
+        "cache".into()
+    } else if task.external_ai_used {
+        "external_openai".into()
+    } else if task.local_mock_used {
+        "local_mock".into()
+    } else {
+        "skipped".into()
+    }
+}
+
+struct AggregateProvenanceInput<'a> {
+    ai_mode: &'a str,
+    source: &'a str,
+    external_ai_used: bool,
+    local_mock_used: bool,
+    cache_hit: bool,
+    new_external_ai_call: bool,
+    request_attempted: bool,
+    request_success: bool,
+    model: &'a str,
+    output_seed: &'a str,
+}
+
+fn aggregate_provenance(input: AggregateProvenanceInput<'_>) -> AiProvenance {
+    AiProvenance {
+        source: input.source.into(),
+        external_ai_used: input.external_ai_used,
+        local_mock_used: input.local_mock_used,
+        cache_hit: input.cache_hit,
+        new_external_ai_call: input.new_external_ai_call,
+        model: input.model.into(),
+        prompt_version: "aggregate_ai_usage_v1".into(),
+        request_attempted: input.request_attempted,
+        request_success: input.request_success,
+        request_id: String::new(),
+        generated_at: chrono::Local::now().to_rfc3339(),
+        input_digest: digest_str(&format!(
+            "{}:{}:{}",
+            input.ai_mode, input.model, input.source
+        )),
+        output_digest: digest_str(input.output_seed),
+    }
+}
+
+pub fn provenance_for_task(usage: &AiUsage, task_name: &str, output_text: &str) -> AiProvenance {
+    let task = usage
+        .tasks
+        .iter()
+        .find(|task| task.task == task_name)
+        .cloned()
+        .unwrap_or_default();
+    AiProvenance {
+        source: if task.source.is_empty() {
+            source_for(&task)
+        } else {
+            task.source.clone()
+        },
+        external_ai_used: task.external_ai_used,
+        local_mock_used: task.local_mock_used,
+        cache_hit: task.cache_hit,
+        new_external_ai_call: task.new_external_ai_call,
+        model: if task.model.is_empty() {
+            usage.model.clone()
+        } else {
+            task.model.clone()
+        },
+        prompt_version: task.prompt_version.clone(),
+        request_attempted: task.request_attempted,
+        request_success: task.request_success,
+        request_id: task.request_id.clone(),
+        generated_at: chrono::Local::now().to_rfc3339(),
+        input_digest: digest_str(&format!("{}:{}:{}", usage.ai_mode, usage.model, task_name)),
+        output_digest: digest_str(output_text),
+    }
+}
+
 fn call_openai(task: &str, prompt: &str, model: &str) -> Result<(String, String)> {
     if std::env::var("OPENAI_MOCK_SUCCESS").ok().as_deref() == Some("1") {
         return Ok((
@@ -136,12 +214,19 @@ fn call_openai(task: &str, prompt: &str, model: &str) -> Result<(String, String)
 fn local_usage(task: &str, prompt_version: &str, model: &str, ai_mode: &str) -> AiTaskUsage {
     AiTaskUsage {
         task: task.to_string(),
+        source: if ai_mode == "off" {
+            "skipped"
+        } else {
+            "local_mock"
+        }
+        .into(),
         prompt_version: prompt_version.to_string(),
         external_ai_used: false,
         external_ai_attempted: false,
         external_ai_used_from_cache: false,
         local_mock_used: ai_mode != "off",
         cache_hit: false,
+        new_external_ai_call: false,
         request_attempted: false,
         request_success: false,
         request_id: String::new(),
@@ -176,6 +261,18 @@ pub fn run_ai_usage_gate(
     if options.require_external_ai && !key_available {
         let usage = AiUsage {
             schema_version: SCHEMA_VERSION.to_string(),
+            ai_provenance: aggregate_provenance(AggregateProvenanceInput {
+                ai_mode: &ai_mode,
+                source: "skipped",
+                external_ai_used: false,
+                local_mock_used: false,
+                cache_hit: false,
+                new_external_ai_call: false,
+                request_attempted: false,
+                request_success: false,
+                model: &model,
+                output_seed: "OPENAI_API_KEY missing",
+            }),
             ai_mode: ai_mode.clone(),
             require_external_ai: true,
             no_ai_cache: options.no_ai_cache,
@@ -183,6 +280,7 @@ pub fn run_ai_usage_gate(
             external_ai_attempted: false,
             external_ai_used_from_cache: false,
             local_mock_used: false,
+            cache_used: false,
             ai_calls: 0,
             new_external_ai_calls: 0,
             cache_hits: 0,
@@ -195,6 +293,7 @@ pub fn run_ai_usage_gate(
                     model: model.clone(),
                     task: (*task).into(),
                     prompt_version: (*version).into(),
+                    source: "skipped".into(),
                     ..Default::default()
                 })
                 .collect(),
@@ -247,12 +346,14 @@ pub fn run_ai_usage_gate(
             external_ai_used_from_cache = true;
             tasks.push(AiTaskUsage {
                 task: task.to_string(),
+                source: "cache".into(),
                 prompt_version: prompt_version.to_string(),
                 external_ai_used: true,
                 external_ai_attempted: false,
                 external_ai_used_from_cache: true,
                 local_mock_used: false,
                 cache_hit: true,
+                new_external_ai_call: false,
                 request_attempted: false,
                 request_success: true,
                 request_id: String::new(),
@@ -281,12 +382,14 @@ pub fn run_ai_usage_gate(
                 external_ai_used = true;
                 tasks.push(AiTaskUsage {
                     task: task.to_string(),
+                    source: "external_openai".into(),
                     prompt_version: prompt_version.to_string(),
                     external_ai_used: true,
                     external_ai_attempted: true,
                     external_ai_used_from_cache: false,
                     local_mock_used: false,
                     cache_hit: false,
+                    new_external_ai_call: true,
                     request_attempted: true,
                     request_success: true,
                     request_id,
@@ -300,12 +403,14 @@ pub fn run_ai_usage_gate(
                 let err_text = err.to_string();
                 tasks.push(AiTaskUsage {
                     task: task.to_string(),
+                    source: "external_openai".into(),
                     prompt_version: prompt_version.to_string(),
                     external_ai_used: false,
                     external_ai_attempted: true,
                     external_ai_used_from_cache: false,
                     local_mock_used: false,
                     cache_hit: false,
+                    new_external_ai_call: false,
                     request_attempted: true,
                     request_success: false,
                     request_id: String::new(),
@@ -317,6 +422,18 @@ pub fn run_ai_usage_gate(
                 if options.require_external_ai {
                     let usage = AiUsage {
                         schema_version: SCHEMA_VERSION.to_string(),
+                        ai_provenance: aggregate_provenance(AggregateProvenanceInput {
+                            ai_mode: &ai_mode,
+                            source: "external_openai",
+                            external_ai_used,
+                            local_mock_used: false,
+                            cache_hit: cache_hits > 0,
+                            new_external_ai_call: new_external_ai_calls > 0,
+                            request_attempted: true,
+                            request_success: false,
+                            model: &model,
+                            output_seed: &err_text,
+                        }),
                         ai_mode: ai_mode.clone(),
                         require_external_ai: options.require_external_ai,
                         no_ai_cache: options.no_ai_cache,
@@ -324,6 +441,7 @@ pub fn run_ai_usage_gate(
                         external_ai_attempted: true,
                         external_ai_used_from_cache,
                         local_mock_used: false,
+                        cache_used: cache_hits > 0,
                         ai_calls: new_external_ai_calls,
                         new_external_ai_calls,
                         cache_hits,
@@ -341,8 +459,34 @@ pub fn run_ai_usage_gate(
     }
 
     let ai_calls = new_external_ai_calls;
+    let source = if new_external_ai_calls > 0 {
+        "external_openai"
+    } else if cache_hits > 0 {
+        "cache"
+    } else if local_mock_used || (ai_mode != "off" && !external_ai_used) {
+        "local_mock"
+    } else {
+        "skipped"
+    };
+    let request_success = if external_ai_attempted {
+        external_ai_used
+    } else {
+        local_mock_used || ai_mode == "off" || cache_hits > 0
+    };
     let usage = AiUsage {
         schema_version: SCHEMA_VERSION.to_string(),
+        ai_provenance: aggregate_provenance(AggregateProvenanceInput {
+            ai_mode: &ai_mode,
+            source,
+            external_ai_used,
+            local_mock_used: local_mock_used || (ai_mode != "off" && !external_ai_used),
+            cache_hit: cache_hits > 0,
+            new_external_ai_call: new_external_ai_calls > 0,
+            request_attempted: external_ai_attempted,
+            request_success,
+            model: &model,
+            output_seed: &format!("{source}:{new_external_ai_calls}:{cache_hits}"),
+        }),
         ai_mode: ai_mode.clone(),
         require_external_ai: options.require_external_ai,
         no_ai_cache: options.no_ai_cache,
@@ -350,6 +494,7 @@ pub fn run_ai_usage_gate(
         external_ai_attempted,
         external_ai_used_from_cache,
         local_mock_used: local_mock_used || (ai_mode != "off" && !external_ai_used),
+        cache_used: cache_hits > 0,
         ai_calls,
         new_external_ai_calls,
         cache_hits,
@@ -362,6 +507,20 @@ pub fn run_ai_usage_gate(
         .into(),
         tasks,
     };
+    if options.no_ai_cache && usage.cache_hits > 0 {
+        write_json(&metadata_dir.join("ai_usage.json"), &usage)?;
+        return Err(anyhow!(
+            "--no-ai-cache was set but AI cache was used; refusing ambiguous AI provenance"
+        ));
+    }
+    if options.require_external_ai
+        && (!usage.external_ai_used || usage.local_mock_used || usage.new_external_ai_calls == 0)
+    {
+        write_json(&metadata_dir.join("ai_usage.json"), &usage)?;
+        return Err(anyhow!(
+            "--require-external-ai requires a successful new external OpenAI API call and forbids local fallback"
+        ));
+    }
     write_json(&metadata_dir.join("ai_usage.json"), &usage)?;
     write_if_changed(
         &ai_dir.join("cache_info.json"),

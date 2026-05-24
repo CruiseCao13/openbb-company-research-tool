@@ -19,6 +19,7 @@ fn report_renderer_has_required_sections() {
     };
     let understanding = CompanyUnderstanding {
         schema_version: SCHEMA_VERSION.to_string(),
+        ai_provenance: AiProvenance::default(),
         company_identity: "Apple identity".into(),
         business_model: "Sells products and services.".into(),
         revenue_engines: vec!["hardware".into()],
@@ -33,6 +34,7 @@ fn report_renderer_has_required_sections() {
     };
     let interpretation = FinancialInterpretation {
         schema_version: SCHEMA_VERSION.to_string(),
+        ai_provenance: AiProvenance::default(),
         revenue_explanation: "Revenue explanation".into(),
         margin_explanation: "Margin explanation".into(),
         cash_flow_explanation: "Cash flow explanation".into(),
@@ -46,6 +48,7 @@ fn report_renderer_has_required_sections() {
     };
     let blueprint = ResearchBlueprint {
         schema_version: SCHEMA_VERSION.to_string(),
+        ai_provenance: AiProvenance::default(),
         core_thesis: "Core thesis is specific enough for report rendering.".into(),
         asset_profile: "Mature Compounder".into(),
         secondary_profile: "Consumer platform".into(),
@@ -62,6 +65,7 @@ fn report_renderer_has_required_sections() {
     };
     let review = AiSelfReview {
         schema_version: SCHEMA_VERSION.to_string(),
+        ai_provenance: AiProvenance::default(),
         company_understanding_check: CheckStatus::PASS,
         framework_fit_check: CheckStatus::PASS,
         numeric_consistency_check: CheckStatus::PASS,
@@ -97,8 +101,32 @@ fn report_renderer_has_required_sections() {
         &review,
         &status,
     );
+    assert!(report.contains("AI Source:"));
+    assert!(report.contains("External AI Used:"));
+    assert!(report.contains("Local Mock Used:"));
     assert!(report.contains("## 4. Money Flow"));
     assert!(report.contains("## 13. Appendix: Locked Data"));
+}
+
+#[test]
+fn report_displays_ai_source() {
+    report_renderer_has_required_sections();
+}
+
+#[test]
+fn dashboard_displays_ai_source() {
+    let dashboard_source = include_str!("dashboard.rs");
+    assert!(dashboard_source.contains("AI Source"));
+    assert!(dashboard_source.contains("External OpenAI API"));
+    assert!(dashboard_source.contains("local fallback analysis"));
+}
+
+#[test]
+fn cannot_claim_external_ai_without_ai_usage_proof() {
+    let report_source = include_str!("markdown.rs");
+    assert!(report_source.contains("External AI Used"));
+    assert!(report_source.contains("Local Mock Used"));
+    assert!(!report_source.contains("AI analyst finished"));
 }
 
 #[test]

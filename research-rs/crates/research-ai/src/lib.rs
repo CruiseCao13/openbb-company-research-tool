@@ -8,7 +8,7 @@ pub mod self_review;
 
 use research_core::types::*;
 
-pub use client::{run_ai_usage_gate, AiRunOptions};
+pub use client::{provenance_for_task, run_ai_usage_gate, AiRunOptions};
 
 pub fn run_local_compact_analyst(
     payload: &ProviderPayload,

@@ -109,6 +109,8 @@ pub struct ProviderError {
 pub struct CompanyUnderstanding {
     #[serde(default = "default_schema_version")]
     pub schema_version: String,
+    #[serde(default)]
+    pub ai_provenance: AiProvenance,
     pub company_identity: String,
     pub business_model: String,
     pub revenue_engines: Vec<String>,
@@ -126,6 +128,8 @@ pub struct CompanyUnderstanding {
 pub struct FinancialInterpretation {
     #[serde(default = "default_schema_version")]
     pub schema_version: String,
+    #[serde(default)]
+    pub ai_provenance: AiProvenance,
     pub revenue_explanation: String,
     pub margin_explanation: String,
     pub cash_flow_explanation: String,
@@ -142,6 +146,8 @@ pub struct FinancialInterpretation {
 pub struct ResearchBlueprint {
     #[serde(default = "default_schema_version")]
     pub schema_version: String,
+    #[serde(default)]
+    pub ai_provenance: AiProvenance,
     pub core_thesis: String,
     pub asset_profile: String,
     pub secondary_profile: String,
@@ -161,6 +167,8 @@ pub struct ResearchBlueprint {
 pub struct AiSelfReview {
     #[serde(default = "default_schema_version")]
     pub schema_version: String,
+    #[serde(default)]
+    pub ai_provenance: AiProvenance,
     pub company_understanding_check: CheckStatus,
     pub framework_fit_check: CheckStatus,
     pub numeric_consistency_check: CheckStatus,
@@ -332,12 +340,14 @@ pub struct RunContext {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct AiTaskUsage {
     pub task: String,
+    pub source: String,
     pub prompt_version: String,
     pub external_ai_used: bool,
     pub external_ai_attempted: bool,
     pub external_ai_used_from_cache: bool,
     pub local_mock_used: bool,
     pub cache_hit: bool,
+    pub new_external_ai_call: bool,
     pub request_attempted: bool,
     pub request_success: bool,
     pub request_id: String,
@@ -351,6 +361,8 @@ pub struct AiTaskUsage {
 pub struct AiUsage {
     #[serde(default = "default_schema_version")]
     pub schema_version: String,
+    #[serde(default)]
+    pub ai_provenance: AiProvenance,
     pub ai_mode: String,
     pub require_external_ai: bool,
     pub no_ai_cache: bool,
@@ -358,12 +370,50 @@ pub struct AiUsage {
     pub external_ai_attempted: bool,
     pub external_ai_used_from_cache: bool,
     pub local_mock_used: bool,
+    pub cache_used: bool,
     pub ai_calls: usize,
     pub new_external_ai_calls: usize,
     pub cache_hits: usize,
     pub model: String,
     pub provider: String,
     pub tasks: Vec<AiTaskUsage>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AiProvenance {
+    pub source: String,
+    pub external_ai_used: bool,
+    pub local_mock_used: bool,
+    pub cache_hit: bool,
+    pub new_external_ai_call: bool,
+    pub model: String,
+    pub prompt_version: String,
+    pub request_attempted: bool,
+    pub request_success: bool,
+    pub request_id: String,
+    pub generated_at: String,
+    pub input_digest: String,
+    pub output_digest: String,
+}
+
+impl Default for AiProvenance {
+    fn default() -> Self {
+        Self {
+            source: "local_mock".into(),
+            external_ai_used: false,
+            local_mock_used: true,
+            cache_hit: false,
+            new_external_ai_call: false,
+            model: "local-compact-analyst-fallback".into(),
+            prompt_version: "local_fallback".into(),
+            request_attempted: false,
+            request_success: false,
+            request_id: String::new(),
+            generated_at: String::new(),
+            input_digest: String::new(),
+            output_digest: String::new(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

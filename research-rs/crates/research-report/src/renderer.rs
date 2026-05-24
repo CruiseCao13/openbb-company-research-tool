@@ -724,6 +724,7 @@ fn write_evidence_map(
         }),
     ];
     let map = json!({
+        "ai_provenance": blueprint.ai_provenance,
         "locked_data_supported": [],
         "ai_interpretation": claims,
         "assumption": [],
