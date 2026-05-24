@@ -1,0 +1,24 @@
+name: Provider Smoke
+
+on:
+  workflow_dispatch:
+
+jobs:
+  provider-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+      - name: Build CLI
+        run: cargo build --manifest-path research-rs/Cargo.toml --bin research-rs
+      - name: Provider health
+        run: research-rs/target/debug/research-rs provider-health
+      - name: Manual provider smoke with fallback allowed
+        run: research-rs/target/debug/research-rs run AAPL --mode quick --provider auto --ai compact --run-id ci_provider_smoke --force

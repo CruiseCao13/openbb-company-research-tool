@@ -1,0 +1,25 @@
+[providers]
+default_us = "openbb"
+default_cn = "akshare"
+allow_mock = true
+timeout_seconds = 30
+
+[ai]
+mode = "compact"
+model = "local-compact-analyst-fallback"
+cache = true
+max_retries = 2
+
+[batch]
+workers = 4
+max_attempts = 2
+
+[report]
+lang = "en"
+pdf = true
+dashboard = true
+charts = true
+
+[quality]
+content_judge = true
+visual_lint = true

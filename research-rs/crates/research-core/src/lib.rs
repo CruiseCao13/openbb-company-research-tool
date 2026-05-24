@@ -6,6 +6,7 @@ pub mod normalizer;
 pub mod parser;
 pub mod provider;
 pub mod run_folder;
+pub mod schema_version;
 pub mod status;
 pub mod types;
 pub mod validation;

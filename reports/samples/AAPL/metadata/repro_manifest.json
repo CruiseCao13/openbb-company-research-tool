@@ -1,0 +1,40 @@
+{
+  "ai_mode": "compact",
+  "cache_keys": {
+    "ai_response": "66250b5db0922312996280763cd594cd11dfcd66808ad6d2f0b971df9c7e9c95",
+    "provider_payload": "34333bca8e7f8eb3042d1a800b7df083f17dd1d5948a33c32d9246f2cf75c25a",
+    "report_render": "1e1bcfc4a15dd190cb840939e61d561bd5bc8d659923dbc8990d99bbdebfa77d"
+  },
+  "chart_renderer_version": "chart_provider-v5.0.0",
+  "command_used": "research-rs/target/debug/research-rs run AAPL --mode standard --market us --provider auto --ai compact --lang both --run-id v5_aapl_productized_final3 --pack --force",
+  "environment_summary": {
+    "arch": "aarch64",
+    "os": "macos",
+    "pdf_export": "PASS"
+  },
+  "generated_at": "2026-05-25T05:35:20.146695+08:00",
+  "git_commit": "8da1d23",
+  "model_name": "local-compact-analyst",
+  "prompt_versions": {
+    "chart_explanation": "chart_explanation_v1",
+    "company_understanding": "company_understanding_v1",
+    "content_quality_judge": "content_quality_judge_v1",
+    "financial_interpretation": "financial_interpretation_v1",
+    "research_blueprint": "research_blueprint_v1",
+    "self_review": "self_review_v1",
+    "table_explanation": "table_explanation_v1"
+  },
+  "provider": "yfinance",
+  "provider_payload_digest": "34333bca8e7f8eb3042d1a800b7df083f17dd1d5948a33c32d9246f2cf75c25a",
+  "provider_version": "v5-provider-bridge",
+  "report_renderer_version": "research-report-v5.0.0",
+  "run_id": "v5_aapl_productized_final3",
+  "rust_binary_version": "5.0.0",
+  "schema_version": "v5.0.0",
+  "schema_versions": {
+    "current": "v5.0.0",
+    "provider_payload": "v5.0.0",
+    "report_status": "v5.0.0"
+  },
+  "ticker": "AAPL"
+}

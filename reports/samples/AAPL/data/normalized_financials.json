@@ -1,4 +1,5 @@
 {
+  "schema_version": "v5.0.0",
   "ticker": "AAPL",
   "reporting_currency": "USD",
   "income_statement": [

@@ -1,4 +1,5 @@
 {
+  "schema_version": "v5.0.0",
   "revenue_explanation": "Locked data includes latest revenue around 220960000000.0. The report can discuss revenue direction only within provider coverage.",
   "margin_explanation": "Margin interpretation must use the Mature Consumer Technology Compounder frame and avoid cross-industry shortcuts.",
   "cash_flow_explanation": "Operating cash flow is 111482000000.0; capital expenditure is -12715000000.0. Free cash flow quality depends on the gap between operating cash generation and reinvestment needs.",

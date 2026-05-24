@@ -125,6 +125,12 @@ Incremental direction: JSON in v5.0; Arrow/Parquet/Polars are reserved for v5.1 
 
 ### Quick Start / 快速开始
 
+Install / 安装：
+
+```bash
+./install.sh
+```
+
 Build and test the Rust engine:
 
 ```bash
@@ -138,24 +144,33 @@ cargo build --bin research-rs
 Configuration starts from `research.toml`; CLI flags override operational
 choices such as ticker, market, provider, language, AI mode, pack, and force.
 Secrets must stay in environment variables, not config files or report packs.
+Use `.env.example` and `research.toml.example` as safe starting points. Do not
+commit `.env`.
+
+Health check / 环境检查：
+
+```bash
+research-rs/target/debug/research-rs doctor
+research-rs/target/debug/research-rs provider-health
+```
 
 Run one company:
 
 ```bash
-research-rs/target/debug/research-rs run AAPL --market us --provider auto --ai compact --lang both --run-id v5_aapl_validation --pack --force
+research-rs/target/debug/research-rs run AAPL --mode standard --market us --provider auto --ai compact --lang both --run-id v5_aapl_validation --pack --force
 ```
 
 Run an A-share ticker. If the local A-share provider is unavailable, the run
 will produce a clear provider fallback instead of pretending full coverage:
 
 ```bash
-research-rs/target/debug/research-rs run 600519.SH --market cn --provider auto --ai compact --lang both --run-id v5_600519_validation --pack --force
+research-rs/target/debug/research-rs run 600519.SH --mode standard --market cn --provider auto --ai compact --lang both --run-id v5_600519_validation --pack --force
 ```
 
 Run the v5 broad probe:
 
 ```bash
-research-rs/target/debug/research-rs batch eval_sets/broad_30_probe.yaml --workers 2 --ai compact --run-id v5_broad_30_validation_clean --pack --force
+research-rs/target/debug/research-rs batch eval_sets/broad_30_probe.yaml --mode batch --workers 2 --ai compact --run-id v5_broad_30_validation_clean --pack --force
 ```
 
 Run content-quality evaluation. This creates `reports/quality_runs/RUN_ID/`
@@ -164,6 +179,24 @@ with rubric scores, quality matrices, spot checks, and local training cases:
 ```bash
 research-rs/target/debug/research-rs quality eval_sets/broad_30_probe.yaml --workers 2 --ai compact --run-id v5_quality_broad_30 --pack --force
 ```
+
+Run modes / 运行模式：
+
+```text
+quick    -> fastest provider + compact understanding; no claim of complete research depth
+standard -> full Markdown, dashboard, core charts, AI blueprint, self-review, visual lint
+deep     -> standard plus heavier quality/polish/PDF expectations when local tools allow
+batch    -> cache-first mode for many tickers; failures are isolated and classified
+```
+
+Sample gallery / 示例展示：
+
+```bash
+research-rs/target/debug/research-rs samples
+open reports/samples/index.html
+```
+
+If a run fails, start with `docs/error_handbook.md`.
 
 The 500-company US/CN set is staged for segmented pressure tests. Do not run it
 as one mandatory block; use `--limit` and `--offset`:

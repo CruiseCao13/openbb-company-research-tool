@@ -1,5 +1,13 @@
 {
+  "schema_version": "v5.0.0",
   "content_quality_score": 84,
+  "visual_quality_score": 86,
+  "data_quality_score": 82,
+  "ai_confidence_score": 78,
+  "reproducibility_score": 90,
+  "completeness_score": 84,
+  "overall_product_score": 84,
+  "grade": "GOOD",
   "chart_table_score": 84,
   "visual_lint_status": "PASS",
   "presentation_status": "PASS",

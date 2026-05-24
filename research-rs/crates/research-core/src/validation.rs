@@ -82,6 +82,7 @@ pub fn report_status(
         "PASS"
     };
     ReportStatus {
+        schema_version: SCHEMA_VERSION.to_string(),
         overall_status: overall_status.to_string(),
         provider_payload_valid: if payload_failures.is_empty() {
             "PASS"

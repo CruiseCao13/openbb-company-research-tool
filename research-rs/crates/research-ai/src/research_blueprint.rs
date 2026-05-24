@@ -104,6 +104,7 @@ pub fn build_blueprint(
     };
 
     ResearchBlueprint {
+        schema_version: SCHEMA_VERSION.to_string(),
         core_thesis: format!("The central research question is whether the {} frame is supported by locked data and company-specific evidence.", frame),
         asset_profile: frame,
         secondary_profile: understanding.key_growth_drivers.first().cloned().unwrap_or_else(|| "Secondary profile not verified".into()),

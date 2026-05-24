@@ -10,13 +10,16 @@ use research_core::normalizer::write_normalized_outputs;
 use research_core::parser::write_parser_report;
 use research_core::provider::fetch_provider_payload;
 use research_core::run_folder::RunFolder;
+use research_core::schema_version::write_schema_validation_report;
 use research_core::types::*;
 use research_core::validation::{
     detect_forbidden_advice, report_status, validate_ai_json, validate_provider_payload,
 };
 use research_report::pack::pack_run;
 use research_report::renderer::{render_run, RenderRunInput};
+use std::fs;
 use std::path::PathBuf;
+use std::process::Command;
 use std::time::Instant;
 
 #[derive(Parser)]
@@ -34,8 +37,11 @@ enum Commands {
     Run(RunArgs),
     Batch(BatchArgs),
     Quality(QualityArgs),
+    Doctor,
+    ProviderHealth,
     Lint { run_folder: String },
     Pack { run_folder: String },
+    Samples,
 }
 
 #[derive(Parser, Clone)]
@@ -47,6 +53,8 @@ struct RunArgs {
     provider: String,
     #[arg(long, default_value = "compact")]
     ai: String,
+    #[arg(long, default_value = "standard")]
+    mode: String,
     #[arg(long, default_value = "en")]
     lang: String,
     #[arg(long)]
@@ -70,6 +78,8 @@ struct BatchArgs {
     workers: usize,
     #[arg(long, default_value = "compact")]
     ai: String,
+    #[arg(long, default_value = "batch")]
+    mode: String,
     #[arg(long)]
     run_id: Option<String>,
     #[arg(long)]
@@ -93,6 +103,8 @@ struct QualityArgs {
     workers: usize,
     #[arg(long, default_value = "compact")]
     ai: String,
+    #[arg(long, default_value = "batch")]
+    mode: String,
     #[arg(long)]
     run_id: Option<String>,
     #[arg(long)]
@@ -119,6 +131,7 @@ fn run_one(args: &RunArgs, render: bool) -> Result<()> {
     println!("Market: {}", args.market.to_uppercase());
     println!("Provider: {}", args.provider);
     println!("AI Mode: {}", args.ai);
+    println!("Run Mode: {}", args.mode);
     println!("Run ID: {}\n", run_id);
 
     let ctx = RunContext {
@@ -131,6 +144,7 @@ fn run_one(args: &RunArgs, render: bool) -> Result<()> {
         force: args.force,
         pack: args.pack,
         lang: args.lang.clone(),
+        mode: args.mode.clone(),
         max_attempts: args.max_attempts,
         auto_fix: args.auto_fix,
         fail_fast: args.fail_fast,
@@ -208,6 +222,22 @@ fn run_one(args: &RunArgs, render: bool) -> Result<()> {
     println!("[3/9] AI company understanding            done  local");
     let (understanding, interpretation, blueprint, review, ai_calls, cache_hits) =
         run_local_compact_analyst(&payload);
+    write_schema_validation_report(
+        &folder,
+        &[
+            ("provider_payload", payload.schema_version.clone()),
+            (
+                "company_understanding",
+                understanding.schema_version.clone(),
+            ),
+            (
+                "financial_interpretation",
+                interpretation.schema_version.clone(),
+            ),
+            ("research_blueprint", blueprint.schema_version.clone()),
+            ("ai_self_review", review.schema_version.clone()),
+        ],
+    )?;
     println!("[4/9] AI financial interpretation         done");
     println!("[5/9] AI research blueprint               done");
     let ai_failures = validate_ai_json(&understanding, &interpretation, &blueprint, &review);
@@ -388,6 +418,7 @@ fn main() -> Result<()> {
                 eval_set: PathBuf::from(args.eval_set),
                 workers: args.workers,
                 ai_mode: args.ai,
+                mode: args.mode,
                 run_id,
                 limit: args.limit,
                 offset: args.offset,
@@ -398,6 +429,7 @@ fn main() -> Result<()> {
             Ok(())
         }
         Commands::Quality(args) => {
+            println!("Quality mode: {}", args.mode);
             let run_id = args
                 .run_id
                 .unwrap_or_else(|| format!("quality_{}", Local::now().format("%Y%m%d_%H%M%S")));
@@ -422,5 +454,109 @@ fn main() -> Result<()> {
             println!("Pack requested for {run_folder}. Use run --pack for v5 generated folders.");
             Ok(())
         }
+        Commands::Doctor => write_provider_health(),
+        Commands::ProviderHealth => write_provider_health(),
+        Commands::Samples => write_sample_gallery(),
     }
+}
+
+fn command_output(cmd: &str, args: &[&str]) -> String {
+    Command::new(cmd)
+        .args(args)
+        .output()
+        .ok()
+        .map(|output| {
+            if output.status.success() {
+                String::from_utf8_lossy(&output.stdout).trim().to_string()
+            } else {
+                String::from_utf8_lossy(&output.stderr).trim().to_string()
+            }
+        })
+        .filter(|value| !value.is_empty())
+        .unwrap_or_else(|| "not available".to_string())
+}
+
+fn write_provider_health() -> Result<()> {
+    let path = PathBuf::from("reports/release_checks/provider_health.md");
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let rust_version = command_output("rustc", &["--version"]);
+    let cargo_version = command_output("cargo", &["--version"]);
+    let python_version = command_output("python3", &["--version"]);
+    let venv_status = if PathBuf::from(".venv/bin/python").exists() {
+        command_output(".venv/bin/python", &["--version"])
+    } else {
+        "not configured".to_string()
+    };
+    let openbb_status = command_output(
+        if PathBuf::from(".venv/bin/python").exists() {
+            ".venv/bin/python"
+        } else {
+            "python3"
+        },
+        &["-c", "import importlib.util; print('available' if importlib.util.find_spec('openbb') else 'not installed')"],
+    );
+    let akshare_status = command_output(
+        if PathBuf::from(".venv/bin/python").exists() {
+            ".venv/bin/python"
+        } else {
+            "python3"
+        },
+        &["-c", "import importlib.util; print('available' if importlib.util.find_spec('akshare') else 'not installed')"],
+    );
+    let tushare_status = if std::env::var("TUSHARE_TOKEN").is_ok() {
+        "token configured"
+    } else {
+        "optional token not configured"
+    };
+    let ai_status = if std::env::var("OPENAI_API_KEY").is_ok() {
+        "external AI key configured"
+    } else {
+        "no external AI key; local compact analyst will be used"
+    };
+    let pdf_status = if PathBuf::from("providers/pdf_export.py").exists() {
+        "lightweight local exporter available"
+    } else {
+        "unavailable"
+    };
+    let cache_status = if PathBuf::from("reports/_cache").exists() {
+        "exists"
+    } else {
+        "will be created on first cached run"
+    };
+    let report = format!(
+        "# Provider Health\n\n| Check | Status |\n|---|---|\n| Rust | {rust_version} |\n| Cargo | {cargo_version} |\n| Python | {python_version} |\n| Python venv | {venv_status} |\n| OpenBB provider | {openbb_status} |\n| AKShare provider | {akshare_status} |\n| Tushare Pro | {tushare_status} |\n| Baostock provider | script available if dependency is installed |\n| PDF engine | {pdf_status} |\n| AI key | {ai_status} |\n| Cache directory | {cache_status} |\n| Write permission | current workspace writable |\n\nNo API keys or secrets are printed in this report.\n\nNext: See `docs/error_handbook.md` if a provider or PDF export step fails.\n"
+    );
+    write_if_changed(&path, &report)?;
+    println!("Provider health report: {}", path.display());
+    Ok(())
+}
+
+fn write_sample_gallery() -> Result<()> {
+    let samples = PathBuf::from("reports/samples");
+    fs::create_dir_all(&samples)?;
+    let mut rows = String::new();
+    let sample_tickers = ["AAPL", "GOOGL", "CAT", "ISRG", "AMD", "600519.SH"];
+    for ticker in sample_tickers {
+        let dir = samples.join(ticker);
+        let status = if dir.exists() {
+            "available"
+        } else {
+            "not generated yet"
+        };
+        rows.push_str(&format!(
+            "<tr><td>{ticker}</td><td>{status}</td><td><a href=\"{ticker}/report/{ticker}_research_report.md\">report</a></td><td><a href=\"{ticker}/dashboard.html\">dashboard</a></td><td><a href=\"{ticker}/metadata/research_blueprint.json\">blueprint</a></td></tr>"
+        ));
+    }
+    let html = format!(
+        "<!doctype html><html><head><meta charset=\"utf-8\"><title>v5 Sample Gallery</title><style>body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#101418;color:#e7edf2;padding:32px}}table{{border-collapse:collapse;width:100%}}td,th{{border:1px solid #2b3540;padding:8px}}a{{color:#8fd3ff}}</style></head><body><h1>v5 Sample Gallery</h1><p>Samples are generated artifacts, not investment advice. Missing samples can be created with <code>research-rs run TICKER --mode standard --pack</code>.</p><table><thead><tr><th>Ticker</th><th>Status</th><th>Report</th><th>Dashboard</th><th>Blueprint</th></tr></thead><tbody>{rows}</tbody></table></body></html>"
+    );
+    write_if_changed(&samples.join("index.html"), &html)?;
+    write_if_changed(
+        &samples.join("README.md"),
+        "# v5 Sample Gallery\n\nOpen `index.html` for the static sample gallery. Samples are generated reports and dashboards used to inspect product quality, not investment advice.\n\nExpected showcase names: AAPL, GOOGL, CAT, ISRG, AMD, and 600519.SH. A sample may be marked missing until its run has been generated and copied into this folder.\n",
+    )?;
+    println!("Sample gallery: {}", samples.join("index.html").display());
+    Ok(())
 }

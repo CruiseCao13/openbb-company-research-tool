@@ -604,6 +604,7 @@ pub fn understand_company(payload: &ProviderPayload) -> CompanyUnderstanding {
     };
 
     CompanyUnderstanding {
+        schema_version: SCHEMA_VERSION.to_string(),
         company_identity: format!("{name} is best treated as {frame} based on the locked provider profile and financial context."),
         business_model: format!("The research frame is {frame}. The report should explain how the company earns money before interpreting valuation."),
         revenue_engines,

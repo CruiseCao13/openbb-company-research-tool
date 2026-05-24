@@ -1,7 +1,7 @@
 {
   "ticker": "AAPL",
-  "run_id": "v5_aapl_productized_final",
-  "generated_at": "2026-05-25T05:25:36.073581+08:00",
+  "run_id": "v5_aapl_productized_final3",
+  "generated_at": "2026-05-25T05:35:20.215171+08:00",
   "files": [
     "charts/Figure_03_financial_trend.png",
     "charts/Figure_04_money_flow.png",
@@ -16,6 +16,7 @@
     "audit/data_inventory_report.md",
     "audit/pdf_export_report.md",
     "audit/visual_lint_report.md",
+    "audit/schema_validation.md",
     "audit/data_quality.md",
     "audit/table_quality_report.md",
     "audit/parser_report.md",
@@ -46,6 +47,7 @@
     "metadata/table_plan.json",
     "metadata/provider_status.json",
     "metadata/financial_interpretation.json",
+    "metadata/repro_manifest.json",
     "metadata/cache_summary.json",
     "metadata/report_status.json",
     "metadata/company_understanding.json",
@@ -99,8 +101,8 @@
     },
     {
       "path": "dashboard.html",
-      "size_bytes": 6542,
-      "sha256": "71f452cdf4844ab9bed5250cebe5d682074cb6dab4e39603ba86f87b18767302"
+      "size_bytes": 6703,
+      "sha256": "60153a8a4cd5c133445ae1a44202983f33819f8ea46eecf48eab15437608cf11"
     },
     {
       "path": "README.md",
@@ -131,6 +133,11 @@
       "path": "audit/visual_lint_report.md",
       "size_bytes": 339,
       "sha256": "b48eccff9832229a509c56bee494690361a9ea9502f0fdadb51eac4150bc7cd6"
+    },
+    {
+      "path": "audit/schema_validation.md",
+      "size_bytes": 759,
+      "sha256": "69f8e3bf6ca4f306c16d072116014970f5c2764cf87848c8852bb151d81c6a36"
     },
     {
       "path": "audit/data_quality.md",
@@ -204,8 +211,8 @@
     },
     {
       "path": "self_review/ai_self_review.json",
-      "size_bytes": 305,
-      "sha256": "378d9a7ce404a10b103d30f1ae97fcaae456760182e08a70fc29960aa769afd0"
+      "size_bytes": 335,
+      "sha256": "3b35f0e772485ff54ed765aa1e5aa04060e71e6aeaf476c3ca356a487704ce3a"
     },
     {
       "path": "self_review/ai_self_review.md",
@@ -234,13 +241,13 @@
     },
     {
       "path": "data/normalized_price_history.json",
-      "size_bytes": 26523,
-      "sha256": "50536bf79b1593dc0f76155af5d317d5fb3ebbfae94e158777563dc9d1049b90"
+      "size_bytes": 26553,
+      "sha256": "ce397e0f595dea28299573c8ac25e383977aa970c3539bb5df0d3735c531eb12"
     },
     {
       "path": "data/normalized_financials.json",
-      "size_bytes": 61656,
-      "sha256": "1c81e3ee69fe0a0d5d62111dd60843b8d96179bd29bad463b240de61542be238"
+      "size_bytes": 61686,
+      "sha256": "11e11afd606a86e4eb4f9f1aa6f78fa73ef8198441ca2c3ff42569150a98cae4"
     },
     {
       "path": "metadata/pdf_status.json",
@@ -279,8 +286,13 @@
     },
     {
       "path": "metadata/financial_interpretation.json",
-      "size_bytes": 1431,
-      "sha256": "a28beb3dc773d49543730bb8656128895ef041b253dcc61ae0ce12f6ba3149a2"
+      "size_bytes": 1461,
+      "sha256": "edf9366e6177696f29114a91b94f772e422414e438496d07a62bc41a9b37263e"
+    },
+    {
+      "path": "metadata/repro_manifest.json",
+      "size_bytes": 1633,
+      "sha256": "433cd6359daec685bc45518e67998706ea89c56d1644beb96b829dcba2f212d7"
     },
     {
       "path": "metadata/cache_summary.json",
@@ -289,18 +301,18 @@
     },
     {
       "path": "metadata/report_status.json",
-      "size_bytes": 450,
-      "sha256": "4cc5db87b056547a5258a6d71cba3fd3815ba016b91f45196247853676e9a92b"
+      "size_bytes": 480,
+      "sha256": "f0129209ba9cf3eb9bd0a0107085bb87a711608a7f1569fd07899aa183ad0b5c"
     },
     {
       "path": "metadata/company_understanding.json",
-      "size_bytes": 1111,
-      "sha256": "a0b64ab0c0db753d08d33c509c808d7f5cf9147bd38c5a148272ba4567f2b866"
+      "size_bytes": 1141,
+      "sha256": "1afcca072e973cf1c9193318ab768f2304792e3c37d912a653e7f05f04d26263"
     },
     {
       "path": "metadata/research_blueprint.json",
-      "size_bytes": 1163,
-      "sha256": "385255890bcf66b8b4666e967a7a063ab1d96cde3ee5f41e50d8f1bb81378189"
+      "size_bytes": 1193,
+      "sha256": "5ca5b7fcb09cd3de1060bbf3d851edd0d3345b75071431267c4410d31599185d"
     },
     {
       "path": "metadata/evidence_map.json",
@@ -310,7 +322,7 @@
     {
       "path": "metadata/provider_cache_info.json",
       "size_bytes": 180,
-      "sha256": "7f657f6d9f52eabc8158b98de415365650b06b3b34db6a59a50a939f0a769f24"
+      "sha256": "ec3e13adcb9d3e9916c5f3848241c05a29eb7aeb545f2ba0b5a0528fab207e86"
     },
     {
       "path": "metadata/rewrite_status.json",
@@ -329,8 +341,8 @@
     },
     {
       "path": "metadata/product_quality_score.json",
-      "size_bytes": 160,
-      "sha256": "ba19fd83041fddf1f4e40d7e187b7e3963a51fb65f82f4983ad4b0f95cea652d"
+      "size_bytes": 386,
+      "sha256": "305b3e583cac301dcb3ef8ce39c60bb881140bb268fc75df72c61c8c5e471fcd"
     },
     {
       "path": "metadata/prompt_versions.json",
@@ -339,8 +351,8 @@
     },
     {
       "path": "raw/provider_payload.json",
-      "size_bytes": 109106,
-      "sha256": "5d991d4a42e33d2533a68e35b47be642c40ae09806a83c88d0a7ccfa2c50b907"
+      "size_bytes": 109136,
+      "sha256": "34333bca8e7f8eb3042d1a800b7df083f17dd1d5948a33c32d9246f2cf75c25a"
     }
   ]
 }

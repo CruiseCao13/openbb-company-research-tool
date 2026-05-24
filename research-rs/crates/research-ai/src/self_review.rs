@@ -20,6 +20,7 @@ pub fn review(
     }
     let blueprint_generic = blueprint.must_analyze.len() < 3 || blueprint.next_checks.len() < 3;
     AiSelfReview {
+        schema_version: SCHEMA_VERSION.to_string(),
         company_understanding_check: if understanding.company_identity.len() > 20 {
             CheckStatus::PASS
         } else {

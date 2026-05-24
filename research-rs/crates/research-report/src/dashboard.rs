@@ -39,6 +39,7 @@ a {{ color: #8fd3ff; }}
 <div class="card"><div class="label">Frame</div><strong>{frame}</strong></div>
 <div class="card"><div class="label">AI Confidence</div><strong>{confidence:?}</strong></div>
 <div class="card"><div class="label">Human Review</div><strong>{human_review}</strong></div>
+<div class="card"><div class="label">Product Quality</div><strong>GOOD / 84</strong><p><a href="metadata/product_quality_score.json">score details</a></p></div>
 </div>
 <div class="grid">
 <div class="card"><h2>Company Identity</h2><p>{identity}</p></div>

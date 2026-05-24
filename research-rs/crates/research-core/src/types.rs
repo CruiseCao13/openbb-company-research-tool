@@ -1,7 +1,15 @@
 use serde::{Deserialize, Serialize};
 
+pub const SCHEMA_VERSION: &str = "v5.0.0";
+
+pub fn default_schema_version() -> String {
+    SCHEMA_VERSION.to_string()
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ProviderPayload {
+    #[serde(default = "default_schema_version")]
+    pub schema_version: String,
     pub ticker: String,
     pub market: String,
     pub provider: String,
@@ -38,6 +46,8 @@ pub struct ValuationSnapshot {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct NormalizedFinancials {
+    #[serde(default = "default_schema_version")]
+    pub schema_version: String,
     pub ticker: String,
     pub reporting_currency: String,
     pub income_statement: Vec<StatementRow>,
@@ -48,6 +58,8 @@ pub struct NormalizedFinancials {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct NormalizedPriceHistory {
+    #[serde(default = "default_schema_version")]
+    pub schema_version: String,
     pub ticker: String,
     pub price_currency: String,
     pub points: Vec<PricePoint>,
@@ -95,6 +107,8 @@ pub struct ProviderError {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CompanyUnderstanding {
+    #[serde(default = "default_schema_version")]
+    pub schema_version: String,
     pub company_identity: String,
     pub business_model: String,
     pub revenue_engines: Vec<String>,
@@ -110,6 +124,8 @@ pub struct CompanyUnderstanding {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FinancialInterpretation {
+    #[serde(default = "default_schema_version")]
+    pub schema_version: String,
     pub revenue_explanation: String,
     pub margin_explanation: String,
     pub cash_flow_explanation: String,
@@ -124,6 +140,8 @@ pub struct FinancialInterpretation {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ResearchBlueprint {
+    #[serde(default = "default_schema_version")]
+    pub schema_version: String,
     pub core_thesis: String,
     pub asset_profile: String,
     pub secondary_profile: String,
@@ -141,6 +159,8 @@ pub struct ResearchBlueprint {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AiSelfReview {
+    #[serde(default = "default_schema_version")]
+    pub schema_version: String,
     pub company_understanding_check: CheckStatus,
     pub framework_fit_check: CheckStatus,
     pub numeric_consistency_check: CheckStatus,
@@ -168,6 +188,8 @@ pub enum CheckStatus {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReportStatus {
+    #[serde(default = "default_schema_version")]
+    pub schema_version: String,
     pub overall_status: String,
     pub provider_payload_valid: String,
     pub company_understanding_present: String,
@@ -226,7 +248,16 @@ pub struct RunTrace {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProductQualityScore {
+    #[serde(default = "default_schema_version")]
+    pub schema_version: String,
     pub content_quality_score: u8,
+    pub visual_quality_score: u8,
+    pub data_quality_score: u8,
+    pub ai_confidence_score: u8,
+    pub reproducibility_score: u8,
+    pub completeness_score: u8,
+    pub overall_product_score: u8,
+    pub grade: String,
     pub chart_table_score: u8,
     pub visual_lint_status: String,
     pub presentation_status: String,
@@ -290,7 +321,28 @@ pub struct RunContext {
     pub force: bool,
     pub pack: bool,
     pub lang: String,
+    pub mode: String,
     pub max_attempts: usize,
     pub auto_fix: bool,
     pub fail_fast: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BatchResult {
+    #[serde(default = "default_schema_version")]
+    pub schema_version: String,
+    pub run_id: String,
+    pub total: usize,
+    pub pass: usize,
+    pub warning: usize,
+    pub fail: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TrainingCase {
+    #[serde(default = "default_schema_version")]
+    pub schema_version: String,
+    pub ticker: String,
+    pub issue_type: String,
+    pub expected_behavior: String,
 }

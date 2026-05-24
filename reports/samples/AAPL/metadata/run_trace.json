@@ -1,9 +1,9 @@
 {
   "ticker": "AAPL",
-  "run_id": "v5_aapl_productized_final",
-  "started_at": "2026-05-25T05:25:33.191138+08:00",
-  "finished_at": "2026-05-25T05:25:36.161229+08:00",
-  "total_ms": 2969,
+  "run_id": "v5_aapl_productized_final3",
+  "started_at": "2026-05-25T05:35:17.446156+08:00",
+  "finished_at": "2026-05-25T05:35:20.295401+08:00",
+  "total_ms": 2849,
   "provider_used": "auto",
   "ai_mode": "compact",
   "ai_calls": 0,
@@ -12,7 +12,7 @@
     {
       "stage": "provider_fetch",
       "status": "PASS",
-      "duration_ms": 1743,
+      "duration_ms": 1634,
       "cache_hit": false,
       "provider_used": "auto",
       "ai_calls": 0,
@@ -59,7 +59,7 @@
     {
       "stage": "report_render",
       "status": "PASS",
-      "duration_ms": 1083,
+      "duration_ms": 1079,
       "cache_hit": false,
       "provider_used": null,
       "ai_calls": 0,
@@ -74,14 +74,14 @@
     {
       "stage": "pack",
       "status": "PASS",
-      "duration_ms": 142,
+      "duration_ms": 133,
       "cache_hit": false,
       "provider_used": null,
       "ai_calls": 0,
       "errors": [],
       "warnings": [],
       "output_files": [
-        "reports/AAPL/runs/v5_aapl_productized_final/pack/AAPL_research_pack.zip"
+        "reports/AAPL/runs/v5_aapl_productized_final3/pack/AAPL_research_pack.zip"
       ]
     }
   ]

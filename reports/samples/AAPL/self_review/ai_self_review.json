@@ -1,4 +1,5 @@
 {
+  "schema_version": "v5.0.0",
   "company_understanding_check": "PASS",
   "framework_fit_check": "PASS",
   "numeric_consistency_check": "PASS",

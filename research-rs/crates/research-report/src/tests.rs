@@ -18,6 +18,7 @@ fn report_renderer_has_required_sections() {
         ..Default::default()
     };
     let understanding = CompanyUnderstanding {
+        schema_version: SCHEMA_VERSION.to_string(),
         company_identity: "Apple identity".into(),
         business_model: "Sells products and services.".into(),
         revenue_engines: vec!["hardware".into()],
@@ -31,6 +32,7 @@ fn report_renderer_has_required_sections() {
         human_review_required: false,
     };
     let interpretation = FinancialInterpretation {
+        schema_version: SCHEMA_VERSION.to_string(),
         revenue_explanation: "Revenue explanation".into(),
         margin_explanation: "Margin explanation".into(),
         cash_flow_explanation: "Cash flow explanation".into(),
@@ -43,6 +45,7 @@ fn report_renderer_has_required_sections() {
         unsupported_due_to_missing_data: vec![],
     };
     let blueprint = ResearchBlueprint {
+        schema_version: SCHEMA_VERSION.to_string(),
         core_thesis: "Core thesis is specific enough for report rendering.".into(),
         asset_profile: "Mature Compounder".into(),
         secondary_profile: "Consumer platform".into(),
@@ -58,6 +61,7 @@ fn report_renderer_has_required_sections() {
         human_review_required: false,
     };
     let review = AiSelfReview {
+        schema_version: SCHEMA_VERSION.to_string(),
         company_understanding_check: CheckStatus::PASS,
         framework_fit_check: CheckStatus::PASS,
         numeric_consistency_check: CheckStatus::PASS,
@@ -69,6 +73,7 @@ fn report_renderer_has_required_sections() {
         human_review_required: false,
     };
     let status = ReportStatus {
+        schema_version: SCHEMA_VERSION.to_string(),
         overall_status: "PASS".into(),
         provider_payload_valid: "PASS".into(),
         company_understanding_present: "PASS".into(),

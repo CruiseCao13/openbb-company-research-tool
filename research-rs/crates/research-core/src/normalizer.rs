@@ -2,6 +2,7 @@ use crate::io::{write_if_changed, write_json};
 use crate::run_folder::RunFolder;
 use crate::types::{
     NormalizedFinancials, NormalizedPriceHistory, ProviderPayload, StatementRow, ValuationSnapshot,
+    SCHEMA_VERSION,
 };
 use anyhow::Result;
 
@@ -49,6 +50,7 @@ pub fn normalized_valuation(payload: &ProviderPayload) -> ValuationSnapshot {
 
 pub fn write_normalized_outputs(folder: &RunFolder, payload: &ProviderPayload) -> Result<()> {
     let financials = NormalizedFinancials {
+        schema_version: SCHEMA_VERSION.to_string(),
         ticker: payload.ticker.clone(),
         reporting_currency: payload.company_profile.currency.clone(),
         income_statement: clean_rows(&payload.income_statement),
@@ -57,6 +59,7 @@ pub fn write_normalized_outputs(folder: &RunFolder, payload: &ProviderPayload) -
         valuation_snapshot: normalized_valuation(payload),
     };
     let prices = NormalizedPriceHistory {
+        schema_version: SCHEMA_VERSION.to_string(),
         ticker: payload.ticker.clone(),
         price_currency: payload.company_profile.currency.clone(),
         points: payload

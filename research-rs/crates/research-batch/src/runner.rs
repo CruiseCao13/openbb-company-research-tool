@@ -10,6 +10,7 @@ use research_core::normalizer::write_normalized_outputs;
 use research_core::parser::write_parser_report;
 use research_core::provider::fetch_provider_payload;
 use research_core::run_folder::RunFolder;
+use research_core::schema_version::write_schema_validation_report;
 use research_core::types::*;
 use research_core::validation::{report_status, validate_ai_json, validate_provider_payload};
 use research_report::dashboard::render_batch_dashboard;
@@ -23,6 +24,7 @@ pub struct BatchRunOptions {
     pub eval_set: PathBuf,
     pub workers: usize,
     pub ai_mode: String,
+    pub mode: String,
     pub run_id: String,
     pub limit: Option<usize>,
     pub offset: usize,
@@ -70,6 +72,7 @@ pub fn run_batch(options: &BatchRunOptions) -> Result<PathBuf> {
             force: options.force,
             pack: options.pack,
             lang: "en".to_string(),
+            mode: options.mode.clone(),
             max_attempts: 2,
             auto_fix: false,
             fail_fast: false,
@@ -89,6 +92,22 @@ pub fn run_batch(options: &BatchRunOptions) -> Result<PathBuf> {
         let provider_failures = validate_provider_payload(&payload);
         let (understanding, interpretation, blueprint, review, ai_calls, cache_hits) =
             run_local_compact_analyst(&payload);
+        write_schema_validation_report(
+            &folder,
+            &[
+                ("provider_payload", payload.schema_version.clone()),
+                (
+                    "company_understanding",
+                    understanding.schema_version.clone(),
+                ),
+                (
+                    "financial_interpretation",
+                    interpretation.schema_version.clone(),
+                ),
+                ("research_blueprint", blueprint.schema_version.clone()),
+                ("ai_self_review", review.schema_version.clone()),
+            ],
+        )?;
         let ai_failures = validate_ai_json(&understanding, &interpretation, &blueprint, &review);
         let status = report_status(
             &provider_failures,
@@ -323,6 +342,24 @@ fn write_batch_outputs(
     )?;
     write_if_changed(&root.join("credit_usage_estimate.md"), "# Credit Usage Estimate\n\n- External AI calls: 0\n- Local compact analyst reviews: enabled\n- Full reports sent to AI: No\n- CSV / charts sent to AI: No\n")?;
     write_if_changed(&root.join("executive_dashboard.md"), &summary)?;
+    let summary_json = serde_json::json!({
+        "schema_version": SCHEMA_VERSION,
+        "batch_name": name,
+        "generated_at": Local::now().to_rfc3339(),
+        "total": total,
+        "pass": pass,
+        "warning": warning,
+        "fail": fail,
+        "training_cases_generated": training_count,
+        "external_ai_calls": 0,
+        "workers_requested": workers,
+        "avg_runtime_per_ticker_ms": avg_ms,
+        "slowest_ticker": slowest,
+        "provider_cache_hits": "recorded per ticker in metadata/provider_status.json",
+        "ai_cache_hits": "local compact fallback records cache per ticker",
+        "broad_200_or_500_live": false
+    });
+    research_core::io::write_json(&root.join("batch_summary.json"), &summary_json)?;
     write_if_changed(
         &root.join("dashboard.html"),
         &render_batch_dashboard(
@@ -355,6 +392,7 @@ fn write_batch_outputs(
     }
     wtr.flush()?;
     let trace = serde_json::json!({
+        "schema_version": SCHEMA_VERSION,
         "batch_name": name,
         "workers_requested": workers,
         "total_ms": total_ms,

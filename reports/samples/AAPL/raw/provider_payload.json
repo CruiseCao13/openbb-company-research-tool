@@ -1,8 +1,9 @@
 {
+  "schema_version": "v5.0.0",
   "ticker": "AAPL",
   "market": "US",
   "provider": "yfinance",
-  "fetched_at": "2026-05-24T21:25:34.304830+00:00",
+  "fetched_at": "2026-05-24T21:35:18.357845+00:00",
   "company_profile": {
     "name": "Apple Inc.",
     "sector": "Technology",

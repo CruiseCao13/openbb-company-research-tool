@@ -5,17 +5,23 @@ on:
   pull_request:
 
 jobs:
-  smoke-test:
+  rust-and-python-smoke:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install dependencies
+      - name: Rust format
+        run: cargo fmt --manifest-path research-rs/Cargo.toml --all -- --check
+      - name: Rust clippy
+        run: cargo clippy --manifest-path research-rs/Cargo.toml --all-targets --all-features -- -D warnings
+      - name: Rust tests
+        run: cargo test --manifest-path research-rs/Cargo.toml
+      - name: Python provider syntax
+        run: python -m py_compile providers/*.py
+      - name: Build CLI and doctor smoke
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      - name: Help smoke test
-        run: |
-          python scripts/company_research_tool.py --help
+          cargo build --manifest-path research-rs/Cargo.toml --bin research-rs
+          research-rs/target/debug/research-rs doctor

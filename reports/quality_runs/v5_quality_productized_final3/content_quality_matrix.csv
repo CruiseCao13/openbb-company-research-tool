@@ -1,0 +1,6 @@
+ticker,score,grade,hard_failures,human_review_required,run_folder
+AAPL,86,GOOD,,false,reports/AAPL/runs/v5_quality_productized_final3_batch_AAPL
+MSFT,86,GOOD,,false,reports/MSFT/runs/v5_quality_productized_final3_batch_MSFT
+GOOGL,86,GOOD,,false,reports/GOOGL/runs/v5_quality_productized_final3_batch_GOOGL
+META,86,GOOD,,false,reports/META/runs/v5_quality_productized_final3_batch_META
+NVDA,86,GOOD,,false,reports/NVDA/runs/v5_quality_productized_final3_batch_NVDA

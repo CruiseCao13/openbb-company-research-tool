@@ -7,6 +7,7 @@
 | Architecture diagram | PASS | Mermaid pipeline diagram is present, with text fallback responsibility map. |
 | Folder structure | PASS | Run folder and expanded output pack examples are shown. |
 | Sample outputs | PASS | Sample dashboard path and sample report folders are listed. |
+| Install / onboarding | PASS | README points to `install.sh`, `.env.example`, `research.toml.example`, `research-rs doctor`, and sample gallery generation. |
 | Quality evaluation | PASS | Content quality outputs and rubric purpose are described. |
 | Mock/fallback boundary | PASS | README states external AI is not enabled and A-share normalization may fallback. |
 | Limitations and disclaimer | PASS | It clearly says no buy/sell/target price and no replacement for due diligence. |

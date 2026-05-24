@@ -28,6 +28,7 @@ pub fn interpret_financials(
     };
 
     FinancialInterpretation {
+        schema_version: SCHEMA_VERSION.to_string(),
         revenue_explanation: match revenue {
             Some(v) => format!("Locked data includes latest revenue around {:.1}. The report can discuss revenue direction only within provider coverage.", v),
             None => "Revenue is not available in locked provider data; revenue quality cannot be treated as verified evidence.".into(),
