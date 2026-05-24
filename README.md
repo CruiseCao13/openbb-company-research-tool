@@ -75,6 +75,20 @@ Run the v5 broad probe:
 research-rs/target/debug/research-rs batch eval_sets/broad_30_probe.yaml --workers 2 --ai compact --run-id v5_broad_30_validation_clean --pack --force
 ```
 
+Run content-quality evaluation. This creates `reports/quality_runs/RUN_ID/`
+with rubric scores, quality matrices, spot checks, and local training cases:
+
+```bash
+research-rs/target/debug/research-rs quality eval_sets/broad_30_probe.yaml --workers 2 --ai compact --run-id v5_quality_broad_30 --pack --force
+```
+
+The 500-company US/CN set is staged for segmented pressure tests. Do not run it
+as one mandatory block; use `--limit` and `--offset`:
+
+```bash
+research-rs/target/debug/research-rs quality eval_sets/broad_500_us_cn.yaml --workers 2 --ai compact --run-id v5_quality_broad_500_mixed_50 --limit 50 --offset 225 --pack --force
+```
+
 ### Folder Structure
 
 Each v5 run writes:
@@ -132,6 +146,27 @@ one. Reports and batch summaries state this clearly.
 
 The compact analyst receives only provider summaries and company profile
 context, not full CSVs or charts. This keeps the system fast and credit-safe.
+
+### Content Quality Evaluation
+
+The v5 quality layer scores reports on company understanding, business-model
+clarity, financial interpretation, money flow, blueprint fit, valuation fit,
+risk specificity, data gaps, chart/table explanations, language quality, and
+unsupported-claim control. It writes:
+
+- `content_quality_summary.md`
+- `content_quality_matrix.csv`
+- `content_quality_matrix.json`
+- `failed_quality_cases.md`
+- `profile_mismatch_cases.md`
+- `unsupported_claims_cases.md`
+- `generic_language_cases.md`
+- `chart_table_quality_report.md`
+- `money_flow_quality_report.md`
+- `ai_judge_reviews.jsonl`
+- `training_cases_from_quality.jsonl`
+- `codex_spot_check_report.md`
+- `quality_iteration_log.md`
 
 ### Limitations
 

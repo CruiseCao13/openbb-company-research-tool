@@ -23,6 +23,8 @@
 - AAPL v5 run
 - 600519.SH v5 run
 - broad_30 v5 batch
+- broad_30 content quality run
+- broad_500 mixed US/CN quality segment with `--limit 50 --offset 225`
 
 ## Batch Result
 
@@ -44,6 +46,18 @@ External paid AI calls: 0.
 
 The current engine uses local compact analyst fallback. Full reports, CSVs, and
 charts were not sent to any external AI service.
+
+## Content Quality Review
+
+Latest quality runs:
+
+- `reports/quality_runs/v5_quality_broad_30`
+- `reports/quality_runs/v5_quality_broad_500_mixed_50`
+
+The broad_30 quality run scored 30 reports with average quality 84.4, zero
+FAIL grades, and zero hard failures. The mixed broad_500 segment scored 50
+US/CN reports with average quality 81.0, zero FAIL grades, and explicit
+human-review caps for fallback/data-limited cases.
 
 ## Provider Limitations
 
@@ -96,6 +110,8 @@ See `reports/release_checks/v5_0/display_review.md`.
   during validation. Production single-company runs do not inject those labels.
 - More sector-specific validators are needed before broad_200 should be treated
   as product-grade.
+- broad_500 is staged and supported, but only a 50-name mixed segment was run
+  in this pass. Full broad_500 remains a later pressure test.
 
 ## Next Recommended Work
 

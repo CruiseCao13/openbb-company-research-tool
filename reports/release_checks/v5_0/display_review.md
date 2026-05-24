@@ -8,6 +8,7 @@
 | Batch UX | PASS | The batch run writes batch_summary.md, failures.md, warnings.md, profile_distribution.md, credit_usage_estimate.md, company_matrix.csv, and dashboard.html. |
 | HTML Dashboard | PASS | Static HTML dashboards are generated for single-company and batch runs. |
 | PDF Export | PASS | A basic dependency-free PDF export is generated next to Markdown reports. |
+| Content Quality UX | PASS | Quality runs generate summary, matrix, spot-check, chart/table, money-flow, and training-case reports. |
 | Language Quality | WARNING | The current local compact analyst is clear and bounded, but it is still less nuanced than the planned external AI analyst. |
 
 No display category is marked FAIL.

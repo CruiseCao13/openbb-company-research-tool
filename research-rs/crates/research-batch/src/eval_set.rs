@@ -12,24 +12,47 @@ pub struct EvalSet {
 
 fn group_family(group: &str) -> String {
     match group {
-        "mature_compounder" => "Mature Compounder",
-        "mega_cap_tech" => "Platform Internet / Mega-cap Tech",
-        "semiconductor_ai" => "AI Semiconductor / Data Center Growth Compounder",
-        "semiconductor_turnaround" => "Capital-Intensive Semiconductor Turnaround",
-        "speculative_growth" => "Speculative Growth",
-        "biotech_like" => "Biotech / Pharma Research Frame",
-        "pharma" => "Biotech / Pharma Research Frame",
-        "medical_devices" => "Medical Devices",
-        "banks" | "brokers_exchanges" => "Financials / Bank-like Screening",
-        "insurance" => "Insurance-like Screening",
-        "reit" => "REIT-like Screening",
-        "energy" | "materials_mining" | "industrials" => "Cyclical / Industrial Cycle",
-        "aerospace_defense" => "Aerospace / Defense",
-        "airlines_transport" | "shipping_logistics" => "Shipping / Airlines / Transport Cycle",
-        "consumer_retail" | "restaurants" | "luxury_apparel" => "Consumer / Retail",
-        "utilities" => "Utilities / Infrastructure",
-        "telecom_media" => "Telecom / Infrastructure Cash Flow",
+        "mature_compounder" | "us_mature_compounder" => "Mature Compounder",
+        "mega_cap_tech" | "us_mega_cap_tech" => "Platform Internet / Mega-cap Tech",
+        "semiconductor_ai" | "us_ai_semiconductor" => {
+            "AI Semiconductor / Data Center Growth Compounder"
+        }
+        "semiconductor_turnaround" | "us_semiconductor_turnaround" | "cn_semiconductor" => {
+            "Capital-Intensive Semiconductor Turnaround"
+        }
+        "speculative_growth" | "us_speculative_unknown" => "Speculative Growth",
+        "biotech_like" | "pharma" | "us_biotech" | "us_healthcare_pharma" | "cn_pharma_biotech" => {
+            "Biotech / Pharma Research Frame"
+        }
+        "medical_devices" | "us_medical_devices" | "cn_medical_devices" => "Medical Devices",
+        "banks"
+        | "brokers_exchanges"
+        | "us_financials"
+        | "us_brokers_exchanges"
+        | "cn_banks"
+        | "cn_brokers_insurance" => "Financials / Bank-like Screening",
+        "insurance" | "us_insurance" => "Insurance-like Screening",
+        "reit" | "us_reit" => "REIT-like Screening",
+        "energy"
+        | "materials_mining"
+        | "industrials"
+        | "us_energy_materials"
+        | "us_industrial_machinery"
+        | "cn_coal_metals"
+        | "cn_building_chemicals"
+        | "cn_machinery_industrial" => "Cyclical / Industrial Cycle",
+        "aerospace_defense" | "us_aerospace_defense" | "cn_defense_aerospace" => {
+            "Aerospace / Defense"
+        }
+        "airlines_transport" | "shipping_logistics" | "us_transport_shipping" => {
+            "Shipping / Airlines / Transport Cycle"
+        }
+        "consumer_retail" | "restaurants" | "luxury_apparel" | "us_consumer_retail"
+        | "us_restaurants" | "cn_baijiu_consumer" => "Consumer / Retail",
+        "utilities" | "us_telecom_utilities" | "cn_power_utilities" => "Utilities / Infrastructure",
+        "telecom_media" | "cn_media_internet" => "Telecom / Infrastructure Cash Flow",
         "payments_fintech" => "Payments / Fintech",
+        "cn_new_energy_auto" | "cn_solar_power_equipment" => "Cyclical / Industrial Cycle",
         _ => "Unknown / Data-Limited Screening",
     }
     .to_string()

@@ -23,6 +23,8 @@ reports/*
 !reports/release_checks/**
 !reports/samples/
 !reports/samples/**
+!reports/quality_runs/
+!reports/quality_runs/**
 
 data/raw/*
 !data/raw/.gitkeep

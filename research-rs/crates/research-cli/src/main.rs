@@ -2,6 +2,7 @@ use anyhow::Result;
 use chrono::Local;
 use clap::{Parser, Subcommand};
 use research_ai::run_local_compact_analyst;
+use research_batch::quality::{run_quality, QualityRunOptions};
 use research_batch::runner::{run_batch, BatchRunOptions};
 use research_core::config::EngineConfig;
 use research_core::provider::fetch_provider_payload;
@@ -28,6 +29,7 @@ enum Commands {
     Analyze(RunArgs),
     Run(RunArgs),
     Batch(BatchArgs),
+    Quality(QualityArgs),
     Lint { run_folder: String },
     Pack { run_folder: String },
 }
@@ -64,6 +66,25 @@ struct BatchArgs {
     resume: bool,
     #[arg(long)]
     only_failed: bool,
+    #[arg(long)]
+    limit: Option<usize>,
+    #[arg(long, default_value_t = 0)]
+    offset: usize,
+    #[arg(long)]
+    force: bool,
+    #[arg(long)]
+    pack: bool,
+}
+
+#[derive(Parser, Clone)]
+struct QualityArgs {
+    eval_set: String,
+    #[arg(long, default_value_t = 2)]
+    workers: usize,
+    #[arg(long, default_value = "compact")]
+    ai: String,
+    #[arg(long)]
+    run_id: Option<String>,
     #[arg(long)]
     limit: Option<usize>,
     #[arg(long, default_value_t = 0)]
@@ -224,6 +245,23 @@ fn main() -> Result<()> {
                 force: args.force,
             })?;
             println!("Batch output: {}", out.display());
+            Ok(())
+        }
+        Commands::Quality(args) => {
+            let run_id = args
+                .run_id
+                .unwrap_or_else(|| format!("quality_{}", Local::now().format("%Y%m%d_%H%M%S")));
+            let out = run_quality(&QualityRunOptions {
+                eval_set: PathBuf::from(args.eval_set),
+                workers: args.workers,
+                ai_mode: args.ai,
+                run_id,
+                limit: args.limit,
+                offset: args.offset,
+                pack: args.pack,
+                force: args.force,
+            })?;
+            println!("Quality output: {}", out.display());
             Ok(())
         }
         Commands::Lint { run_folder } => {

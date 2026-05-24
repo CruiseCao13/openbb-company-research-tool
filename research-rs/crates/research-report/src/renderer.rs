@@ -50,6 +50,10 @@ pub fn render_run(input: RenderRunInput<'_>) -> Result<()> {
         provider_source: payload.provider.clone(),
     };
     write_json(&folder.metadata.join("unit_policy.json"), &unit_policy)?;
+    write_if_changed(
+        &folder.metadata.join("prompt_versions.json"),
+        "{\n  \"company_understanding\": \"company_understanding_v1\",\n  \"financial_interpretation\": \"financial_interpretation_v1\",\n  \"research_blueprint\": \"research_blueprint_v1\",\n  \"self_review\": \"self_review_v1\",\n  \"content_quality_judge\": \"content_quality_judge_v1\",\n  \"chart_explanation\": \"chart_explanation_v1\",\n  \"table_explanation\": \"table_explanation_v1\"\n}\n",
+    )?;
     generate_charts(folder)?;
     write_if_changed(
         &folder.self_review.join("ai_self_review.md"),

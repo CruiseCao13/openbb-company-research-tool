@@ -13,6 +13,11 @@ Added:
   lint output.
 - English/Chinese report selection through `--lang en|zh|both`.
 - Basic dependency-free PDF export for generated Markdown reports.
+- Content quality evaluation command with rubric scoring, quality matrices,
+  spot-check reports, and quality-derived training cases.
+- Content quality judge schema under `schemas/content_quality_judge.schema.json`.
+- Versioned prompt library under `research-rs/crates/research-ai/prompts/`.
+- `eval_sets/broad_500_us_cn.yaml` for staged US/CN pressure testing.
 - Cross-industry `broad_30_probe` validation through the Rust batch command.
 - Local compact analyst fallback with explicit zero external AI call reporting.
 - Release self-review and display-review artifacts under
