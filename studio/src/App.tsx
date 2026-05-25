@@ -1,5 +1,8 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { AppInfoCard } from "./components/AppInfoCard";
+import { getAppInfo } from "./lib/tauri";
+import type { AppInfo, AppInfoStatus } from "./types/app";
 
 type StudioPing = {
   status: "ok";
@@ -89,9 +92,9 @@ function TopStatusStrip({ ipcMessage }: { ipcMessage: string }): JSX.Element {
   );
 }
 
-function ResearchCard({ card }: { card: ResearchCardConfig }): JSX.Element {
+function ResearchCard({ card, wide }: { card: ResearchCardConfig; wide: boolean }): JSX.Element {
   return (
-    <article className="detail-card">
+    <article className={`detail-card${wide ? " detail-card--wide" : ""}`}>
       <div className="card-header">
         <span className="card-label">{card.title}</span>
         <StatusBadge variant={card.badge} />
@@ -128,6 +131,9 @@ function AppShell({ children }: { children: ReactNode }): JSX.Element {
 
 export function App(): JSX.Element {
   const [ipcMessage, setIpcMessage] = useState<string>("IPC not checked");
+  const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
+  const [appInfoStatus, setAppInfoStatus] = useState<AppInfoStatus>("loading");
+  const [appInfoError, setAppInfoError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -141,6 +147,27 @@ export function App(): JSX.Element {
       .catch(() => {
         if (mounted) {
           setIpcMessage("IPC unavailable in browser preview");
+        }
+      });
+
+    getAppInfo()
+      .then((info) => {
+        if (mounted) {
+          setAppInfo(info);
+          setAppInfoStatus("connected");
+          setAppInfoError(null);
+        }
+      })
+      .catch((error: unknown) => {
+        if (mounted) {
+          const message = error instanceof Error ? error.message : String(error);
+          setAppInfo(null);
+          setAppInfoStatus(message.includes("__TAURI__") ? "browser-preview" : "failed");
+          setAppInfoError(
+            message.includes("__TAURI__")
+              ? "Tauri IPC is unavailable in browser preview. Run the desktop app to verify the command."
+              : message
+          );
         }
       });
 
@@ -165,8 +192,9 @@ export function App(): JSX.Element {
         </header>
 
         <section className="card-grid" aria-label="Placeholder detail cards">
-          {placeholderCards.map((card) => (
-            <ResearchCard card={card} key={card.title} />
+          <AppInfoCard appInfo={appInfo} error={appInfoError} status={appInfoStatus} />
+          {placeholderCards.map((card, index) => (
+            <ResearchCard card={card} key={card.title} wide={index >= 3} />
           ))}
         </section>
 
