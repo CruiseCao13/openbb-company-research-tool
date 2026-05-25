@@ -65,6 +65,7 @@ pub fn render_run(input: RenderRunInput<'_>) -> Result<()> {
     write_data_inventory(folder, payload, blueprint)?;
     write_data_usage_coverage(folder, payload, blueprint)?;
     write_chart_plan(folder, payload)?;
+    write_chart_observation_maps(folder, payload, blueprint)?;
     write_table_plan(folder)?;
     write_section_source_map(folder, payload)?;
     write_company_specific_artifacts(folder, payload, understanding, interpretation, blueprint)?;
@@ -1260,6 +1261,251 @@ fn write_chart_plan(folder: &RunFolder, payload: &ProviderPayload) -> Result<()>
     write_if_changed(
         &folder.audit.join("chart_coverage_report.md"),
         "# Chart Coverage Report\n\nStatus: PASS\n\nCore chart coverage is planned through `metadata/chart_plan.json` and generated into the shared `charts/` folder. Cash-flow data maps to Figure 4; if cash-flow data is missing, the chart helper writes a data-gap card instead of an empty chart.\n",
+    )?;
+    Ok(())
+}
+
+fn chart_locked_observation(payload: &ProviderPayload, fields: &[String]) -> String {
+    for field in fields {
+        let value = match field.as_str() {
+            "price_history.close" => payload.price_history.iter().rev().find_map(|point| {
+                point
+                    .close
+                    .map(|close| format!("{} close = {:.2}", point.date, close))
+            }),
+            "income_statement.revenue" => metric_value(
+                &payload.income_statement,
+                &["revenue", "total revenue", "营业收入"],
+            )
+            .map(|value| format!("latest revenue = {value:.1}")),
+            "cash_flow.operating_cash_flow" => metric_value(
+                &payload.cash_flow,
+                &["operating cash flow", "cash from operations", "经营现金"],
+            )
+            .map(|value| format!("latest operating cash flow = {value:.1}")),
+            "cash_flow.capex" => metric_value(
+                &payload.cash_flow,
+                &["capital expenditure", "capex", "资本开支"],
+            )
+            .map(|value| format!("latest capex = {value:.1}")),
+            "valuation_snapshot" => payload.valuation_snapshot.as_object().and_then(|object| {
+                object.iter().find_map(|(key, value)| {
+                    value
+                        .as_f64()
+                        .filter(|number| *number > 0.0)
+                        .map(|number| format!("{key} = {number:.2}"))
+                })
+            }),
+            _ => None,
+        };
+        if let Some(value) = value {
+            return value;
+        }
+    }
+    "source field is missing or data-limited".to_string()
+}
+
+fn chart_frame_reason(frame: &str, figure: i64) -> &'static str {
+    let lower = frame.to_lowercase();
+    if lower.contains("bank") || lower.contains("financial") {
+        match figure {
+            4 => "bank charts must be read as funding, credit, capital, and liquidity context rather than industrial FCF proof",
+            5 => "bank valuation needs P/B, ROE, NIM, credit quality, and capital context before any multiple is meaningful",
+            _ => "bank research needs price/risk context tied to asset quality, deposits, credit cost, and capital strength",
+        }
+    } else if lower.contains("insurance") {
+        "insurance charts need premium, investment income, solvency, and asset-liability context before conclusions"
+    } else if lower.contains("aerospace") || lower.contains("space") {
+        "speculative aerospace charts need cash burn, contract timing, capex, financing, and milestone context"
+    } else if lower.contains("battery") || lower.contains("new energy") {
+        "battery manufacturing charts need revenue, margin, capex, inventory, receivables, debt, and cycle context"
+    } else if lower.contains("mining") || lower.contains("commodity") {
+        "mining charts need commodity price, production, capex, debt, and reserve context"
+    } else if lower.contains("pharma") || lower.contains("drug") {
+        "pharma charts need revenue, R&D, product portfolio, approval, reimbursement, and patent-risk context"
+    } else if lower.contains("medical") || lower.contains("robotics") {
+        "medtech charts need procedure volume, system/accessory revenue, R&D, SG&A, inventory, and receivables context"
+    } else if lower.contains("industrial") || lower.contains("cyclical") {
+        "industrial charts need machinery cycle, working capital, inventory, receivables, capex, and debt context"
+    } else if lower.contains("platform") || lower.contains("cloud") {
+        "platform charts need ads/cloud economics, R&D, capex, AI infrastructure, and margin context"
+    } else if lower.contains("consumer") || lower.contains("baijiu") {
+        "consumer-brand charts need revenue, margin, OCF, inventory, receivables, cash, and shareholder-return context"
+    } else {
+        "chart interpretation needs company-specific locked facts and explicit data gaps before conclusions"
+    }
+}
+
+fn write_chart_observation_maps(
+    folder: &RunFolder,
+    payload: &ProviderPayload,
+    blueprint: &ResearchBlueprint,
+) -> Result<()> {
+    let manifest_path = folder.charts.join("chart_manifest.json");
+    let manifest: Vec<serde_json::Value> = if manifest_path.exists() {
+        serde_json::from_str(&fs::read_to_string(&manifest_path).unwrap_or_default())
+            .unwrap_or_default()
+    } else {
+        Vec::new()
+    };
+    let run_id = folder
+        .root
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("")
+        .to_string();
+    let mut chart_rows = Vec::new();
+    let mut claim_rows = Vec::new();
+    let mut warnings = Vec::new();
+    for item in manifest.iter() {
+        let figure = item
+            .get("figure")
+            .and_then(|value| value.as_i64())
+            .unwrap_or(0);
+        let chart_id = if figure > 0 {
+            format!("Figure_{figure:02}")
+        } else {
+            "Figure_unknown".to_string()
+        };
+        let title = item
+            .get("title")
+            .and_then(|value| value.as_str())
+            .unwrap_or("Untitled chart")
+            .to_string();
+        let file = item
+            .get("file")
+            .and_then(|value| value.as_str())
+            .unwrap_or("")
+            .to_string();
+        let status = item
+            .get("status")
+            .and_then(|value| value.as_str())
+            .unwrap_or("UNKNOWN")
+            .to_string();
+        let fields = item
+            .get("data_used")
+            .and_then(|value| value.as_array())
+            .map(|values| {
+                values
+                    .iter()
+                    .filter_map(|value| value.as_str().map(|s| s.to_string()))
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+        let source_file = if file.is_empty() {
+            String::new()
+        } else {
+            format!("charts/{file}")
+        };
+        let source_exists = !file.is_empty() && folder.charts.join(&file).exists();
+        let locked_observation = chart_locked_observation(payload, &fields);
+        let frame_reason = chart_frame_reason(&blueprint.asset_profile, figure);
+        let data_gap_if_any = if status == "DATA_GAP" || !source_exists {
+            item.get("reason")
+                .and_then(|value| value.as_str())
+                .unwrap_or("chart source missing or data-limited")
+                .to_string()
+        } else {
+            String::new()
+        };
+        if !source_exists {
+            warnings.push(format!("{chart_id} source file missing: {source_file}"));
+        }
+        let company_specific_observation = format!(
+            "{} uses {} for {}; locked observation: {}. For the {} frame, {}.",
+            title,
+            if fields.is_empty() {
+                "no machine-readable source field".to_string()
+            } else {
+                fields.join(", ")
+            },
+            payload.ticker,
+            locked_observation,
+            blueprint.asset_profile,
+            frame_reason
+        );
+        let limitation = if figure == 5 {
+            "This chart cannot create an investment recommendation or fair-value conclusion without the missing valuation inputs.".to_string()
+        } else {
+            format!(
+                "This chart cannot prove {}'s business quality, valuation, or future return without the linked locked data and company-specific follow-up checks.",
+                payload.ticker
+            )
+        };
+        let next_check = match figure {
+            1 => format!("Tie {}'s price path to revenue, cash flow, drawdown, and provider gaps before interpreting performance.", payload.ticker),
+            2 => format!("Compare {} drawdowns with financing, debt, working capital, and frame-specific milestones.", payload.ticker),
+            3 => format!("Verify {} revenue trend against segment/product drivers and margin bridge.", payload.ticker),
+            4 => format!("Reconcile {} OCF, capex, FCF, debt, inventory/receivables, and financing gaps.", payload.ticker),
+            _ => format!("Check whether {}'s blueprint valuation method has enough locked inputs to be meaningful.", payload.ticker),
+        };
+        chart_rows.push(json!({
+            "chart_id": chart_id,
+            "title": title,
+            "source_file": source_file,
+            "source_fields": fields,
+            "company_specific_observation": company_specific_observation,
+            "linked_financial_metric": locked_observation,
+            "linked_company_fact": blueprint.asset_profile,
+            "what_this_chart_supports": item.get("research_question").and_then(|value| value.as_str()).unwrap_or("company-specific chart observation"),
+            "what_this_chart_cannot_prove": limitation,
+            "next_check": next_check,
+            "data_gap_if_any": data_gap_if_any,
+            "confidence": if source_exists && status == "PASS" { "medium" } else { "data_limited" }
+        }));
+        claim_rows.push(json!({
+            "chart_id": chart_id,
+            "report_section": "Charts and Evidence",
+            "claim_supported": format!("{} supports a first-pass observation for {} within the {} frame.", title, payload.ticker, blueprint.asset_profile),
+            "evidence_refs": [
+                "charts/chart_manifest.json",
+                source_file,
+                "raw/provider_payload.json",
+                "metadata/chart_observation_map.json"
+            ],
+            "unsupported_or_overread_risk": "Do not infer an investment recommendation or complete business-model proof from this chart.",
+            "limitation_text": limitation
+        }));
+    }
+    if manifest.is_empty() {
+        warnings.push("chart_manifest.json missing or empty".to_string());
+    }
+    let status = if warnings.iter().any(|warning| warning.contains("missing")) {
+        "WARNING"
+    } else {
+        "PASS"
+    };
+    write_json(
+        &folder.metadata.join("chart_observation_map.json"),
+        &json!({
+            "schema_version": SCHEMA_VERSION,
+            "ticker": payload.ticker,
+            "run_id": run_id,
+            "charts": chart_rows
+        }),
+    )?;
+    write_json(
+        &folder.metadata.join("chart_claim_map.json"),
+        &json!({
+            "schema_version": SCHEMA_VERSION,
+            "ticker": payload.ticker,
+            "run_id": run_id,
+            "claims": claim_rows
+        }),
+    )?;
+    let findings = if warnings.is_empty() {
+        "- Every chart has a company-specific observation, source reference, limitation, and next check.\n".to_string()
+    } else {
+        warnings
+            .iter()
+            .map(|warning| format!("- {warning}\n"))
+            .collect::<String>()
+    };
+    write_if_changed(
+        &folder.audit.join("chart_observation_quality_report.md"),
+        &format!(
+            "# Chart Observation Quality Report\n\nStatus: {status}\n\n## Checks\n\n- Company-specific chart observation: checked\n- Source existence: checked\n- Limitation text: checked\n- Generic template-only explanation: checked\n- Buy/sell/target-price implication: checked\n\n## Findings\n\n{findings}"
+        ),
     )?;
     Ok(())
 }

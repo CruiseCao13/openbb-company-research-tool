@@ -505,7 +505,10 @@ pub fn visual_lint(
     if !(report.contains("## Table of Contents") || report.contains("## 目录")) {
         failures.push("report_has_toc".to_string());
     }
-    if !(report.contains("What to look at:") || report.contains("怎么看：")) {
+    if !(report.contains("What to look at:")
+        || report.contains("Company-specific observation:")
+        || report.contains("怎么看："))
+    {
         failures.push("chart_explanations_present".to_string());
     }
     if report.contains("NaN") || report.contains("null") || report.contains("[METRIC_MISSING_RAW]")

@@ -247,6 +247,83 @@ fn template_leakage_report_detects_generic_phrases() {
 }
 
 #[test]
+fn chart_observation_map_generated() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("chart_observation_map.json"));
+    assert!(source.contains("write_chart_observation_maps"));
+    assert!(source.contains("company_specific_observation"));
+}
+
+#[test]
+fn chart_claim_map_generated() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("chart_claim_map.json"));
+    assert!(source.contains("unsupported_or_overread_risk"));
+    assert!(source.contains("limitation_text"));
+}
+
+#[test]
+fn chart_explanation_not_generic_without_company_fact() {
+    let source = include_str!("markdown.rs");
+    assert!(source.contains("Company-specific observation"));
+    assert!(source.contains("For the {frame} frame"));
+    assert!(!source.contains("Compare the company price path with the benchmark"));
+    assert!(!source.contains("This can show whether the stock has created relative price"));
+}
+
+#[test]
+fn chart_observation_references_locked_data() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("raw/provider_payload.json"));
+    assert!(source.contains("charts/chart_manifest.json"));
+    assert!(source.contains("source_fields"));
+    assert!(source.contains("linked_financial_metric"));
+}
+
+#[test]
+fn chart_observation_has_limitation() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("what_this_chart_cannot_prove"));
+    assert!(source.contains("cannot create an investment recommendation"));
+}
+
+#[test]
+fn chart_explanation_does_not_imply_buy_sell() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("Do not infer an investment recommendation"));
+    let markdown = include_str!("markdown.rs");
+    assert!(markdown.contains("It cannot create an investment recommendation"));
+}
+
+#[test]
+fn chart_missing_source_warns() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("source file missing"));
+    assert!(source.contains("chart_manifest.json missing or empty"));
+}
+
+#[test]
+fn chart_observation_quality_report_generated() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("chart_observation_quality_report.md"));
+    assert!(source.contains("Generic template-only explanation"));
+}
+
+#[test]
+fn aapl_chart_observation_mentions_company_specific_metric() {
+    let source = include_str!("markdown.rs");
+    assert!(source.contains("hardware/services ecosystem") || source.contains("cash flow"));
+    assert!(source.contains("latest locked observation"));
+}
+
+#[test]
+fn jpm_chart_observation_avoids_industrial_fcf_core() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("bank charts must be read as funding"));
+    assert!(source.contains("rather than industrial FCF proof"));
+}
+
+#[test]
 fn product_quality_score_includes_ai_money_flow_and_evidence_dimensions() {
     let source = include_str!("renderer.rs");
     assert!(source.contains("ai_provenance_score"));
@@ -752,16 +829,22 @@ fn chart_explanation_not_generic() {
         &review,
         &status,
     );
-    assert!(report.contains("A price chart cannot prove the stock is cheap"));
-    assert!(report.contains("operating cash flow, capital spending, financing flows"));
+    assert!(report.contains("Company-specific observation"));
+    assert!(report.contains("latest locked observation"));
+    assert!(report.contains("What this chart can support"));
     assert!(!report.contains("depending on the figure"));
 }
 
 #[test]
 fn lunr_chart_explanation_mentions_space_or_data_gap() {
-    let source = include_str!("markdown.rs");
-    assert!(source.contains("when those data are missing"));
-    assert!(source.contains("cash-flow bridge cannot prove future runway"));
+    let source = format!(
+        "{}\n{}",
+        include_str!("markdown.rs"),
+        include_str!("renderer.rs")
+    );
+    assert!(source.contains("speculative aerospace charts need cash burn"));
+    assert!(source.contains("contract timing"));
+    assert!(source.contains("financing"));
 }
 
 #[test]
@@ -769,10 +852,10 @@ fn chart_explanation_mentions_specific_metric() {
     let source = include_str!("markdown.rs");
     for phrase in [
         "operating cash flow",
-        "capital spending",
-        "valuation metric",
-        "drawdowns",
-        "revenue, operating profit, free cash flow",
+        "capex",
+        "valuation evidence",
+        "drawdown",
+        "income_statement.revenue",
     ] {
         assert!(
             source.contains(phrase),

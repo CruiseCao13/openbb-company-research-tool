@@ -88,44 +88,121 @@ fn money_flow_fact_anchors(payload: &ProviderPayload) -> String {
     .join("")
 }
 
-fn chart_block(figure: usize, title: &str, file: &str, status: &str) -> String {
+fn latest_value_for_fields(payload: &ProviderPayload, fields: &[&str]) -> String {
+    for field in fields {
+        let value = match *field {
+            "price_history.close" => payload.price_history.iter().rev().find_map(|point| {
+                point
+                    .close
+                    .map(|close| format!("{} close = {:.2}", point.date, close))
+            }),
+            "income_statement.revenue" => payload.income_statement.iter().find_map(|row| {
+                let metric = row.metric.to_lowercase();
+                if metric.contains("revenue") || metric.contains("营业收入") {
+                    row.value.map(|value| {
+                        format!("{} {} = {:.1} {}", row.period, row.metric, value, row.unit)
+                    })
+                } else {
+                    None
+                }
+            }),
+            "cash_flow.operating_cash_flow" => payload.cash_flow.iter().find_map(|row| {
+                let metric = row.metric.to_lowercase();
+                if metric.contains("operating cash") || metric.contains("经营现金") {
+                    row.value.map(|value| {
+                        format!("{} {} = {:.1} {}", row.period, row.metric, value, row.unit)
+                    })
+                } else {
+                    None
+                }
+            }),
+            "cash_flow.capex" => payload.cash_flow.iter().find_map(|row| {
+                let metric = row.metric.to_lowercase();
+                if metric.contains("capex") || metric.contains("capital expenditure") {
+                    row.value.map(|value| {
+                        format!("{} {} = {:.1} {}", row.period, row.metric, value, row.unit)
+                    })
+                } else {
+                    None
+                }
+            }),
+            "valuation_snapshot" => payload.valuation_snapshot.as_object().and_then(|object| {
+                object.iter().find_map(|(key, value)| {
+                    value
+                        .as_f64()
+                        .filter(|number| *number > 0.0)
+                        .map(|number| format!("{key} = {number:.2}"))
+                })
+            }),
+            _ => None,
+        };
+        if let Some(value) = value {
+            return value;
+        }
+    }
+    "locked field is missing or data-limited".to_string()
+}
+
+fn chart_company_observation(
+    payload: &ProviderPayload,
+    figure: usize,
+    title: &str,
+    fields: &[&str],
+    frame: &str,
+) -> (String, String, String, String) {
+    let ticker = &payload.ticker;
+    let latest = latest_value_for_fields(payload, fields);
+    let field_list = fields.join(", ");
+    match figure {
+        1 => (
+            format!("{title} uses {field_list} for {ticker}; latest locked observation: {latest}. For the {frame} frame, price path is only context for opportunity cost and volatility, not proof of business quality."),
+            format!("It can support a market-path discussion for {ticker}'s {frame} case when paired with drawdown and operating evidence."),
+            format!("It cannot prove valuation, business quality, or whether {ticker}'s research frame is correct."),
+            format!("Check whether {ticker}'s revenue, cash flow, and drawdown explain the same period rather than reading the price line alone."),
+        ),
+        2 => (
+            format!("{title} uses {field_list} for {ticker}; latest locked observation: {latest}. For the {frame} frame, drawdown describes path risk and financing pressure context."),
+            format!("It can support a risk-path discussion for {ticker}'s {frame} case, especially where volatility affects financing, confidence, or patience."),
+            format!("It cannot prove {ticker}'s solvency, product-market fit, credit quality, or permanent impairment by itself."),
+            format!("Compare {ticker}'s drawdown periods with cash-flow, debt, provider gaps, and frame-specific milestones."),
+        ),
+        3 => (
+            format!("{title} uses {field_list} for {ticker}; latest locked observation: {latest}. For the {frame} frame, the question is whether reported scale connects to the company-specific revenue engine."),
+            format!("It can support a first-pass revenue or financial progression claim for {ticker} when the source field is available."),
+            format!("It cannot prove {ticker}'s segment mix, customer concentration, pricing power, or margin durability unless those facts are present."),
+            format!("Verify {ticker}'s segment drivers, margin bridge, and one-off items against filings or provider detail."),
+        ),
+        4 => (
+            format!("{title} uses {field_list} for {ticker}; latest locked observation: {latest}. For the {frame} frame, the chart should be read through OCF, capex, FCF, working capital, and financing need."),
+            format!("It can support whether {ticker} appears self-funding or cash-consuming within locked data limits for the {frame} frame."),
+            format!("It cannot prove {ticker}'s future cash runway, contract durability, bank capital quality, insurance solvency, or shareholder-return capacity without the missing supporting fields."),
+            format!("Reconcile {ticker}'s OCF, capex, debt, inventory/receivables, and data gaps before making a money-flow conclusion."),
+        ),
+        _ => (
+            format!("{title} uses {field_list} for {ticker}; latest locked observation: {latest}. For the {frame} frame, valuation evidence must match the company's profitability stage and asset type."),
+            format!("It can support which valuation lens is available for {ticker}'s {frame} frame."),
+            format!("It cannot create an investment recommendation or fair-value conclusion for {ticker} on its own."),
+            format!("Use {ticker}'s blueprint valuation method, then verify missing inputs before treating any multiple as meaningful."),
+        ),
+    }
+}
+
+fn chart_block(
+    payload: &ProviderPayload,
+    figure: usize,
+    title: &str,
+    file: &str,
+    status: &str,
+    fields: &[&str],
+    frame: &str,
+) -> String {
     let link = if file.ends_with(".png") {
         format!("![Figure {figure}. {title}](../charts/{file})")
     } else {
         format!("[Figure {figure}. {title}](../charts/{file})")
     };
-    let (look_at, meaning, not_overread, next_check) = match figure {
-        1 => (
-            "Compare the company price path with the benchmark over the stated period, using the index level rather than the ending price alone.",
-            "This can show whether the stock has created relative price outperformance or lagged the opportunity-cost benchmark.",
-            "A price chart cannot prove the stock is cheap, cannot validate the business model, and cannot replace company-specific cash-flow work.",
-            "Check whether the same period also shows drawdown, revenue, margin, or cash-flow evidence that explains the price path.",
-        ),
-        2 => (
-            "Look for the depth and duration of drawdowns from prior highs.",
-            "This helps separate smooth compounding from a return path that depends on tolerating large interim losses.",
-            "Drawdown does not prove solvency risk or business failure; it only describes historical market path risk.",
-            "Compare drawdowns with financing needs, debt maturity, and business milestones before treating market stress as fundamental stress.",
-        ),
-        3 => (
-            "Read revenue, operating profit, free cash flow, and margin together instead of treating revenue growth as enough.",
-            "The useful question is whether growth is converting into operating profit and cash generation.",
-            "A financial trend chart cannot prove segment quality, customer concentration, or management guidance accuracy when those data are missing.",
-            "Verify segment drivers, gross margin bridge, and one-off items in the filing or provider source.",
-        ),
-        4 => (
-            "Focus on operating cash flow, capital spending, financing flows, dividends, and buybacks when available.",
-            "This is the evidence path for whether the business funds itself or depends on external capital.",
-            "A cash-flow bridge cannot prove future runway without backlog, debt terms, and committed spending data.",
-            "Reconcile cash-flow rows with debt, share issuance, working capital, and project or R&D spending.",
-        ),
-        _ => (
-            "Check which valuation metric is actually present and whether it fits the company profile.",
-            "The chart is useful only when the chosen metric matches the business model and profitability stage.",
-            "A multiple does not prove fair value by itself, and negative or non-meaningful multiples should not be normalized into a bullish or bearish claim.",
-            "Use the valuation method named in the research blueprint, then verify the missing data that would make that method meaningful.",
-        ),
-    };
+    let (observation, supports, cannot_prove, next_check) =
+        chart_company_observation(payload, figure, title, fields, frame);
     format!(
         r#"### Figure {figure}. {title}
 
@@ -134,14 +211,14 @@ fn chart_block(figure: usize, title: &str, file: &str, status: &str) -> String {
 Source: provider_payload.json  
 Status: {status}
 
-What to look at:
-{look_at}
+Company-specific observation:
+{observation}
 
-What it means:
-{meaning}
+What this chart can support:
+{supports}
 
 What not to overread:
-{not_overread}
+{cannot_prove}
 
 Next check:
 {next_check}
@@ -165,34 +242,49 @@ pub fn render_report(
     };
     let chart_manifest = [
         chart_block(
+            payload,
             1,
             "Price / Benchmark Performance",
             "Figure_01_price_vs_benchmark.png",
             "PASS or DATA_GAP",
+            &["price_history.close"],
+            &blueprint.asset_profile,
         ),
         chart_block(
+            payload,
             2,
             "Drawdown / Risk Path",
             "Figure_02_drawdown.png",
             "PASS or DATA_GAP",
+            &["price_history.close"],
+            &blueprint.asset_profile,
         ),
         chart_block(
+            payload,
             3,
             "Financial Trend",
             "Figure_03_financial_trend.png",
             "PASS or DATA_GAP",
+            &["income_statement.revenue"],
+            &blueprint.asset_profile,
         ),
         chart_block(
+            payload,
             4,
             "Money Flow / Cash Flow Bridge",
             "Figure_04_money_flow.png",
             "PASS or DATA_GAP",
+            &["cash_flow.operating_cash_flow", "cash_flow.capex"],
+            &blueprint.asset_profile,
         ),
         chart_block(
+            payload,
             5,
             "Valuation Frame",
             "Figure_05_valuation_frame.png",
             "PASS or DATA_GAP",
+            &["valuation_snapshot"],
+            &blueprint.asset_profile,
         ),
     ]
     .join("\n");
