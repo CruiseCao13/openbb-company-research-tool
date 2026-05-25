@@ -614,6 +614,78 @@ fn load_repo_dotenv() -> Result<bool> {
     load_dotenv_from_repo_root(&repo_root)
 }
 
+#[cfg(test)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+struct SecretScanResult {
+    real_secret_hits: Vec<String>,
+    placeholder_hits: Vec<String>,
+}
+
+#[cfg(test)]
+fn is_real_openai_key_token(token: &str) -> bool {
+    let Some(rest) = token.strip_prefix("sk-") else {
+        return false;
+    };
+    rest.len() >= 20
+        && rest
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+}
+
+#[cfg(test)]
+fn collect_real_secret_hits(text: &str) -> Vec<String> {
+    let mut hits = Vec::new();
+    for token in
+        text.split(|c: char| c.is_whitespace() || matches!(c, '"' | '\'' | '`' | ',' | '='))
+    {
+        let token = token.trim_matches(|c: char| matches!(c, ')' | '(' | '[' | ']' | '{' | '}'));
+        if is_real_openai_key_token(token) {
+            hits.push("real_openai_key_pattern".to_string());
+        }
+    }
+    let bearer_prefix = ["Authorization: Bearer ", "sk-"].concat();
+    if text.contains(&bearer_prefix) {
+        hits.push("authorization_bearer_openai_key".to_string());
+    }
+    hits
+}
+
+#[cfg(test)]
+fn collect_placeholder_secret_hits(text: &str) -> Vec<String> {
+    let mut hits = Vec::new();
+    for line in text.lines() {
+        let trimmed = line.trim();
+        if trimmed == "OPENAI_API_KEY="
+            || trimmed.contains("OPENAI_API_KEY=")
+            || trimmed.contains("OPENAI_API_KEY=\"your_key\"")
+            || trimmed.contains("OPENAI_API_KEY='your_key'")
+            || trimmed.contains("OPENAI_API_KEY=test-")
+        {
+            hits.push(trimmed.to_string());
+        }
+    }
+    hits
+}
+
+#[cfg(test)]
+fn should_skip_secret_scan_path(path: &Path, audit_reports: bool) -> bool {
+    !audit_reports
+        && path
+            .components()
+            .map(|component| component.as_os_str().to_string_lossy())
+            .collect::<Vec<_>>()
+            .windows(3)
+            .any(|window| window == ["reports", "release_checks", "v5_0"])
+}
+
+#[cfg(test)]
+fn scan_secret_text(text: &str) -> SecretScanResult {
+    SecretScanResult {
+        real_secret_hits: collect_real_secret_hits(text),
+        placeholder_hits: collect_placeholder_secret_hits(text),
+    }
+}
+
 fn main() -> Result<()> {
     let _dotenv_loaded = load_repo_dotenv()?;
     let cli = Cli::parse();
@@ -966,9 +1038,42 @@ mod tests {
     }
 
     #[test]
+    fn real_sk_key_fails_secret_scan() {
+        let key = ["OPENAI_API_KEY=", "sk-", "abcdefghijklmnopqrstuvwxyz123456"].concat();
+        let result = scan_secret_text(&key);
+        assert!(!result.real_secret_hits.is_empty());
+    }
+
+    #[test]
     fn secret_scan_blocks_real_key() {
-        let key_pattern = "real-looking-secret-value";
-        let summary = "OPENAI_API_KEY set: yes\nmasked: sk-...abcd\n";
-        assert!(!summary.contains(key_pattern));
+        real_sk_key_fails_secret_scan();
+    }
+
+    #[test]
+    fn placeholder_openai_key_does_not_fail() {
+        let result = scan_secret_text("OPENAI_API_KEY=\"your_key\"\nOPENAI_API_KEY=\n");
+        assert!(result.real_secret_hits.is_empty());
+        assert_eq!(result.placeholder_hits.len(), 2);
+    }
+
+    #[test]
+    fn test_dotenv_key_does_not_fail() {
+        let result = scan_secret_text(
+            "OPENAI_API_KEY=test-dotenv-key\nOPENAI_API_KEY=test-from-root-key\nOPENAI_API_KEY=test-secret-value\n",
+        );
+        assert!(result.real_secret_hits.is_empty());
+        assert_eq!(result.placeholder_hits.len(), 3);
+    }
+
+    #[test]
+    fn release_check_scan_output_not_recursive_fail() {
+        let path = PathBuf::from("reports/release_checks/v5_0/secret_safety_report.md");
+        assert!(should_skip_secret_scan_path(&path, false));
+        assert!(!should_skip_secret_scan_path(&path, true));
+        let quoted_old_scan =
+            "./README.md:94:OPENAI_API_KEY=\"your_key\"\n./.env.example:2:OPENAI_API_KEY=\n";
+        let result = scan_secret_text(quoted_old_scan);
+        assert!(result.real_secret_hits.is_empty());
+        assert_eq!(result.placeholder_hits.len(), 2);
     }
 }
