@@ -17,7 +17,7 @@ type RunDetailPanelProps = {
 };
 
 function StatusBadge({ variant }: { variant: DetailBadgeVariant }): JSX.Element {
-  return <span className={`status-badge status-badge--${variant.toLowerCase()}`}>{variant}</span>;
+  return <span className={`status-badge status-badge--${variant.toLowerCase()}`} data-tooltip={variant}>{variant}</span>;
 }
 
 function AuditStatusBadge({ status }: { status: string }): JSX.Element {
@@ -30,7 +30,7 @@ function AuditStatusBadge({ status }: { status: string }): JSX.Element {
     normalized === "SKIPPED"
       ? (normalized as AuditBadgeVariant)
       : "UNKNOWN";
-  return <span className={`status-badge status-badge--${variant.toLowerCase()}`}>{variant}</span>;
+  return <span className={`status-badge status-badge--${variant.toLowerCase()}`} data-tooltip={variant}>{variant}</span>;
 }
 
 function statusToBadge(status: string | null): DetailBadgeVariant {
@@ -112,11 +112,11 @@ function buildMoneyFlowGraph(detail: RunDetail): SankeyGraph<SankeyNodeDatum, Sa
   return {
     nodes: [
       { name: "Revenue", kind: "inflow" },
-      { name: "Cash engine", kind: "engine" },
+      { name: "Cash Engine", kind: "engine" },
       { name: "Reinvestment", kind: "reinvestment" },
       { name: "Liquidity", kind: "liquidity" },
-      { name: "Data gaps", kind: "gap" },
-      { name: "Shareholder return", kind: "return" }
+      { name: "Data Gaps", kind: "gap" },
+      { name: "Returns", kind: "return" }
     ],
     links: [
       {
@@ -668,10 +668,10 @@ function ArtifactLinksPanel({ detail }: { detail: RunDetail }): JSX.Element {
         {artifactButtons.map((config) => (
           <button
             className="artifact-button artifact-button--large"
+            data-tooltip={config.path ? `${config.label} artifact is available` : `${config.label} artifact is missing`}
             disabled={!config.path || isBusy !== null}
             key={config.label}
             onClick={() => void handleArtifactAction(config)}
-            title={config.path ? `${config.label} artifact is available` : `${config.label} artifact is missing`}
             type="button"
           >
             <span>{config.label}</span>

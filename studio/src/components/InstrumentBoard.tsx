@@ -47,7 +47,7 @@ function collectWarnings(detail: RunDetail | null): string[] {
 }
 
 function StatusBadge({ variant }: { variant: BadgeVariant }): JSX.Element {
-  return <span className={`status-badge status-badge--${variant.toLowerCase()}`}>{variant}</span>;
+  return <span className={`status-badge status-badge--${variant.toLowerCase()}`} data-tooltip={variant}>{variant}</span>;
 }
 
 function SimpleList({ emptyLabel, items }: { emptyLabel: string; items: string[] }): JSX.Element {
@@ -75,6 +75,37 @@ function gaugeVariant(status: BadgeVariant): "good" | "warning" | "risk" | "unkn
   return "unknown";
 }
 
+const labelAbbreviations = new Map<string, string>([
+  ["Operating Cash Flow", "OCF"],
+  ["Free Cash Flow", "FCF"],
+  ["Capital Expenditure", "Capex"],
+  ["Financial Report Framework Coverage", "Framework Coverage"],
+  ["Money Flow Specificity", "Flow Specificity"],
+  ["Provider Coverage", "Provider"],
+  ["Human Review Required", "Human Review"],
+  ["Human Review", "Human Review"],
+  ["Template Leakage", "Template Leak"],
+  ["Market Expectations", "Expectations"],
+  ["Data Confidence", "Data Confidence"],
+  ["Cash Flow Quality", "Cash Flow"],
+  ["Valuation Risk", "Valuation Risk"],
+  ["财报阅读框架覆盖情况", "框架覆盖"],
+  ["资金流具体性", "资金流"],
+  ["现金流具体度", "现金流"],
+  ["是否需要人工复核", "人工复核"],
+  ["人工复核", "人工复核"],
+  ["数据来源覆盖度", "数据源"],
+  ["数据源覆盖", "数据源"],
+  ["估值风险", "估值风险"],
+  ["现金流质量", "现金流"],
+  ["数据可信度", "可信度"],
+  ["模板泄漏", "模板"]
+]);
+
+function shortLabel(label: string): string {
+  return labelAbbreviations.get(label) ?? label;
+}
+
 function GaugeDial({
   detail,
   label,
@@ -88,12 +119,16 @@ function GaugeDial({
 }): JSX.Element {
   const variant = gaugeVariant(status);
   return (
-    <article className={`gauge-dial gauge-dial--${variant}`}>
+    <article
+      aria-label={`${label}: ${summary}`}
+      className={`gauge-dial gauge-dial--${variant}`}
+      data-tooltip={`${label} / ${summary}. ${detail}`}
+    >
       <div className="gauge-dial__meter" aria-hidden="true">
         <span>{variant === "unknown" ? "--" : status}</span>
       </div>
       <div className="gauge-dial__body">
-        <strong>{label}</strong>
+        <strong className="gauge-label" data-full-label={label}>{shortLabel(label)}</strong>
         <span>{summary}</span>
         <p>{detail}</p>
       </div>

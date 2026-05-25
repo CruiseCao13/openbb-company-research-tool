@@ -3501,3 +3501,500 @@ body::after {
     animation: none !important;
   }
 }
+
+/* Final aesthetic closure: label discipline, micro-glass inspectors, liquid motion. */
+:root {
+  --ease-liquid: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 180ms;
+  --duration-normal: 360ms;
+  --duration-slow: 520ms;
+}
+
+.workspace-hero,
+.hero-graph-stage,
+.chart-preview-strip,
+.workspace-scroll,
+.run-detail-card,
+.detail-tab,
+.matrix-cell,
+.matrix-inspector,
+.settings-backdrop,
+.settings-center,
+.diagnostics-drawer,
+.diagnostics-panel,
+.sankey-mini-inspector,
+.gauge-dial,
+.primary-action,
+.artifact-button,
+.topbar-chip,
+.segmented-choice__button,
+.landing-search-console,
+.landing-search-console input,
+.landing-search-console select,
+.run-search input,
+.training-selector select {
+  transition:
+    opacity var(--duration-normal) var(--ease-liquid),
+    transform var(--duration-normal) var(--ease-liquid),
+    filter var(--duration-normal) var(--ease-liquid),
+    background var(--duration-normal) var(--ease-liquid),
+    border-color var(--duration-normal) var(--ease-liquid),
+    box-shadow var(--duration-normal) var(--ease-liquid),
+    color var(--duration-normal) var(--ease-liquid);
+}
+
+.workspace-hero,
+.hero-graph-stage,
+.chart-preview-strip,
+.workspace-scroll {
+  animation: liquid-enter var(--duration-slow) var(--ease-liquid) both;
+}
+
+@keyframes liquid-enter {
+  from {
+    opacity: 0;
+    filter: blur(5px);
+    transform: translateY(8px) scale(0.996);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0) scale(1);
+  }
+}
+
+.metric-label,
+.node-label,
+.gauge-label,
+.status-label,
+.artifact-label,
+.inspector-label,
+.card-label,
+.subsection-title,
+.setting-group > span,
+.status-badge,
+.signal-pill,
+.detail-tab,
+.mode-switch__button,
+.topbar-chip,
+.segmented-choice__button,
+.primary-action span,
+.primary-action small,
+.artifact-button span,
+.artifact-button small,
+.matrix-inspector dt,
+.detail-kv-grid dt,
+.self-review-grid dt,
+.app-info-list dt,
+.chart-facts dt,
+.gauge-dial__body strong,
+.gauge-dial__body span,
+.sankey-node text {
+  overflow: hidden;
+  color: rgba(148, 163, 184, 0.68);
+  font-family: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.gauge-dial__body strong,
+.primary-action span,
+.artifact-button span,
+.matrix-cell span,
+.workspace-hero__title-row span,
+.settings-toggle span,
+.segmented-choice__button {
+  display: block;
+  min-width: 0;
+}
+
+.status-badge,
+.signal-pill,
+.detail-tab,
+.mode-switch__button,
+.topbar-chip,
+.segmented-choice__button {
+  max-width: 100%;
+}
+
+.sankey-node text {
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  max-width: 110px;
+}
+
+.setting-group,
+.matrix-panel-section,
+.gauge-dial__body,
+.detail-kv-grid div,
+.self-review-grid div,
+.app-info-list div {
+  min-width: 0;
+}
+
+.setting-group > span {
+  max-width: 100%;
+}
+
+.segmented-choice {
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.segmented-choice__button {
+  min-width: 0;
+  text-align: center;
+}
+
+.settings-toggle {
+  min-width: 0;
+}
+
+.settings-toggle span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.primary-action,
+.artifact-button,
+.matrix-cell,
+.gauge-dial,
+.status-badge {
+  position: relative;
+}
+
+.primary-action,
+.artifact-button {
+  overflow: hidden;
+}
+
+.primary-action b,
+.primary-action span,
+.artifact-button span,
+.artifact-button small {
+  position: relative;
+  z-index: 1;
+  transition:
+    opacity var(--duration-normal) var(--ease-liquid),
+    transform var(--duration-normal) var(--ease-liquid),
+    color var(--duration-normal) var(--ease-liquid);
+}
+
+.primary-action::before,
+.artifact-button::before,
+.hero-cta::before {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.12) 45%, transparent 65%);
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-120%);
+  transition:
+    opacity var(--duration-normal) var(--ease-liquid),
+    transform 700ms var(--ease-liquid);
+}
+
+.primary-action:hover:not(:disabled)::before,
+.artifact-button:hover:not(:disabled)::before,
+.hero-cta:hover:not(:disabled)::before {
+  opacity: 1;
+  transform: translateX(120%);
+}
+
+.primary-action:hover:not(:disabled) b,
+.primary-action:hover:not(:disabled) span,
+.artifact-button:hover:not(:disabled) span,
+.artifact-button:hover:not(:disabled) small {
+  transform: translateX(2px);
+}
+
+.primary-action:disabled,
+.artifact-button:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.28);
+  opacity: 0.48;
+}
+
+.primary-action:disabled::before,
+.artifact-button:disabled::before {
+  display: none;
+}
+
+.landing-search-console:focus-within,
+.run-search:focus-within,
+.quick-search:focus-within {
+  border-color: rgba(34, 211, 238, 0.18);
+  box-shadow:
+    0 0 0 1px rgba(34, 211, 238, 0.18),
+    0 0 42px rgba(34, 211, 238, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 24px 70px rgba(0, 0, 0, 0.32);
+}
+
+.landing-search-console input::placeholder,
+.run-search input::placeholder,
+.quick-search input::placeholder {
+  color: rgba(148, 163, 184, 0.48);
+  transition: color var(--duration-normal) var(--ease-liquid);
+}
+
+.landing-search-console:focus-within input::placeholder,
+.run-search:focus-within input::placeholder,
+.quick-search:focus-within input::placeholder {
+  color: rgba(148, 163, 184, 0.34);
+}
+
+.landing-search-console:focus-within::after,
+.run-search:focus-within::after,
+.quick-search:focus-within::after {
+  opacity: 1;
+}
+
+.landing-search-console,
+.run-search,
+.quick-search {
+  position: relative;
+}
+
+.landing-search-console::after,
+.run-search::after,
+.quick-search::after {
+  position: absolute;
+  inset: -18px;
+  z-index: -1;
+  border-radius: 28px;
+  background: radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.12), transparent 62%);
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-normal) var(--ease-liquid);
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 1px rgba(34, 211, 238, 0.22),
+    0 0 34px rgba(34, 211, 238, 0.08);
+}
+
+.micro-glass-tooltip,
+.primary-action[data-tooltip]::after,
+.artifact-button[data-tooltip]::after,
+.matrix-cell[data-tooltip]::after,
+.gauge-dial[data-tooltip]::after,
+.status-badge[data-tooltip]::after {
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(15, 23, 42, 0.65)),
+    rgba(15, 23, 42, 0.65);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 18px 55px rgba(0, 0, 0, 0.36),
+    0 0 28px rgba(34, 211, 238, 0.10);
+  color: rgba(248, 250, 252, 0.94);
+  font-family: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  line-height: 1.45;
+  pointer-events: none;
+  white-space: normal;
+  backdrop-filter: blur(14px) saturate(150%);
+}
+
+.primary-action[data-tooltip]::after,
+.artifact-button[data-tooltip]::after,
+.matrix-cell[data-tooltip]::after,
+.gauge-dial[data-tooltip]::after,
+.status-badge[data-tooltip]::after {
+  position: absolute;
+  z-index: 50;
+  width: max-content;
+  max-width: min(300px, 70vw);
+  padding: 10px 12px;
+  content: attr(data-tooltip);
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 220ms var(--ease-liquid),
+    transform 220ms var(--ease-liquid),
+    filter 220ms var(--ease-liquid);
+}
+
+.primary-action[data-tooltip]::after,
+.artifact-button[data-tooltip]::after,
+.gauge-dial[data-tooltip]::after,
+.status-badge[data-tooltip]::after {
+  bottom: calc(100% + 12px);
+  left: 0;
+}
+
+.matrix-cell[data-tooltip]::after {
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translate(-50%, 6px);
+}
+
+.primary-action[data-tooltip]:hover::after,
+.artifact-button[data-tooltip]:hover::after,
+.gauge-dial[data-tooltip]:hover::after,
+.status-badge[data-tooltip]:hover::after {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.matrix-cell[data-tooltip]:hover::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.matrix-board,
+.artifact-dock,
+.artifact-button-grid,
+.gauge-dashboard__grid {
+  overflow: visible;
+}
+
+.matrix-cell {
+  transition:
+    opacity var(--duration-fast) var(--ease-liquid),
+    transform var(--duration-fast) var(--ease-liquid),
+    border-color var(--duration-fast) var(--ease-liquid),
+    box-shadow var(--duration-fast) var(--ease-liquid),
+    filter var(--duration-fast) var(--ease-liquid);
+}
+
+.matrix-inspector {
+  animation: inspector-vapor var(--duration-normal) var(--ease-liquid) both;
+}
+
+@keyframes inspector-vapor {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+
+.detail-tab--active {
+  position: relative;
+}
+
+.detail-tab--active::after {
+  position: absolute;
+  right: 10px;
+  bottom: 2px;
+  left: 10px;
+  height: 1px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.72), transparent);
+  content: "";
+  transform-origin: center;
+  animation: tab-glide var(--duration-normal) var(--ease-liquid) both;
+}
+
+@keyframes tab-glide {
+  from {
+    opacity: 0;
+    transform: scaleX(0.35);
+  }
+  to {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+.settings-backdrop {
+  animation: backdrop-fade var(--duration-normal) var(--ease-liquid) both;
+}
+
+.settings-center {
+  animation: settings-float var(--duration-normal) var(--ease-liquid) both;
+}
+
+@keyframes backdrop-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes settings-float {
+  from {
+    opacity: 0;
+    filter: blur(5px);
+    transform: translateY(16px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0) scale(1);
+  }
+}
+
+.sankey-mini-inspector {
+  filter: blur(4px);
+}
+
+.sankey-link-group:hover .sankey-mini-inspector {
+  filter: blur(0);
+}
+
+@keyframes icon-breathe {
+  0%,
+  100% {
+    opacity: 0.74;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+@media (max-width: 1500px) {
+  .artifact-dock__buttons {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .primary-action span {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 1180px) {
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-search-console,
+  .settings-center {
+    max-width: calc(100vw - 36px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
+}

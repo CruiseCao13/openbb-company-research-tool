@@ -57,7 +57,7 @@ const detailTabs: Array<{ id: RunDetailTab; labelKey: string }> = [
 ];
 
 function StatusBadge({ variant }: { variant: BadgeVariant }): JSX.Element {
-  return <span className={`status-badge status-badge--${variant.toLowerCase()}`}>{variant}</span>;
+  return <span className={`status-badge status-badge--${variant.toLowerCase()}`} data-tooltip={variant}>{variant}</span>;
 }
 
 function statusToBadge(status: string | null): BadgeVariant {
@@ -615,10 +615,10 @@ function PrimaryActionBar({ detail, onOpenCharts }: { detail: RunDetail | null; 
         {actions.map((action) => (
           <button
             className="primary-action"
+            data-tooltip={action.path ? `${action.label} is available` : `${action.label} is unavailable for this run`}
             disabled={!action.path || busyLabel !== null}
             key={action.label}
             onClick={() => void handleAction(action.label, action.path, action.action)}
-            title={action.path ? `${action.label} is available` : `${action.label} unavailable for this run`}
             type="button"
           >
             <b>{action.icon}</b>
@@ -1003,9 +1003,9 @@ function RegressionMatrixHub({
                   <button
                     aria-label={`${row.ticker} quality ${row.quality_score ?? "unknown"}`}
                     className={`matrix-cell ${scoreClass(row)}${selectedRow?.ticker === row.ticker ? " matrix-cell--selected" : ""}`}
+                    data-tooltip={`${row.ticker} / Score: ${row.quality_score ?? "unknown"} / Status: ${row.status ?? "unknown"} / Issues: ${row.issue_types.join(", ") || "none"} / Hard failures: ${row.hard_failures.join(", ") || "none"}`}
                     key={`${row.ticker}-${row.market ?? "market"}`}
                     onClick={() => onSelectRow(row)}
-                    title={`${row.ticker}\nScore: ${row.quality_score ?? "unknown"}\nStatus: ${row.status ?? "unknown"}\nIssues: ${row.issue_types.join(", ") || "none"}\nHard failures: ${row.hard_failures.join(", ") || "none"}`}
                     type="button"
                   >
                     <span>{row.ticker}</span>
