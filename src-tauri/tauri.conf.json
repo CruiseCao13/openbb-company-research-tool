@@ -1,0 +1,30 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "v6 Tauri Research Studio",
+  "version": "0.1.0",
+  "identifier": "com.openbb-company-research-tool.v6-studio",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://127.0.0.1:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../studio/dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "v6 Tauri Research Studio",
+        "width": 1280,
+        "height": 820,
+        "minWidth": 1024,
+        "minHeight": 720
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": false,
+    "icon": []
+  }
+}
