@@ -9,6 +9,7 @@ with an explicit error object.
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -20,6 +21,7 @@ def _base_payload(ticker: str, market: str, provider: str) -> dict[str, Any]:
         "ticker": ticker.upper(),
         "market": market.upper(),
         "provider": provider,
+        "provider_status": "PASS",
         "fetched_at": datetime.now(timezone.utc).isoformat(),
         "company_profile": {
             "name": ticker.upper(),
@@ -35,16 +37,37 @@ def _base_payload(ticker: str, market: str, provider: str) -> dict[str, Any]:
         "cash_flow": [],
         "valuation_snapshot": {},
         "segments": [],
+        "data_coverage": {},
+        "missing_fields": [],
         "metadata": {
             "data_quality_warnings": [],
             "source": provider,
             "provider_version": "v5-provider-bridge",
+            "package_used": False,
+            "mock": False,
+            "provider_adapter": provider,
+            "provider_limitations": [],
         },
     }
 
 
 def _error_payload(ticker: str, market: str, provider: str, error_type: str, message: str) -> dict[str, Any]:
     payload = _base_payload(ticker, market, provider)
+    payload["provider_status"] = "PROVIDER_ERROR"
+    payload["data_coverage"] = {
+        "company_profile": False,
+        "price_history": False,
+        "income_statement": False,
+        "balance_sheet": False,
+        "cash_flow": False,
+    }
+    payload["missing_fields"] = [
+        "company_profile",
+        "price_history",
+        "income_statement",
+        "balance_sheet",
+        "cash_flow",
+    ]
     payload["metadata"]["data_quality_warnings"].append(message)
     payload["error"] = {
         "error_type": error_type,
@@ -125,24 +148,29 @@ def fetch_yfinance(ticker: str, market: str, provider: str) -> dict[str, Any]:
 
 
 def fetch_cn_placeholder(ticker: str, market: str, provider: str) -> dict[str, Any]:
-    try:
-        if provider in {"auto", "akshare"}:
-            import akshare as ak  # noqa: F401
-            # Keep this conservative for v5 foundation. The provider is detected,
-            # but full A-share normalization is a follow-up adapter task.
-            payload = _base_payload(ticker, market, "akshare")
-            payload["company_profile"]["name"] = ticker.upper()
-            payload["company_profile"]["currency"] = "CNY"
-            payload["metadata"]["data_quality_warnings"].append("akshare_available_but_v5_adapter_is_screening_only")
+    attempts: list[str] = []
+    provider_order = {
+        "auto": ["akshare_provider", "tushare_provider", "baostock_provider"],
+        "akshare": ["akshare_provider", "tushare_provider", "baostock_provider"],
+        "tushare": ["tushare_provider", "baostock_provider"],
+        "baostock": ["baostock_provider"],
+    }.get(provider, ["akshare_provider", "tushare_provider", "baostock_provider"])
+    for module_name in provider_order:
+        try:
+            module = importlib.import_module(module_name)
+            payload = module.fetch(ticker)
+            if payload.get("error"):
+                attempts.append(f"{module_name}: {payload['error'].get('error_message', 'provider error')}")
+                continue
             return payload
-    except Exception:
-        pass
+        except Exception as exc:
+            attempts.append(f"{module_name}: {type(exc).__name__}: {exc}")
     return _error_payload(
         ticker,
         market,
         provider,
         "ProviderUnavailable",
-        "A-share provider adapter is unavailable or screening-only in this environment.",
+        "A-share provider adapter is unavailable. Attempts: " + " | ".join(attempts),
     )
 
 
@@ -168,4 +196,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

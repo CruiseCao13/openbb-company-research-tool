@@ -125,6 +125,28 @@ fn dashboard_displays_ai_source() {
 }
 
 #[test]
+fn a_share_report_discloses_provider_source() {
+    let report_source = include_str!("markdown.rs");
+    assert!(report_source.contains("Provider Source"));
+    assert!(report_source.contains("Provider Adapter"));
+    assert!(report_source.contains("Provider Package Used"));
+    assert!(report_source.contains("Provider Mock"));
+    let dashboard_source = include_str!("dashboard.rs");
+    assert!(dashboard_source.contains("Provider Source"));
+    assert!(dashboard_source.contains("Package used"));
+    assert!(dashboard_source.contains("Mock"));
+}
+
+#[test]
+fn provider_labels_eastmoney_fallback_not_akshare_package() {
+    let provider_source = include_str!("../../../../providers/akshare_provider.py");
+    assert!(provider_source.contains("provider = \"eastmoney_public\""));
+    assert!(provider_source.contains("provider_adapter=\"akshare_compatible_fallback\""));
+    assert!(provider_source.contains("package_used=False"));
+    assert!(provider_source.contains("\"mock\": False"));
+}
+
+#[test]
 fn section_source_map_is_generated_by_renderer() {
     let source = include_str!("renderer.rs");
     assert!(source.contains("section_source_map.json"));

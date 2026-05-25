@@ -13,6 +13,8 @@ pub struct ProviderPayload {
     pub ticker: String,
     pub market: String,
     pub provider: String,
+    #[serde(default)]
+    pub provider_status: String,
     pub fetched_at: String,
     pub company_profile: CompanyProfile,
     #[serde(default)]
@@ -27,6 +29,10 @@ pub struct ProviderPayload {
     pub valuation_snapshot: serde_json::Value,
     #[serde(default)]
     pub segments: Vec<serde_json::Value>,
+    #[serde(default)]
+    pub data_coverage: serde_json::Value,
+    #[serde(default)]
+    pub missing_fields: Vec<String>,
     #[serde(default)]
     pub metadata: ProviderMetadata,
     #[serde(default)]
@@ -96,6 +102,14 @@ pub struct ProviderMetadata {
     pub data_quality_warnings: Vec<String>,
     pub source: String,
     pub provider_version: String,
+    #[serde(default)]
+    pub package_used: bool,
+    #[serde(default)]
+    pub mock: bool,
+    #[serde(default)]
+    pub provider_adapter: String,
+    #[serde(default)]
+    pub provider_limitations: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -220,6 +234,22 @@ pub struct ReportStatus {
 pub struct ProviderStatus {
     pub ticker: String,
     pub provider: String,
+    #[serde(default)]
+    pub source: String,
+    #[serde(default)]
+    pub provider_adapter: String,
+    #[serde(default)]
+    pub package_used: bool,
+    #[serde(default)]
+    pub mock: bool,
+    #[serde(default)]
+    pub currency: String,
+    #[serde(default)]
+    pub market: String,
+    #[serde(default)]
+    pub missing_fields: Vec<String>,
+    #[serde(default)]
+    pub provider_limitations: Vec<String>,
     pub status: String,
     pub cache_hit: bool,
     pub attempts: usize,

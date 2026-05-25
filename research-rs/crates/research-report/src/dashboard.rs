@@ -37,6 +37,7 @@ a {{ color: #8fd3ff; }}
 <div class="grid">
 <div class="card"><div class="label">Status</div><strong>{status_value}</strong></div>
 <div class="card"><div class="label">Frame</div><strong>{frame}</strong></div>
+<div class="card"><div class="label">Provider Source</div><strong>{provider}</strong><p>Source: {provider_source}<br>Adapter: {provider_adapter}<br>Package used: {provider_package_used}<br>Mock: {provider_mock}<br>Currency: {currency}<br>Market: {market}<br>Missing fields: {missing_provider_fields}</p><p>{provider_limitations}</p></div>
 <div class="card"><div class="label">AI Confidence</div><strong>{confidence:?}</strong></div>
 <div class="card"><div class="label">Human Review</div><strong>{human_review}</strong></div>
 <div class="card"><div class="label">AI Source</div><strong>{ai_source}</strong><p>External OpenAI API: {external_ai_used}<br>Local fallback: {local_mock_used}<br>New external calls: {new_external_ai_calls}<br>Cache hit: {ai_cache_hit}<br>Model: {ai_model}<br>Prompt: {prompt_version}</p>{local_warning}</div>
@@ -86,6 +87,22 @@ a {{ color: #8fd3ff; }}
         identity = understanding.company_identity,
         status_value = status.overall_status,
         provider = payload.provider,
+        provider_source = payload.metadata.source,
+        provider_adapter = payload.metadata.provider_adapter,
+        provider_package_used = payload.metadata.package_used,
+        provider_mock = payload.metadata.mock,
+        provider_limitations = if payload.metadata.provider_limitations.is_empty() {
+            "No provider limitations recorded.".to_string()
+        } else {
+            payload.metadata.provider_limitations.join("; ")
+        },
+        missing_provider_fields = if payload.missing_fields.is_empty() {
+            "None recorded".to_string()
+        } else {
+            payload.missing_fields.join("; ")
+        },
+        currency = payload.company_profile.currency,
+        market = payload.market,
         ai_source = understanding.ai_provenance.source,
         external_ai_used = understanding.ai_provenance.external_ai_used,
         local_mock_used = understanding.ai_provenance.local_mock_used,

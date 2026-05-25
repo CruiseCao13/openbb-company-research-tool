@@ -7,7 +7,7 @@ Generated: 2026-05-25
 Command:
 
 ```bash
-rg -n "sk-[A-Za-z0-9_-]{20,}|Authorization: Bearer sk-" . \
+rg -n "<real OpenAI sk-token pattern or bearer header with sk-token>" . \
   -g '!target/**' \
   -g '!research-rs/target/**' \
   -g '!reports/release_checks/**' \

@@ -166,7 +166,7 @@ pub fn render_run(input: RenderRunInput<'_>) -> Result<()> {
     write_language_quality(folder, &primary_report, lang, &language_traces)?;
     write_if_changed(
         &folder.audit.join("provider_validation.md"),
-        "# Provider Validation\n\nProvider payload was parsed into the v5 locked-data schema.\n",
+        &provider_validation_markdown(payload),
     )?;
     write_if_changed(&folder.audit.join("data_quality.md"), "# Data Quality\n\nData quality warnings are recorded in raw/provider_payload.json metadata.\n")?;
     write_validator_report(folder, &final_status, &pdf_status)?;
@@ -231,6 +231,86 @@ fn generate_charts(folder: &RunFolder) -> Result<()> {
             Ok(())
         }
     }
+}
+
+fn provider_validation_markdown(payload: &ProviderPayload) -> String {
+    let coverage = payload
+        .data_coverage
+        .as_object()
+        .map(|object| {
+            object
+                .iter()
+                .map(|(field, value)| {
+                    format!(
+                        "| {} | {} |\n",
+                        field,
+                        value
+                            .as_bool()
+                            .map_or_else(|| value.to_string(), |v| v.to_string())
+                    )
+                })
+                .collect::<String>()
+        })
+        .unwrap_or_else(|| "| data_coverage | unavailable |\n".to_string());
+    let missing = if payload.missing_fields.is_empty() {
+        "- None recorded by provider.\n".to_string()
+    } else {
+        payload
+            .missing_fields
+            .iter()
+            .map(|field| format!("- {field}\n"))
+            .collect::<String>()
+    };
+    let warnings = if payload.metadata.data_quality_warnings.is_empty() {
+        "- None.\n".to_string()
+    } else {
+        payload
+            .metadata
+            .data_quality_warnings
+            .iter()
+            .map(|warning| format!("- {warning}\n"))
+            .collect::<String>()
+    };
+    let error = payload.error.as_ref().map_or_else(
+        || "- None.\n".to_string(),
+        |err| {
+            format!(
+                "- {} at {}: {}\n",
+                err.error_type, err.stage, err.error_message
+            )
+        },
+    );
+    format!(
+        "# Provider Validation\n\nStatus: {}\n\nProvider: {}\nSource: {}\nAdapter: {}\nPackage used: {}\nMock: {}\nMarket: {}\nCurrency: {}\n\nProvider payload was parsed into the v5 locked-data schema.\n\n## Data Coverage\n\n| Field | Available |\n|---|---:|\n{}\n## Missing Fields\n\n{}\n## Provider Limitations\n\n{}\n## Provider Warnings\n\n{}\n## Provider Error\n\n{}",
+        if payload.error.is_some() {
+            "PROVIDER_ERROR"
+        } else if payload.provider_status.is_empty() {
+            "PASS"
+        } else {
+            payload.provider_status.as_str()
+        },
+        payload.provider,
+        payload.metadata.source,
+        payload.metadata.provider_adapter,
+        payload.metadata.package_used,
+        payload.metadata.mock,
+        payload.market,
+        payload.company_profile.currency,
+        coverage,
+        missing,
+        if payload.metadata.provider_limitations.is_empty() {
+            "- None recorded by provider.\n".to_string()
+        } else {
+            payload
+                .metadata
+                .provider_limitations
+                .iter()
+                .map(|limitation| format!("- {limitation}\n"))
+                .collect::<String>()
+        },
+        warnings,
+        error
+    )
 }
 
 fn section_available(rows: &[StatementRow]) -> bool {

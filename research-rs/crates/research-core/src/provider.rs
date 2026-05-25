@@ -138,9 +138,55 @@ fn write_provider_status(
         "{}:{}:{}:{}:{}",
         ctx.ticker, ctx.market, ctx.provider, ctx.run_id, ctx.force
     ));
+    let payload = read_json::<ProviderPayload>(out_path).ok();
+    let provider_name = payload
+        .as_ref()
+        .map(|payload| payload.provider.clone())
+        .filter(|provider| !provider.trim().is_empty())
+        .unwrap_or_else(|| ctx.provider.clone());
+    let source = payload
+        .as_ref()
+        .map(|payload| payload.metadata.source.clone())
+        .unwrap_or_default();
+    let provider_adapter = payload
+        .as_ref()
+        .map(|payload| payload.metadata.provider_adapter.clone())
+        .unwrap_or_default();
+    let package_used = payload
+        .as_ref()
+        .map(|payload| payload.metadata.package_used)
+        .unwrap_or(false);
+    let mock = payload
+        .as_ref()
+        .map(|payload| payload.metadata.mock)
+        .unwrap_or(false);
+    let currency = payload
+        .as_ref()
+        .map(|payload| payload.company_profile.currency.clone())
+        .unwrap_or_default();
+    let market = payload
+        .as_ref()
+        .map(|payload| payload.market.clone())
+        .unwrap_or_else(|| ctx.market.clone());
+    let missing_fields = payload
+        .as_ref()
+        .map(|payload| payload.missing_fields.clone())
+        .unwrap_or_default();
+    let provider_limitations = payload
+        .as_ref()
+        .map(|payload| payload.metadata.provider_limitations.clone())
+        .unwrap_or_default();
     let provider_status = ProviderStatus {
         ticker: ctx.ticker.clone(),
-        provider: ctx.provider.clone(),
+        provider: provider_name,
+        source,
+        provider_adapter,
+        package_used,
+        mock,
+        currency,
+        market,
+        missing_fields,
+        provider_limitations,
         status: status.to_string(),
         cache_hit,
         attempts,
@@ -171,9 +217,25 @@ fn write_provider_status(
     write_if_changed(
         &audit.join("provider_validation.md"),
         &format!(
-            "# Provider Validation\n\nStatus: {}\n\nProvider: {}\nCache hit: {}\nAttempts: {}\n\n## User Message\n\n{}\n\n## Suggested Next Action\n\n{}\n\n## stderr excerpt\n\n```text\n{}\n```\n",
+            "# Provider Validation\n\nStatus: {}\n\nProvider: {}\nSource: {}\nProvider adapter: {}\nPackage used: {}\nMock: {}\nCurrency: {}\nMarket: {}\nMissing fields: {}\nProvider limitations: {}\nCache hit: {}\nAttempts: {}\n\n## User Message\n\n{}\n\n## Suggested Next Action\n\n{}\n\n## stderr excerpt\n\n```text\n{}\n```\n",
             provider_status.status,
             provider_status.provider,
+            provider_status.source,
+            provider_status.provider_adapter,
+            provider_status.package_used,
+            provider_status.mock,
+            provider_status.currency,
+            provider_status.market,
+            if provider_status.missing_fields.is_empty() {
+                "none".to_string()
+            } else {
+                provider_status.missing_fields.join(", ")
+            },
+            if provider_status.provider_limitations.is_empty() {
+                "none".to_string()
+            } else {
+                provider_status.provider_limitations.join("; ")
+            },
             provider_status.cache_hit,
             provider_status.attempts,
             provider_status.user_message,

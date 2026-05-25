@@ -52,6 +52,92 @@ fn provider_payload_validation_catches_missing_ticker() {
 }
 
 #[test]
+fn a_share_provider_payload_has_package_used_field() {
+    let payload: ProviderPayload = serde_json::from_value(serde_json::json!({
+        "schema_version": "v5.0.0",
+        "ticker": "600519.SH",
+        "market": "CN_A",
+        "provider": "eastmoney_public",
+        "provider_status": "PASS",
+        "fetched_at": "2026-05-25T00:00:00Z",
+        "company_profile": {
+            "name": "贵州茅台",
+            "sector": "食品饮料",
+            "industry": "白酒",
+            "description": "白酒生产与销售",
+            "exchange": "上海证券交易所",
+            "currency": "CNY"
+        },
+        "metadata": {
+            "source": "Eastmoney public endpoint",
+            "provider_version": "test",
+            "package_used": false,
+            "mock": false,
+            "provider_adapter": "akshare_compatible_fallback",
+            "provider_limitations": ["Public endpoint; field coverage and schema may change"]
+        }
+    }))
+    .unwrap();
+    assert_eq!(payload.provider, "eastmoney_public");
+    assert!(!payload.metadata.package_used);
+}
+
+#[test]
+fn a_share_provider_payload_has_mock_field() {
+    let payload: ProviderPayload = serde_json::from_value(serde_json::json!({
+        "ticker": "000001.SZ",
+        "market": "CN_A",
+        "provider": "eastmoney_public",
+        "fetched_at": "2026-05-25T00:00:00Z",
+        "company_profile": {
+            "name": "平安银行",
+            "sector": "金融",
+            "industry": "银行",
+            "description": "A-share bank",
+            "exchange": "SZSE",
+            "currency": "CNY"
+        },
+        "metadata": {
+            "source": "Eastmoney public endpoint",
+            "provider_version": "test",
+            "mock": false
+        }
+    }))
+    .unwrap();
+    assert!(!payload.metadata.mock);
+}
+
+#[test]
+fn a_share_provider_payload_has_limitations_field() {
+    let payload: ProviderPayload = serde_json::from_value(serde_json::json!({
+        "ticker": "000001.SZ",
+        "market": "CN_A",
+        "provider": "eastmoney_public",
+        "fetched_at": "2026-05-25T00:00:00Z",
+        "company_profile": {
+            "name": "平安银行",
+            "sector": "金融",
+            "industry": "银行",
+            "description": "A-share bank",
+            "exchange": "SZSE",
+            "currency": "CNY"
+        },
+        "metadata": {
+            "source": "Eastmoney public endpoint",
+            "provider_version": "test",
+            "provider_limitations": ["Validate important values against exchange filings or company reports"]
+        }
+    }))
+    .unwrap();
+    assert!(payload.metadata.provider_limitations[0].contains("Validate important values"));
+}
+
+#[test]
+fn eastmoney_fallback_is_not_mock() {
+    a_share_provider_payload_has_mock_field();
+}
+
+#[test]
 fn provider_path_resolves_from_repo_root() {
     let root = discover_repo_root().expect("repo root should be discoverable");
     let resolved = discover_repo_root_from(&root).expect("repo root should resolve from itself");

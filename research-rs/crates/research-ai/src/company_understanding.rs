@@ -384,6 +384,61 @@ pub fn understand_company(payload: &ProviderPayload) -> CompanyUnderstanding {
             Confidence::MEDIUM,
             false,
         )
+    } else if payload.market.eq_ignore_ascii_case("CN_A")
+        && (h.contains("平安银行")
+            || h.contains("银行")
+            || h.contains("货币金融")
+            || h.contains("金融-银行"))
+    {
+        (
+            "Financials / Bank-like Screening",
+            "Chinese A-share bank",
+            vec![
+                "net interest income / 息差收入".into(),
+                "fees and banking services".into(),
+                "loan and deposit balance growth".into(),
+            ],
+            vec![
+                "ordinary industrial free cash flow story".into(),
+                "net debt / EBITDA as core".into(),
+                "consumer or manufacturing company".into(),
+            ],
+            vec![
+                "credit loss and NPL pressure".into(),
+                "deposit cost and NIM pressure".into(),
+                "capital adequacy".into(),
+            ],
+            Confidence::MEDIUM,
+            false,
+        )
+    } else if payload.market.eq_ignore_ascii_case("CN_A")
+        && (h.contains("贵州茅台")
+            || h.contains("茅台")
+            || h.contains("白酒")
+            || h.contains("食品饮料")
+            || h.contains("饮料"))
+    {
+        (
+            "A-share Premium Baijiu / Consumer Brand",
+            "Chinese consumer staple with brand, channel, margin, and cash conversion economics",
+            vec![
+                "白酒及系列酒销售".into(),
+                "premium brand pricing and channel execution".into(),
+                "operating cash flow from product sales".into(),
+            ],
+            vec![
+                "bank or insurance company".into(),
+                "US SEC filing-driven company".into(),
+                "telecom carrier economics".into(),
+            ],
+            vec![
+                "high-margin sustainability".into(),
+                "inventory and channel pressure".into(),
+                "dividend and cash conversion quality".into(),
+            ],
+            Confidence::MEDIUM,
+            false,
+        )
     } else if h.contains("restaurant")
         || h.contains("retail")
         || h.contains("apparel")

@@ -13,7 +13,7 @@ Status: blocking
 Fail on:
 
 - `sk-[A-Za-z0-9_-]{20,}`
-- `Authorization: Bearer sk-`
+- Authorization bearer headers containing an OpenAI `sk-` token
 
 These patterns represent real OpenAI-style key material or bearer usage and must not appear in source, README, reports, dashboards, packs, prompts, responses, or logs.
 

@@ -330,6 +330,31 @@ pub fn validate_provider_payload(payload: &ProviderPayload) -> Vec<String> {
     if payload.company_profile.name.trim().is_empty() && payload.error.is_none() {
         failures.push("weak_company_identity:name_missing".to_string());
     }
+    if payload.market.eq_ignore_ascii_case("CN_A") && payload.error.is_none() {
+        if !matches!(payload.company_profile.currency.as_str(), "CNY" | "RMB") {
+            failures.push("cn_a_provider_payload:currency_missing_or_not_cny".to_string());
+        }
+        if payload
+            .price_history
+            .iter()
+            .all(|point| point.close.is_none())
+        {
+            failures.push("cn_a_provider_payload:price_history_missing".to_string());
+        }
+        if payload
+            .income_statement
+            .iter()
+            .all(|row| row.value.is_none())
+        {
+            failures.push("cn_a_provider_payload:income_statement_missing".to_string());
+        }
+        if payload.balance_sheet.iter().all(|row| row.value.is_none()) {
+            failures.push("cn_a_provider_payload:balance_sheet_missing".to_string());
+        }
+        if payload.cash_flow.iter().all(|row| row.value.is_none()) {
+            failures.push("cn_a_provider_payload:cash_flow_missing".to_string());
+        }
+    }
     failures
 }
 

@@ -15,6 +15,22 @@ fn table_rows(items: &[(&str, String, &str, &str)]) -> String {
         .collect()
 }
 
+fn provider_limitations(payload: &ProviderPayload) -> String {
+    if payload.metadata.provider_limitations.is_empty() {
+        "- None recorded by provider.\n".to_string()
+    } else {
+        bullet(&payload.metadata.provider_limitations)
+    }
+}
+
+fn missing_provider_fields(payload: &ProviderPayload) -> String {
+    if payload.missing_fields.is_empty() {
+        "None recorded by provider.".to_string()
+    } else {
+        payload.missing_fields.join("; ")
+    }
+}
+
 fn chart_block(figure: usize, title: &str, file: &str, status: &str) -> String {
     let link = if file.ends_with(".png") {
         format!("![Figure {figure}. {title}](../charts/{file})")
@@ -146,12 +162,16 @@ pub fn render_report(
     format!(
         r#"# {ticker} Company Research Report
 
-> Version: v5.0  
-> Company: {name}  
-> Market: {market}  
-> Provider: {provider}  
-> Status: {status_value}  
-> AI Confidence: {confidence:?}  
+> Version: v5.0
+> Company: {name}
+> Market: {market}
+> Provider: {provider}
+> Provider Source: {provider_source}
+> Provider Adapter: {provider_adapter}
+> Provider Package Used: {provider_package_used}
+> Provider Mock: {provider_mock}
+> Status: {status_value}
+> AI Confidence: {confidence:?}
 > AI Source: {ai_source}
 > External AI Used: {external_ai_used}
 > Local Mock Used: {local_mock_used}
@@ -185,6 +205,12 @@ pub fn render_report(
 |---|---|
 | Overall status | {status_value} |
 | Provider status | {provider_status} |
+| Provider used | {provider} |
+| Provider source | {provider_source} |
+| Provider adapter | {provider_adapter} |
+| Provider package used | {provider_package_used} |
+| Provider mock | {provider_mock} |
+| Missing provider fields | {missing_provider_fields} |
 | Visual lint | {visual_lint_status} |
 | PDF export | {pdf_export_status} |
 | AI mode | {ai_mode} |
@@ -204,6 +230,10 @@ Table 1. Research status snapshot
 Unit: status / text  
 Source: metadata/report_status.json  
 How to read this table: use it to decide whether this report is usable as a first-pass memo or needs manual review.
+
+Provider limitations:
+
+{provider_limitations}
 
 ## 2. Company Identity
 
@@ -332,6 +362,11 @@ How to read this table: it tells you which locked data exists before relying on 
 | Sector | {sector} |
 | Industry | {industry} |
 | Currency | {currency} |
+| Provider source | {provider_source} |
+| Provider adapter | {provider_adapter} |
+| Provider package used | {provider_package_used} |
+| Provider mock | {provider_mock} |
+| Missing provider fields | {missing_provider_fields} |
 | Price points | {price_count} |
 | Income rows | {income_count} |
 | Balance sheet rows | {balance_count} |
@@ -342,6 +377,12 @@ How to read this table: it tells you which locked data exists before relying on 
         name = name,
         market = payload.market,
         provider = payload.provider,
+        provider_source = payload.metadata.source,
+        provider_adapter = payload.metadata.provider_adapter,
+        provider_package_used = payload.metadata.package_used,
+        provider_mock = payload.metadata.mock,
+        provider_limitations = provider_limitations(payload),
+        missing_provider_fields = missing_provider_fields(payload),
         status_value = status.overall_status,
         provider_status = status.provider_status,
         visual_lint_status = status.visual_lint_status,
@@ -414,8 +455,13 @@ pub fn render_report_zh(
     format!(
         r#"# {ticker} 公司研究报告
 
-> 状态：{status_value}  
-> AI 置信度：{confidence:?}  
+> 状态：{status_value}
+> Provider：{provider}
+> Provider Source：{provider_source}
+> Provider Adapter：{provider_adapter}
+> Provider Package Used：{provider_package_used}
+> Provider Mock：{provider_mock}
+> AI 置信度：{confidence:?}
 > AI 来源：{ai_source}
 > 是否使用外部 OpenAI API：{external_ai_used}
 > 是否使用本地 fallback：{local_mock_used}
@@ -455,6 +501,12 @@ How to read this table：先看是否需要人工复核，再看研究框架是�
 | 公司 | {name} |
 | 总体状态 | {status_value} |
 | 数据源状态 | {provider_status} |
+| Provider used | {provider} |
+| Provider source | {provider_source} |
+| Provider adapter | {provider_adapter} |
+| Provider package used | {provider_package_used} |
+| Provider mock | {provider_mock} |
+| Missing provider fields | {missing_provider_fields} |
 | 视觉检查 | {visual_lint_status} |
 | PDF 导出 | {pdf_export_status} |
 | AI 模式 | {ai_mode} |
@@ -611,11 +663,22 @@ How to read this table：先看数据覆盖，再决定解释可信度。
 | Sector | {sector} |
 | Industry | {industry} |
 | Currency | {currency} |
+| Provider source | {provider_source} |
+| Provider adapter | {provider_adapter} |
+| Provider package used | {provider_package_used} |
+| Provider mock | {provider_mock} |
+| Missing provider fields | {missing_provider_fields} |
 | Price rows | {price_count} |
 
 "#,
         ticker = payload.ticker,
         name = name,
+        provider = payload.provider,
+        provider_source = payload.metadata.source,
+        provider_adapter = payload.metadata.provider_adapter,
+        provider_package_used = payload.metadata.package_used,
+        provider_mock = payload.metadata.mock,
+        missing_provider_fields = missing_provider_fields(payload),
         status_value = status.overall_status,
         provider_status = status.provider_status,
         visual_lint_status = status.visual_lint_status,

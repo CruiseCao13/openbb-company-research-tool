@@ -117,15 +117,53 @@ pub fn build_blueprint(
             ],
             "Use P/B, ROE, NIM, credit quality, funding cost, and capital adequacy.".into(),
             vec![
-                "NIM".into(),
-                "credit losses".into(),
-                "capital ratio".into(),
-                "deposit cost".into(),
+                "credit loss / provision expense trend".into(),
+                "deposit cost trend".into(),
+                "loan mix and collateral detail".into(),
             ],
             vec![
                 "Pull NIM and deposit-cost trend.".into(),
                 "Check credit loss and provision coverage.".into(),
                 "Review capital ratios and asset quality.".into(),
+            ],
+        )
+    } else if lower.contains("baijiu")
+        || lower.contains("consumer brand")
+        || lower.contains("consumer staple")
+    {
+        (
+            vec![
+                "营业收入 and volume/price mix".into(),
+                "归母净利润 and 扣非归母净利润".into(),
+                "毛利率 / 净利率 durability".into(),
+                "经营现金流 and cash conversion".into(),
+                "inventory, receivables, and dividend sustainability".into(),
+            ],
+            vec![
+                "US SEC filing-driven 10-K / 10-Q frame".into(),
+                "telecom carrier economics".into(),
+                "ordinary speculative project company".into(),
+            ],
+            vec![
+                "Is revenue supported by product/channel quality rather than one-off effects?".into(),
+                "Do margins and cash conversion support the brand-quality story?".into(),
+                "Are inventory, receivables, and dividends consistent with healthy cash flow?".into(),
+            ],
+            vec![
+                "channel inventory pressure".into(),
+                "margin normalization".into(),
+                "dividend unsupported by cash conversion".into(),
+            ],
+            "Use A-share consumer-brand metrics: revenue, attributable net profit, non-recurring-adjusted net profit, margin, operating cash flow, inventory/receivables, ROE, and RMB valuation context. Do not use a US filing template.".into(),
+            vec![
+                "dividend detail".into(),
+                "contract liabilities / advances".into(),
+                "cash and interest-bearing debt detail".into(),
+            ],
+            vec![
+                "Check annual report for product mix, channel inventory, and contract liabilities.".into(),
+                "Compare operating cash flow with attributable net profit and dividend cash outflow.".into(),
+                "Verify RMB units and A-share accounting labels before publishing.".into(),
             ],
         )
     } else if lower.contains("medical devices")

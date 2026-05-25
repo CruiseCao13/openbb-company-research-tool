@@ -115,6 +115,31 @@ cargo run --manifest-path research-rs/Cargo.toml -p research-rs -- run 600519.SH
   --run-id demo_600519
 ```
 
+### Optional A-share Provider Packages
+
+Main CI does not require AKShare, Tushare, Baostock, provider tokens, or live financial-network access. For fuller local A-share provider coverage, install the optional provider set:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -r requirements-providers.txt
+```
+
+or:
+
+```bash
+python3 -m pip install akshare baostock tushare
+```
+
+Provider source labels are explicit:
+
+- `akshare_package`: AKShare is installed and an AKShare endpoint was called.
+- `tushare_package`: Tushare is installed, `TUSHARE_TOKEN` is set, and Tushare was called.
+- `baostock_package`: Baostock is installed and Baostock was called.
+- `eastmoney_public`: public Eastmoney endpoints were used through the A-share fallback adapter.
+
+`eastmoney_public` is real public provider data, not mock data, but it is not a guaranteed official data contract. Important values should still be checked against exchange filings or company reports.
+
 ## How to Verify Real OpenAI API Usage
 
 Do not infer real AI usage from polished writing. Check the run artifact:
@@ -239,9 +264,28 @@ The quality layer is designed to catch polished but weak reports: wrong company 
 | Market | Path | Notes |
 | --- | --- | --- |
 | US | OpenBB/yfinance bridge | Coverage depends on local provider availability and upstream fields. |
-| China A-share | AKShare, Tushare path, Baostock path | Supports tickers such as `600519.SH`, `000001.SZ`, and `300750.SZ`; provider coverage and field completeness can vary. |
+| China A-share | AKShare package, Tushare path, Baostock path, Eastmoney public fallback | Supports tickers such as `600519.SH`, `000001.SZ`, and `300750.SZ`; provider coverage and field completeness can vary. Reports disclose package/fallback source, adapter, mock flag, limitations, and missing fields. |
 
 A-share reports should use the correct accounting context: RMB units, operating revenue, net profit attributable to parent, adjusted net profit where available, operating cash flow, monetary cash, interest-bearing debt, receivables, inventory, R&D expense, asset-liability ratio, and ROE.
+
+### 可选 A 股 Provider 依赖
+
+主 CI 不强制安装 AKShare、Tushare、Baostock，也不依赖外部金融数据网络。要在本地启用更完整的 A 股 provider 能力，可以安装可选依赖：
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -r requirements-providers.txt
+```
+
+A 股数据源标签必须看清楚：
+
+- `akshare_package`：实际安装并调用了 AKShare。
+- `tushare_package`：实际安装并调用了 Tushare，且 `TUSHARE_TOKEN` 可用。
+- `baostock_package`：实际安装并调用了 Baostock。
+- `eastmoney_public`：使用东方财富公开接口 fallback。
+
+`eastmoney_public` 是真实公开数据，不是 mock；但它不是稳定官方数据契约，重要数字仍应和交易所公告或公司年报交叉核验。
 
 ## Limitations
 

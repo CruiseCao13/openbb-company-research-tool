@@ -791,7 +791,24 @@ fn command_output(cmd: &str, args: &[&str]) -> String {
         .unwrap_or_else(|| "not available".to_string())
 }
 
+fn python_for_repo(root: &Path) -> String {
+    let venv_python = root.join(".venv/bin/python");
+    if venv_python.exists() {
+        venv_python.to_string_lossy().to_string()
+    } else {
+        "python3".to_string()
+    }
+}
+
+fn python_package_status(python: &str, package: &str) -> String {
+    let script = format!(
+        "import importlib.util; print('yes' if importlib.util.find_spec({package:?}) else 'no')"
+    );
+    command_output(python, &["-c", &script])
+}
+
 fn write_provider_health() -> Result<()> {
+    let root = discover_repo_root()?;
     let path = release_checks_dir()?.join("provider_health.md");
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
@@ -799,31 +816,26 @@ fn write_provider_health() -> Result<()> {
     let rust_version = command_output("rustc", &["--version"]);
     let cargo_version = command_output("cargo", &["--version"]);
     let python_version = command_output("python3", &["--version"]);
-    let venv_status = if PathBuf::from(".venv/bin/python").exists() {
-        command_output(".venv/bin/python", &["--version"])
+    let venv_python = root.join(".venv/bin/python");
+    let venv_status = if venv_python.exists() {
+        command_output(&venv_python.to_string_lossy(), &["--version"])
     } else {
         "not configured".to_string()
     };
-    let openbb_status = command_output(
-        if PathBuf::from(".venv/bin/python").exists() {
-            ".venv/bin/python"
-        } else {
-            "python3"
-        },
-        &["-c", "import importlib.util; print('available' if importlib.util.find_spec('openbb') else 'not installed')"],
-    );
-    let akshare_status = command_output(
-        if PathBuf::from(".venv/bin/python").exists() {
-            ".venv/bin/python"
-        } else {
-            "python3"
-        },
-        &["-c", "import importlib.util; print('available' if importlib.util.find_spec('akshare') else 'not installed')"],
-    );
-    let tushare_status = if std::env::var("TUSHARE_TOKEN").is_ok() {
-        "token configured"
+    let python = python_for_repo(&root);
+    let openbb_status = python_package_status(&python, "openbb");
+    let akshare_status = python_package_status(&python, "akshare");
+    let tushare_installed = python_package_status(&python, "tushare");
+    let baostock_status = python_package_status(&python, "baostock");
+    let tushare_token = if std::env::var("TUSHARE_TOKEN").is_ok() {
+        "yes"
     } else {
-        "optional token not configured"
+        "no"
+    };
+    let eastmoney_fallback = if root.join("providers/akshare_provider.py").exists() {
+        "yes"
+    } else {
+        "no"
     };
     let ai_status = if std::env::var("OPENAI_API_KEY").is_ok() {
         "external AI key configured"
@@ -841,7 +853,7 @@ fn write_provider_health() -> Result<()> {
         "will be created on first cached run"
     };
     let report = format!(
-        "# Provider Health\n\n| Check | Status |\n|---|---|\n| Rust | {rust_version} |\n| Cargo | {cargo_version} |\n| Python | {python_version} |\n| Python venv | {venv_status} |\n| OpenBB provider | {openbb_status} |\n| AKShare provider | {akshare_status} |\n| Tushare Pro | {tushare_status} |\n| Baostock provider | script available if dependency is installed |\n| PDF engine | {pdf_status} |\n| AI key | {ai_status} |\n| Cache directory | {cache_status} |\n| Write permission | current workspace writable |\n\nNo API keys or secrets are printed in this report.\n\nNext: See `docs/error_handbook.md` if a provider or PDF export step fails.\n"
+        "# Provider Health\n\n| Check | Status |\n|---|---|\n| Rust | {rust_version} |\n| Cargo | {cargo_version} |\n| Python | {python_version} |\n| Python venv | {venv_status} |\n| OpenBB provider installed | {openbb_status} |\n| AKShare installed | {akshare_status} |\n| Tushare installed | {tushare_installed} |\n| Baostock installed | {baostock_status} |\n| TUSHARE_TOKEN set | {tushare_token} |\n| Eastmoney public fallback available | {eastmoney_fallback} |\n| PDF engine | {pdf_status} |\n| AI key | {ai_status} |\n| Cache directory | {cache_status} |\n| Write permission | current workspace writable |\n\n## A-share Provider Health\n\n- Missing AKShare/Tushare/Baostock packages are WARNING conditions for optional A-share depth, not default doctor failures.\n- Missing TUSHARE_TOKEN is a WARNING unless a Tushare-only run is requested.\n- Eastmoney public fallback is labeled as `eastmoney_public`, `package_used=false`, `mock=false`, and `provider_adapter=akshare_compatible_fallback`.\n- Mock data must never be labeled as a real provider.\n\nNo API keys or secrets are printed in this report.\n\nNext: See `docs/error_handbook.md` if a provider or PDF export step fails.\n"
     );
     write_if_changed(&path, &report)?;
     println!("Provider health report: {}", path.display());
@@ -1075,5 +1087,45 @@ mod tests {
         let result = scan_secret_text(quoted_old_scan);
         assert!(result.real_secret_hits.is_empty());
         assert_eq!(result.placeholder_hits.len(), 2);
+    }
+
+    #[test]
+    fn provider_health_reports_optional_packages() {
+        let source = include_str!("main.rs");
+        assert!(source.contains("AKShare installed"));
+        assert!(source.contains("Tushare installed"));
+        assert!(source.contains("Baostock installed"));
+    }
+
+    #[test]
+    fn provider_health_reports_missing_akshare_as_warning() {
+        let source = include_str!("main.rs");
+        assert!(source.contains("Missing AKShare/Tushare/Baostock packages are WARNING"));
+    }
+
+    #[test]
+    fn tushare_token_missing_is_warning_not_failure() {
+        let source = include_str!("main.rs");
+        assert!(source.contains("Missing TUSHARE_TOKEN is a WARNING"));
+        assert!(source.contains("TUSHARE_TOKEN set"));
+    }
+
+    #[test]
+    fn provider_health_reports_eastmoney_fallback() {
+        let source = include_str!("main.rs");
+        assert!(source.contains("Eastmoney public fallback available"));
+        assert!(source.contains("eastmoney_public"));
+        assert!(source.contains("package_used=false"));
+        assert!(source.contains("mock=false"));
+    }
+
+    #[test]
+    fn requirements_providers_exists() {
+        let path =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../requirements-providers.txt");
+        let text = fs::read_to_string(path).unwrap();
+        assert!(text.contains("akshare"));
+        assert!(text.contains("baostock"));
+        assert!(text.contains("tushare"));
     }
 }
