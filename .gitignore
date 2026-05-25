@@ -15,6 +15,13 @@ __pycache__/
 .ipynb_checkpoints/
 research-rs/target/
 research-rs/training_cases/
+node_modules/
+**/node_modules/
+target/
+**/target/
+src-tauri/target/
+dist/
+studio/dist/
 
 # Generated outputs
 reports/*
