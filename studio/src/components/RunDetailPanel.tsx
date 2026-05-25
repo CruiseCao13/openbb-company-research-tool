@@ -3,6 +3,7 @@ import { openArtifact, revealInFolder } from "../lib/tauri";
 import type { RunDetail, RunDetailStatus } from "../types/app";
 
 type DetailBadgeVariant = "PASS" | "WARNING" | "FAIL" | "DATA_GAP" | "EXTERNAL_AI" | "LOCAL_MOCK" | "UNKNOWN";
+type AuditBadgeVariant = DetailBadgeVariant | "CACHED" | "SKIPPED";
 
 type RunDetailPanelProps = {
   detail: RunDetail | null;
@@ -31,6 +32,19 @@ function DetailSection({
 }
 
 function StatusBadge({ variant }: { variant: DetailBadgeVariant }): JSX.Element {
+  return <span className={`status-badge status-badge--${variant.toLowerCase()}`}>{variant}</span>;
+}
+
+function AuditStatusBadge({ status }: { status: string }): JSX.Element {
+  const normalized = status.toUpperCase();
+  const variant: AuditBadgeVariant =
+    normalized === "PASS" ||
+    normalized === "WARNING" ||
+    normalized === "FAIL" ||
+    normalized === "CACHED" ||
+    normalized === "SKIPPED"
+      ? (normalized as AuditBadgeVariant)
+      : "UNKNOWN";
   return <span className={`status-badge status-badge--${variant.toLowerCase()}`}>{variant}</span>;
 }
 
@@ -261,6 +275,111 @@ function DataGapsCard({ detail }: { detail: RunDetail }): JSX.Element {
   );
 }
 
+function validatorAlerts(detail: RunDetail): string[] {
+  const alerts = new Set<string>();
+  const combined = [
+    ...detail.warnings,
+    detail.status.overall_status,
+    detail.status.provider_status,
+    detail.status.visual_lint_status,
+    detail.self_review.framework_fit_check,
+    detail.self_review.money_flow_check,
+    detail.self_review.numeric_consistency_check
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  const alertRules: Array<[string, string[]]> = [
+    ["Wrong framework risk", ["wrong framework", "framework conflict"]],
+    ["Hallucinated revenue engine risk", ["hallucinated revenue", "unsupported revenue"]],
+    ["Unsupported claim risk", ["unsupported claim", "unsupported numeric"]],
+    ["Provider data gap", ["provider data gap", "missing field", "data gap"]],
+    ["Missing AI provenance", ["missing ai provenance", "ai provenance missing"]],
+    ["Local/mock AI warning", ["local mock", "local/mock"]]
+  ];
+
+  for (const [label, needles] of alertRules) {
+    if (needles.some((needle) => combined.includes(needle))) {
+      alerts.add(label);
+    }
+  }
+  if (detail.status.human_review_required || detail.self_review.human_review_required) {
+    alerts.add("Human review required");
+  }
+  if (detail.ai_usage.local_mock_used) {
+    alerts.add("Local/mock AI warning");
+  }
+  if (detail.provider.missing_fields.length > 0 || detail.blueprint.data_gaps.length > 0) {
+    alerts.add("Provider data gap");
+  }
+
+  return Array.from(alerts);
+}
+
+function AuditTrailPanel({ detail }: { detail: RunDetail }): JSX.Element {
+  const [message, setMessage] = useState<string>("Audit trail reconstructed from completed-run metadata.");
+  const [isBusy, setIsBusy] = useState<string | null>(null);
+  const alerts = validatorAlerts(detail);
+
+  async function handleOpen(stage: string, artifactPath: string | null): Promise<void> {
+    if (!artifactPath) {
+      return;
+    }
+    setIsBusy(stage);
+    setMessage(`Opening ${stage} artifact...`);
+    try {
+      const result = await openArtifact(artifactPath);
+      setMessage(`${result.message}: ${result.path}`);
+    } catch (error: unknown) {
+      const text = error instanceof Error ? error.message : String(error);
+      const browserPreview = text.includes("__TAURI__")
+        ? "Tauri IPC is unavailable in browser preview. Artifact opening requires the desktop runtime."
+        : text;
+      setMessage(`Audit artifact action failed: ${browserPreview}`);
+    } finally {
+      setIsBusy(null);
+    }
+  }
+
+  return (
+    <DetailSection badge={alerts.length > 0 ? "WARNING" : "UNKNOWN"} title="Audit Trail">
+      <div className="audit-timeline" aria-label="Static audit trail">
+        {detail.audit_trail.map((stage) => (
+          <div className="audit-stage" key={stage.stage}>
+            <div className="audit-stage__marker" aria-hidden="true" />
+            <div className="audit-stage__body">
+              <div className="audit-stage__topline">
+                <div>
+                  <strong>{stage.label}</strong>
+                  <span>{stage.source ?? "source unknown"}</span>
+                </div>
+                <AuditStatusBadge status={stage.status} />
+              </div>
+              <p>{stage.message ?? "No stage message available."}</p>
+              <button
+                className="audit-open-button"
+                disabled={!stage.artifact_path || isBusy !== null}
+                onClick={() => void handleOpen(stage.label, stage.artifact_path)}
+                type="button"
+              >
+                {stage.artifact_path ? "Open" : "No artifact"}
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+      {alerts.length > 0 ? (
+        <div className="validator-alerts">
+          <span className="subsection-title">Validator alerts</span>
+          <BulletList emptyLabel="No validator alerts." items={alerts} />
+        </div>
+      ) : null}
+      <p className="artifact-message">{message}</p>
+    </DetailSection>
+  );
+}
+
 type ArtifactButtonConfig = {
   label: string;
   path: string | null;
@@ -353,6 +472,7 @@ export function RunDetailPanel({ detail, error, status }: RunDetailPanelProps): 
       <MoneyFlowCard detail={detail} />
       <BlueprintCard detail={detail} />
       <DataGapsCard detail={detail} />
+      <AuditTrailPanel detail={detail} />
       <ArtifactLinksCard detail={detail} />
     </>
   );

@@ -501,6 +501,118 @@ textarea {
   color: var(--text-muted);
 }
 
+.audit-timeline {
+  position: relative;
+  display: grid;
+  gap: 12px;
+}
+
+.audit-timeline::before {
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  left: 6px;
+  width: 1px;
+  background: rgba(143, 211, 255, 0.16);
+  content: "";
+}
+
+.audit-stage {
+  position: relative;
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.audit-stage__marker {
+  z-index: 1;
+  width: 13px;
+  height: 13px;
+  margin-top: 7px;
+  border: 1px solid rgba(143, 211, 255, 0.38);
+  border-radius: 999px;
+  background: var(--surface-solid);
+  box-shadow: 0 0 0 3px rgba(3, 7, 18, 0.92);
+}
+
+.audit-stage__body {
+  display: grid;
+  gap: 8px;
+  border: 1px solid rgba(30, 41, 59, 0.72);
+  background: rgba(2, 6, 23, 0.32);
+  padding: 10px;
+}
+
+.audit-stage__topline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.audit-stage__topline div {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.audit-stage__topline strong,
+.audit-stage__topline span,
+.audit-open-button {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+.audit-stage__topline strong {
+  color: var(--text-main);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.audit-stage__topline span,
+.audit-stage p {
+  overflow: hidden;
+  color: var(--text-muted);
+  text-overflow: ellipsis;
+}
+
+.audit-stage__topline span {
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.audit-stage p {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.audit-open-button {
+  justify-self: start;
+  border: 1px solid rgba(143, 211, 255, 0.22);
+  background: rgba(15, 23, 42, 0.45);
+  color: var(--info);
+  cursor: pointer;
+  padding: 5px 8px;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.audit-open-button:hover:not(:disabled) {
+  border-color: rgba(143, 211, 255, 0.5);
+}
+
+.audit-open-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.46;
+}
+
+.validator-alerts {
+  display: grid;
+  gap: 8px;
+  border-left: 2px solid var(--warning);
+  background: rgba(251, 146, 60, 0.07);
+  padding: 10px;
+}
+
 .compact-list {
   display: grid;
   gap: 6px;
@@ -609,6 +721,12 @@ textarea {
 .status-badge--unknown {
   border-color: rgba(143, 211, 255, 0.34);
   color: var(--info);
+}
+
+.status-badge--cached,
+.status-badge--skipped {
+  border-color: rgba(148, 163, 184, 0.28);
+  color: var(--text-muted);
 }
 
 .bottom-bar {

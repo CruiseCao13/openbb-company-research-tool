@@ -110,6 +110,14 @@ export type RunDetail = {
     validator_report_path: string | null;
     provider_payload_path: string | null;
   };
+  audit_trail: Array<{
+    stage: string;
+    label: string;
+    status: "pending" | "running" | "pass" | "warning" | "fail" | "skipped" | "cached" | "unknown";
+    source: string | null;
+    message: string | null;
+    artifact_path: string | null;
+  }>;
   warnings: string[];
 };
 

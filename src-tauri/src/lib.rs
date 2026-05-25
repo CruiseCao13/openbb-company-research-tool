@@ -53,6 +53,7 @@ pub struct RunDetail {
     self_review: DetailSelfReview,
     charts: Vec<DetailChart>,
     artifacts: DetailArtifacts,
+    audit_trail: Vec<AuditTrailStage>,
     warnings: Vec<String>,
 }
 
@@ -149,6 +150,16 @@ pub struct DetailArtifacts {
     blueprint_path: Option<String>,
     validator_report_path: Option<String>,
     provider_payload_path: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct AuditTrailStage {
+    stage: String,
+    label: String,
+    status: String,
+    source: Option<String>,
+    message: Option<String>,
+    artifact_path: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
@@ -529,22 +540,36 @@ fn build_run_detail(ticker: &str, run_id: &str, run_path: &Path) -> RunDetail {
         warnings.push("important artifact missing: audit/validator_report.md".to_string());
     }
 
+    let status = build_detail_status(
+        report_status.as_ref(),
+        provider_status.as_ref(),
+        product_quality_score.as_ref(),
+        chart_table_quality.as_ref(),
+    );
+    let ai_usage_detail = build_detail_ai_usage(ai_usage.as_ref());
+    let provider_detail = build_detail_provider(
+        provider_payload.as_ref(),
+        provider_status.as_ref(),
+        data_inventory.as_ref(),
+    );
+    let audit_trail = build_audit_trail(
+        run_path,
+        &artifacts,
+        &status,
+        &ai_usage_detail,
+        &provider_detail,
+        report_status.as_ref(),
+        ai_usage.as_ref(),
+        provider_payload.as_ref(),
+    );
+
     RunDetail {
         ticker: ticker.to_string(),
         run_id: run_id.to_string(),
         run_folder: path_to_string(run_path),
-        status: build_detail_status(
-            report_status.as_ref(),
-            provider_status.as_ref(),
-            product_quality_score.as_ref(),
-            chart_table_quality.as_ref(),
-        ),
-        ai_usage: build_detail_ai_usage(ai_usage.as_ref()),
-        provider: build_detail_provider(
-            provider_payload.as_ref(),
-            provider_status.as_ref(),
-            data_inventory.as_ref(),
-        ),
+        status,
+        ai_usage: ai_usage_detail,
+        provider: provider_detail,
         company: build_detail_company(company_understanding.as_ref(), provider_payload.as_ref()),
         financial_interpretation: build_detail_financial_interpretation(
             financial_interpretation.as_ref(),
@@ -554,6 +579,7 @@ fn build_run_detail(ticker: &str, run_id: &str, run_path: &Path) -> RunDetail {
         self_review: build_detail_self_review(self_review.as_ref()),
         charts: build_detail_charts(chart_manifest.as_ref(), &charts_dir),
         artifacts,
+        audit_trail,
         warnings,
     }
 }
@@ -818,6 +844,355 @@ fn build_detail_artifacts(run_path: &Path, ticker: &str) -> DetailArtifacts {
             &run_path.join("raw").join("provider_payload.json"),
         ),
     }
+}
+
+fn build_audit_trail(
+    run_path: &Path,
+    artifacts: &DetailArtifacts,
+    status: &DetailStatus,
+    ai_usage: &DetailAiUsage,
+    provider: &DetailProvider,
+    report_status: Option<&Value>,
+    ai_usage_json: Option<&Value>,
+    provider_payload: Option<&Value>,
+) -> Vec<AuditTrailStage> {
+    let metadata_dir = run_path.join("metadata");
+    let audit_dir = run_path.join("audit");
+    let self_review_dir = run_path.join("self_review");
+    let report_dir = run_path.join("report");
+    let pack_dir = run_path.join("pack");
+
+    let provider_artifact = artifacts.provider_payload_path.clone();
+    let provider_missing = !provider.missing_fields.is_empty()
+        || provider
+            .limitations
+            .iter()
+            .any(|item| contains_any_ci(item, &["data gap", "missing", "limited"]));
+    let provider_status = if provider_payload.is_none() {
+        "fail"
+    } else if provider_missing || status_contains(status.provider_status.as_deref(), "warn") {
+        "warning"
+    } else {
+        "pass"
+    };
+
+    let locked_validation_status =
+        match report_status.and_then(|json| json_pointer_bool(json, "/provider_payload_valid")) {
+            Some(true) => "pass",
+            Some(false) => "fail",
+            None if audit_dir.join("provider_validation.md").is_file() => "unknown",
+            None => "warning",
+        };
+
+    vec![
+        AuditTrailStage {
+            stage: "provider_fetch".to_string(),
+            label: "Provider Fetch".to_string(),
+            status: provider_status.to_string(),
+            source: first_string(&[
+                provider.provider.clone(),
+                provider.source.clone(),
+                provider.provider_adapter.clone(),
+            ]),
+            message: Some(provider_stage_message(provider)),
+            artifact_path: provider_artifact,
+        },
+        AuditTrailStage {
+            stage: "locked_data_validation".to_string(),
+            label: "Locked Data Validation".to_string(),
+            status: locked_validation_status.to_string(),
+            source: Some("metadata/report_status.json + audit/provider_validation.md".to_string()),
+            message: Some(
+                "Uses completed-run metadata and provider validation artifacts; no live validation stream."
+                    .to_string(),
+            ),
+            artifact_path: existing_file_path(&audit_dir.join("provider_validation.md")),
+        },
+        build_ai_audit_stage(
+            "ai_company_understanding",
+            "AI Company Understanding",
+            &metadata_dir.join("company_understanding.json"),
+            ai_usage,
+            ai_usage_json,
+            "company_understanding",
+        ),
+        build_ai_audit_stage(
+            "ai_financial_interpretation",
+            "AI Financial Interpretation",
+            &metadata_dir.join("financial_interpretation.json"),
+            ai_usage,
+            ai_usage_json,
+            "financial_interpretation",
+        ),
+        build_ai_audit_stage(
+            "ai_research_blueprint",
+            "AI Research Blueprint",
+            &metadata_dir.join("research_blueprint.json"),
+            ai_usage,
+            ai_usage_json,
+            "research_blueprint",
+        ),
+        AuditTrailStage {
+            stage: "report_rendering".to_string(),
+            label: "Report Rendering".to_string(),
+            status: if artifacts.markdown_report_path.is_some() {
+                status_to_audit_status(status.overall_status.as_deref())
+            } else {
+                "fail".to_string()
+            },
+            source: Some("report/*.md + metadata/report_status.json".to_string()),
+            message: Some(
+                artifacts
+                    .markdown_report_path
+                    .as_ref()
+                    .map(|_| "Markdown report artifact exists.".to_string())
+                    .unwrap_or_else(|| "Markdown report artifact is missing.".to_string()),
+            ),
+            artifact_path: artifacts.markdown_report_path.clone(),
+        },
+        AuditTrailStage {
+            stage: "ai_self_review".to_string(),
+            label: "AI Self Review".to_string(),
+            status: ai_stage_status(
+                self_review_dir.join("ai_self_review.json").is_file(),
+                ai_usage,
+                ai_usage_json,
+                "self_review",
+            ),
+            source: ai_stage_source(ai_usage),
+            message: Some(ai_stage_message(
+                self_review_dir.join("ai_self_review.json").is_file(),
+                ai_usage,
+                "self_review",
+            )),
+            artifact_path: existing_file_path(&self_review_dir.join("ai_self_review.md")),
+        },
+        AuditTrailStage {
+            stage: "validator_lint".to_string(),
+            label: "Validator / Lint".to_string(),
+            status: if audit_dir.join("validator_report.md").is_file() {
+                status_to_audit_status(status.visual_lint_status.as_deref())
+            } else {
+                "warning".to_string()
+            },
+            source: Some("audit/validator_report.md + visual_lint_status".to_string()),
+            message: Some(
+                status
+                    .visual_lint_status
+                    .clone()
+                    .unwrap_or_else(|| "Validator report status is unknown.".to_string()),
+            ),
+            artifact_path: artifacts.validator_report_path.clone(),
+        },
+        AuditTrailStage {
+            stage: "pdf_pack_export".to_string(),
+            label: "PDF / Pack / Export".to_string(),
+            status: export_stage_status(status, artifacts, &pack_dir),
+            source: Some("report/*.pdf + pack/*.zip + pdf_export_status".to_string()),
+            message: Some(export_stage_message(status, artifacts, &pack_dir)),
+            artifact_path: artifacts
+                .pdf_report_path
+                .clone()
+                .or_else(|| find_first_file_with_extension(&pack_dir, "zip").map(|path| path_to_string(&path)))
+                .or_else(|| existing_file_path(&report_dir)),
+        },
+    ]
+}
+
+fn build_ai_audit_stage(
+    stage: &str,
+    label: &str,
+    artifact_path: &Path,
+    ai_usage: &DetailAiUsage,
+    ai_usage_json: Option<&Value>,
+    task_name: &str,
+) -> AuditTrailStage {
+    let exists = artifact_path.is_file();
+    AuditTrailStage {
+        stage: stage.to_string(),
+        label: label.to_string(),
+        status: ai_stage_status(exists, ai_usage, ai_usage_json, task_name),
+        source: ai_stage_source(ai_usage),
+        message: Some(ai_stage_message(exists, ai_usage, task_name)),
+        artifact_path: existing_file_path(artifact_path),
+    }
+}
+
+fn ai_stage_status(
+    artifact_exists: bool,
+    ai_usage: &DetailAiUsage,
+    ai_usage_json: Option<&Value>,
+    task_name: &str,
+) -> String {
+    if !artifact_exists {
+        return "warning".to_string();
+    }
+    if task_request_success(ai_usage_json, task_name) == Some(false) {
+        return "fail".to_string();
+    }
+    if ai_usage.local_mock_used == Some(true) {
+        return "warning".to_string();
+    }
+    if ai_usage.cache_hits.unwrap_or(0) > 0 {
+        return "cached".to_string();
+    }
+    if ai_usage.external_ai_used == Some(true) {
+        return "pass".to_string();
+    }
+    "unknown".to_string()
+}
+
+fn ai_stage_source(ai_usage: &DetailAiUsage) -> Option<String> {
+    if ai_usage.local_mock_used == Some(true) {
+        Some("local_mock".to_string())
+    } else if ai_usage.external_ai_used == Some(true) {
+        Some(
+            ai_usage
+                .source
+                .clone()
+                .unwrap_or_else(|| "external_openai".to_string()),
+        )
+    } else {
+        ai_usage.source.clone()
+    }
+}
+
+fn ai_stage_message(artifact_exists: bool, ai_usage: &DetailAiUsage, task_name: &str) -> String {
+    if !artifact_exists {
+        return format!("{task_name} artifact is missing.");
+    }
+    if ai_usage.local_mock_used == Some(true) {
+        return format!("{task_name} used local/mock AI; treat as non-external analysis.");
+    }
+    if ai_usage.cache_hits.unwrap_or(0) > 0 {
+        return format!("{task_name} may include cached AI output.");
+    }
+    if ai_usage.external_ai_used == Some(true) {
+        return format!("{task_name} artifact exists with external AI provenance.");
+    }
+    format!("{task_name} artifact exists; AI source is unknown.")
+}
+
+fn task_request_success(ai_usage: Option<&Value>, task_name: &str) -> Option<bool> {
+    ai_usage?
+        .pointer("/tasks")
+        .and_then(Value::as_array)?
+        .iter()
+        .find(|task| {
+            first_string(&[
+                json_pointer_string(task, "/task"),
+                json_pointer_string(task, "/name"),
+                json_pointer_string(task, "/stage"),
+            ])
+            .is_some_and(|name| name.contains(task_name))
+        })
+        .and_then(|task| json_pointer_bool(task, "/request_success"))
+}
+
+fn provider_stage_message(provider: &DetailProvider) -> String {
+    let mut parts = Vec::new();
+    if let Some(provider_name) = &provider.provider {
+        parts.push(format!("Provider: {provider_name}."));
+    }
+    if let Some(source) = &provider.source {
+        parts.push(format!("Source: {source}."));
+    }
+    if provider.mock == Some(true) {
+        parts.push("Mock provider data is flagged.".to_string());
+    }
+    if !provider.missing_fields.is_empty() {
+        parts.push(format!(
+            "Missing fields: {}.",
+            provider.missing_fields.join(", ")
+        ));
+    }
+    if parts.is_empty() {
+        "Provider metadata is unavailable.".to_string()
+    } else {
+        parts.join(" ")
+    }
+}
+
+fn status_to_audit_status(status: Option<&str>) -> String {
+    let Some(status) = status else {
+        return "unknown".to_string();
+    };
+    let normalized = status.to_ascii_lowercase();
+    if normalized.contains("fail") {
+        "fail".to_string()
+    } else if normalized.contains("warn")
+        || normalized.contains("review")
+        || normalized.contains("degraded")
+    {
+        "warning".to_string()
+    } else if normalized.contains("pass") {
+        "pass".to_string()
+    } else if normalized.contains("skip") {
+        "skipped".to_string()
+    } else {
+        "unknown".to_string()
+    }
+}
+
+fn export_stage_status(
+    status: &DetailStatus,
+    artifacts: &DetailArtifacts,
+    pack_dir: &Path,
+) -> String {
+    if status_contains(status.pdf_export_status.as_deref(), "fail") {
+        return "fail".to_string();
+    }
+    if status_contains(status.pdf_export_status.as_deref(), "warn") {
+        return "warning".to_string();
+    }
+    if artifacts.pdf_report_path.is_some()
+        || find_first_file_with_extension(pack_dir, "zip").is_some()
+    {
+        return status_to_audit_status(status.pdf_export_status.as_deref())
+            .replace("unknown", "pass");
+    }
+    "unknown".to_string()
+}
+
+fn export_stage_message(
+    status: &DetailStatus,
+    artifacts: &DetailArtifacts,
+    pack_dir: &Path,
+) -> String {
+    let pdf = if artifacts.pdf_report_path.is_some() {
+        "PDF present"
+    } else {
+        "PDF missing or unavailable"
+    };
+    let pack = if find_first_file_with_extension(pack_dir, "zip").is_some() {
+        "pack zip present"
+    } else {
+        "pack zip not found"
+    };
+    let pdf_status = status
+        .pdf_export_status
+        .clone()
+        .unwrap_or_else(|| "pdf status unknown".to_string());
+    format!("{pdf}; {pack}; {pdf_status}.")
+}
+
+fn status_contains(status: Option<&str>, needle: &str) -> bool {
+    status
+        .map(|value| value.to_ascii_lowercase().contains(needle))
+        .unwrap_or(false)
+}
+
+fn contains_any_ci(value: &str, needles: &[&str]) -> bool {
+    let normalized = value.to_ascii_lowercase();
+    needles.iter().any(|needle| normalized.contains(needle))
+}
+
+fn find_first_file_with_extension(dir: &Path, extension: &str) -> Option<PathBuf> {
+    fs::read_dir(dir)
+        .ok()?
+        .flatten()
+        .map(|entry| entry.path())
+        .find(|path| path.is_file() && path.extension().is_some_and(|ext| ext == extension))
 }
 
 fn read_json_with_warning(
@@ -1717,6 +2092,225 @@ mod tests {
 
         assert!(!serialized.contains("SHOULD_NOT_BE_READ"));
         assert!(serialized.contains("provider_payload.json"));
+    }
+
+    #[test]
+    fn load_run_detail_builds_audit_trail() {
+        let temp_dir = TempDir::new().expect("temp dir");
+        let run_path = create_detail_fixture(temp_dir.path(), "AAPL", "audit");
+        write_required_detail_metadata(&run_path);
+        create_dir_all(run_path.join("audit")).expect("audit dir");
+        create_dir_all(run_path.join("report")).expect("report dir");
+        write(
+            run_path.join("audit").join("validator_report.md"),
+            "validator",
+        )
+        .expect("validator");
+        write(
+            run_path.join("report").join("AAPL_research_report.md"),
+            "# AAPL",
+        )
+        .expect("report");
+
+        let detail =
+            load_run_detail_from_reports_root(&temp_dir.path().join("reports"), "AAPL", "audit")
+                .expect("detail");
+        let stages = detail
+            .audit_trail
+            .iter()
+            .map(|stage| stage.stage.as_str())
+            .collect::<Vec<_>>();
+
+        assert_eq!(detail.audit_trail.len(), 9);
+        assert!(stages.contains(&"provider_fetch"));
+        assert!(stages.contains(&"ai_company_understanding"));
+        assert!(stages.contains(&"validator_lint"));
+    }
+
+    #[test]
+    fn audit_trail_marks_missing_optional_stage_unknown_or_warning() {
+        let temp_dir = TempDir::new().expect("temp dir");
+        let run_path = create_detail_fixture(temp_dir.path(), "CAT", "missing_audit");
+        write_required_detail_metadata(&run_path);
+
+        let detail = load_run_detail_from_reports_root(
+            &temp_dir.path().join("reports"),
+            "CAT",
+            "missing_audit",
+        )
+        .expect("detail");
+        let validator = detail
+            .audit_trail
+            .iter()
+            .find(|stage| stage.stage == "validator_lint")
+            .expect("validator stage");
+        let export = detail
+            .audit_trail
+            .iter()
+            .find(|stage| stage.stage == "pdf_pack_export")
+            .expect("export stage");
+
+        assert_eq!(validator.status, "warning");
+        assert_eq!(export.status, "unknown");
+    }
+
+    #[test]
+    fn audit_trail_marks_ai_source_external() {
+        let temp_dir = TempDir::new().expect("temp dir");
+        let run_path = create_detail_fixture(temp_dir.path(), "JPM", "external_audit");
+        write_required_detail_metadata(&run_path);
+
+        let detail = load_run_detail_from_reports_root(
+            &temp_dir.path().join("reports"),
+            "JPM",
+            "external_audit",
+        )
+        .expect("detail");
+        let company_stage = detail
+            .audit_trail
+            .iter()
+            .find(|stage| stage.stage == "ai_company_understanding")
+            .expect("company stage");
+
+        assert_eq!(company_stage.status, "pass");
+        assert_eq!(company_stage.source.as_deref(), Some("external_openai"));
+    }
+
+    #[test]
+    fn audit_trail_marks_local_mock_warning() {
+        let temp_dir = TempDir::new().expect("temp dir");
+        let run_path = create_detail_fixture(temp_dir.path(), "AAPL", "local_audit");
+        write_required_detail_metadata(&run_path);
+        write(
+            run_path.join("metadata").join("ai_usage.json"),
+            r#"{"source":"local_mock","external_ai_used":false,"local_mock_used":true,"cache_hits":0,"new_external_ai_calls":0}"#,
+        )
+        .expect("ai usage");
+
+        let detail = load_run_detail_from_reports_root(
+            &temp_dir.path().join("reports"),
+            "AAPL",
+            "local_audit",
+        )
+        .expect("detail");
+        let ai_stages = detail
+            .audit_trail
+            .iter()
+            .filter(|stage| stage.stage.starts_with("ai_"))
+            .collect::<Vec<_>>();
+
+        assert!(!ai_stages.is_empty());
+        assert!(ai_stages.iter().all(|stage| stage.status == "warning"));
+        assert!(ai_stages
+            .iter()
+            .all(|stage| stage.source.as_deref() == Some("local_mock")));
+    }
+
+    #[test]
+    fn audit_trail_includes_artifact_paths_when_present() {
+        let temp_dir = TempDir::new().expect("temp dir");
+        let run_path = create_detail_fixture(temp_dir.path(), "RKLB", "artifact_audit");
+        write_required_detail_metadata(&run_path);
+        create_dir_all(run_path.join("audit")).expect("audit dir");
+        create_dir_all(run_path.join("report")).expect("report dir");
+        write(
+            run_path.join("audit").join("validator_report.md"),
+            "validator",
+        )
+        .expect("validator");
+        write(
+            run_path.join("report").join("RKLB_research_report.md"),
+            "# RKLB",
+        )
+        .expect("report");
+
+        let detail = load_run_detail_from_reports_root(
+            &temp_dir.path().join("reports"),
+            "RKLB",
+            "artifact_audit",
+        )
+        .expect("detail");
+
+        assert!(detail.audit_trail.iter().any(|stage| stage
+            .artifact_path
+            .as_deref()
+            .is_some_and(|path| path.ends_with("provider_payload.json"))));
+        assert!(detail.audit_trail.iter().any(|stage| stage
+            .artifact_path
+            .as_deref()
+            .is_some_and(|path| path.ends_with("validator_report.md"))));
+    }
+
+    #[test]
+    fn audit_trail_does_not_require_live_events() {
+        let temp_dir = TempDir::new().expect("temp dir");
+        let run_path = create_detail_fixture(temp_dir.path(), "GOOGL", "static_audit");
+        write_required_detail_metadata(&run_path);
+
+        let detail = load_run_detail_from_reports_root(
+            &temp_dir.path().join("reports"),
+            "GOOGL",
+            "static_audit",
+        )
+        .expect("detail");
+        let serialized = serde_json::to_string(&detail.audit_trail).expect("serialize");
+
+        assert!(!serialized.contains("running"));
+        assert!(!serialized.contains("event_stream"));
+    }
+
+    #[test]
+    fn audit_trail_marks_provider_data_gap_warning() {
+        let temp_dir = TempDir::new().expect("temp dir");
+        let run_path = create_detail_fixture(temp_dir.path(), "600519.SH", "gap_audit");
+        write_required_detail_metadata(&run_path);
+        write(
+            run_path.join("metadata").join("provider_status.json"),
+            r#"{"provider":"eastmoney_public","status":"WARNING","missing_fields":["dividend"],"market":"CN_A","currency":"CNY"}"#,
+        )
+        .expect("provider status");
+
+        let detail = load_run_detail_from_reports_root(
+            &temp_dir.path().join("reports"),
+            "600519.SH",
+            "gap_audit",
+        )
+        .expect("detail");
+        let provider_stage = detail
+            .audit_trail
+            .iter()
+            .find(|stage| stage.stage == "provider_fetch")
+            .expect("provider stage");
+
+        assert_eq!(provider_stage.status, "warning");
+        assert!(provider_stage
+            .message
+            .as_deref()
+            .is_some_and(|message| message.contains("Missing fields")));
+    }
+
+    #[test]
+    fn audit_trail_does_not_parse_full_report_markdown() {
+        let temp_dir = TempDir::new().expect("temp dir");
+        let run_path = create_detail_fixture(temp_dir.path(), "AAPL", "report_guard");
+        write_required_detail_metadata(&run_path);
+        create_dir_all(run_path.join("report")).expect("report dir");
+        write(
+            run_path.join("report").join("AAPL_research_report.md"),
+            "REPORT_BODY_SHOULD_NOT_RETURN",
+        )
+        .expect("report");
+
+        let detail = load_run_detail_from_reports_root(
+            &temp_dir.path().join("reports"),
+            "AAPL",
+            "report_guard",
+        )
+        .expect("detail");
+        let serialized = serde_json::to_string(&detail).expect("serialize");
+
+        assert!(!serialized.contains("REPORT_BODY_SHOULD_NOT_RETURN"));
+        assert!(serialized.contains("AAPL_research_report.md"));
     }
 
     fn create_run_with_generated_at(
