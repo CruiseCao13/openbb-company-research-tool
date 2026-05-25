@@ -1,0 +1,153 @@
+schema_version: v5.0.0
+description: Issue taxonomy for v5 system-level AI research quality training.
+issue_types:
+  - issue_type: wrong_profile
+    severity: BLOCKER
+    fix_target: validator
+    training_use: negative
+    description: Research frame conflicts with provider identity or eval-set expectation.
+    examples: ["LUNR classified as telecom infrastructure"]
+  - issue_type: hallucinated_revenue_engine
+    severity: BLOCKER
+    fix_target: validator
+    training_use: negative
+    description: Report invents unsupported revenue engines not present in provider data.
+    examples: ["wireless service revenue for a lunar infrastructure company"]
+  - issue_type: weak_company_understanding
+    severity: HIGH
+    fix_target: prompt
+    training_use: regression
+    description: Company identity is vague, generic, or misses what the company is not.
+    examples: []
+  - issue_type: weak_business_model
+    severity: HIGH
+    fix_target: prompt
+    training_use: regression
+    description: Business model does not explain what the company sells or how it earns money.
+    examples: []
+  - issue_type: weak_money_flow
+    severity: HIGH
+    fix_target: prompt
+    training_use: regression
+    description: Money-flow section is generic or not tied to cash-flow evidence/data gaps.
+    examples: []
+  - issue_type: weak_financial_interpretation
+    severity: HIGH
+    fix_target: prompt
+    training_use: regression
+    description: Financial explanation repeats numbers without explaining meaning or boundaries.
+    examples: []
+  - issue_type: weak_valuation_frame
+    severity: MEDIUM
+    fix_target: prompt
+    training_use: regression
+    description: Valuation method is not suitable for the company profile or data coverage.
+    examples: []
+  - issue_type: generic_risk_language
+    severity: MEDIUM
+    fix_target: language
+    training_use: regression
+    description: Risks are broad statements without source, mechanism, or next check.
+    examples: []
+  - issue_type: generic_chart_explanation
+    severity: MEDIUM
+    fix_target: chart
+    training_use: regression
+    description: Chart explanation does not explain what the specific figure can and cannot prove.
+    examples: []
+  - issue_type: table_quality_bad
+    severity: MEDIUM
+    fix_target: table
+    training_use: regression
+    description: Tables are too wide, lack units/source, or contain long prose/raw dumps.
+    examples: []
+  - issue_type: unsupported_claim
+    severity: HIGH
+    fix_target: evidence_map
+    training_use: negative
+    description: Non-numeric claim is asserted without evidence or boundary.
+    examples: []
+  - issue_type: unsupported_numeric_claim
+    severity: BLOCKER
+    fix_target: validator
+    training_use: negative
+    description: Numeric claim cannot be traced to locked data.
+    examples: []
+  - issue_type: provider_data_gap
+    severity: MEDIUM
+    fix_target: provider
+    training_use: regression
+    description: Provider lacks critical data; report should mark data-limited, not fabricate.
+    examples: []
+  - issue_type: provider_schema_bad
+    severity: HIGH
+    fix_target: provider
+    training_use: regression
+    description: Provider output fails v5 typed schema or required metadata fields.
+    examples: []
+  - issue_type: translationese
+    severity: MEDIUM
+    fix_target: language
+    training_use: regression
+    description: Chinese or English reads like machine-translated generic prose.
+    examples: []
+  - issue_type: ai_provenance_missing
+    severity: BLOCKER
+    fix_target: validator
+    training_use: negative
+    description: AI artifact lacks source/cache/external provenance proof.
+    examples: []
+  - issue_type: local_mock_mislabeled
+    severity: BLOCKER
+    fix_target: validator
+    training_use: negative
+    description: Local/mock output is presented as external OpenAI output.
+    examples: []
+  - issue_type: local_mock_case
+    severity: LOW
+    fix_target: prompt
+    training_use: regression
+    description: Local/mock output may be useful for fixture sanity but cannot enter positive training cases.
+    examples: []
+  - issue_type: report_status_wrong
+    severity: BLOCKER
+    fix_target: validator
+    training_use: regression
+    description: Report status says PASS despite hard content failures.
+    examples: []
+  - issue_type: self_review_failed_to_catch
+    severity: HIGH
+    fix_target: prompt
+    training_use: regression
+    description: AI self-review misses wrong frame, hallucinated revenue engine, or generic output.
+    examples: []
+  - issue_type: pdf_blank
+    severity: HIGH
+    fix_target: pdf
+    training_use: regression
+    description: PDF is empty, tiny, missing title, or falsely marked PASS.
+    examples: []
+  - issue_type: dashboard_link_only
+    severity: MEDIUM
+    fix_target: dashboard
+    training_use: regression
+    description: Dashboard is mostly links and lacks product research cards.
+    examples: []
+  - issue_type: missing_next_checks
+    severity: MEDIUM
+    fix_target: prompt
+    training_use: regression
+    description: Next checks are vague or not actionable.
+    examples: []
+  - issue_type: evidence_map_missing
+    severity: HIGH
+    fix_target: evidence_map
+    training_use: regression
+    description: Important claims lack evidence-map entries.
+    examples: []
+  - issue_type: data_inventory_missing
+    severity: HIGH
+    fix_target: renderer
+    training_use: regression
+    description: Run lacks data inventory or critical unused-data audit.
+    examples: []

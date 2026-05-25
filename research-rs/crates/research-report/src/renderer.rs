@@ -9,7 +9,7 @@ use research_core::io::{write_if_changed, write_json};
 use research_core::provider::{resolve_python, resolve_repo_path};
 use research_core::run_folder::RunFolder;
 use research_core::types::*;
-use research_core::validation::visual_lint;
+use research_core::validation::{has_space_lunar_identity, visual_lint};
 use serde_json::json;
 use std::process::Command;
 use std::{env, fs};
@@ -69,6 +69,14 @@ pub fn render_run(input: RenderRunInput<'_>) -> Result<()> {
     write_section_source_map(folder, payload)?;
     write_money_flow_map(folder, payload, interpretation)?;
     write_evidence_map(folder, understanding, interpretation, blueprint)?;
+    write_lunr_root_cause_report(
+        folder,
+        payload,
+        understanding,
+        interpretation,
+        blueprint,
+        review,
+    )?;
     write_if_changed(
         &folder.self_review.join("ai_self_review.md"),
         &render_self_review_md(review),
@@ -768,6 +776,70 @@ fn write_evidence_map(
     Ok(())
 }
 
+fn write_lunr_root_cause_report(
+    folder: &RunFolder,
+    payload: &ProviderPayload,
+    understanding: &CompanyUnderstanding,
+    interpretation: &FinancialInterpretation,
+    blueprint: &ResearchBlueprint,
+    review: &AiSelfReview,
+) -> Result<()> {
+    if payload.ticker != "LUNR" && !has_space_lunar_identity(payload) {
+        return Ok(());
+    }
+    let description = if payload.company_profile.description.trim().is_empty() {
+        "Provider description is missing.".to_string()
+    } else {
+        payload
+            .company_profile
+            .description
+            .chars()
+            .take(900)
+            .collect::<String>()
+    };
+    let profile_summary = format!(
+        "- Name: {}\n- Sector: {}\n- Industry: {}\n- Provider: {}\n- Description excerpt: {}\n",
+        payload.company_profile.name,
+        payload.company_profile.sector,
+        payload.company_profile.industry,
+        payload.provider,
+        description
+    );
+    let compact_summary = format!(
+        "- Compact payload includes ticker, market, company name, sector, industry, full description, income summary, and cash-flow summary.\n- Company frame after guard: {}\n- Money flow source text: {}\n- Money flow use text: {}\n",
+        understanding.correct_research_frame,
+        interpretation.where_money_comes_from,
+        interpretation.where_money_goes
+    );
+    let validator_summary = format!(
+        "- Framework fit check: {:?}\n- Human review required: {}\n- Wrong framework risk: {}\n- Rewrite sections: {}\n",
+        review.framework_fit_check,
+        review.human_review_required,
+        if review.wrong_framework_risk.is_empty() {
+            "None".to_string()
+        } else {
+            review.wrong_framework_risk.join("; ")
+        },
+        if review.required_rewrite_sections.is_empty() {
+            "None".to_string()
+        } else {
+            review.required_rewrite_sections.join("; ")
+        }
+    );
+    let report = format!(
+        "# LUNR Root Cause Report\n\n## Provider Company Profile\n\n{}\n## Compact Payload Sent to AI\n\n{}\n## Why The Previous Output Could Fail\n\nThe provider identity is space/lunar/aerospace. Any carrier-style infrastructure frame is a framework conflict unless the provider description explicitly supports that business model. The previous quality gap was that framework acceptance did not deterministically challenge AI output against provider identity before report status was assigned.\n\n## Validator / Self-Review Failure Mode\n\nBefore this guard, a fluent but wrong industry frame could pass because the JSON fields were present and self-review mainly checked completeness. The new framework challenge checks provider identity, forbidden frame terms, revenue-engine support, and human-review escalation.\n\n## Applied Fix\n\n- Space/lunar provider clues trigger an aerospace/data-limited identity guard.\n- Wrong framework conflicts set framework_fit_check=FAIL and human_review_required=true.\n- The report cannot remain PASS when wrong_framework_conflict is present.\n- Money Flow must be specific or data-limited, not generic.\n- Chart explanations must answer figure-specific questions.\n\n## Current Validator Summary\n\n{}\n## Current Blueprint\n\n- Asset profile: {}\n- Secondary profile: {}\n- Must analyze: {}\n- Data gaps: {}\n",
+        profile_summary,
+        compact_summary,
+        validator_summary,
+        blueprint.asset_profile,
+        blueprint.secondary_profile,
+        blueprint.must_analyze.join("; "),
+        blueprint.data_gaps.join("; ")
+    );
+    write_if_changed(&folder.audit.join("lunr_root_cause_report.md"), &report)?;
+    Ok(())
+}
+
 fn value_state(rows: &[StatementRow], needles: &[&str]) -> &'static str {
     if metric_present(rows, needles) {
         "available"
@@ -803,12 +875,35 @@ fn write_money_flow_map(
         "{} {}",
         interpretation.where_money_comes_from, interpretation.where_money_goes
     );
-    let generic = money_flow_text.trim().len() < 40
-        || money_flow_text
-            .to_lowercase()
-            .contains("pay attention to cash flow");
-    let score = if generic { 55 } else { 82 };
-    let status = if score < 60 { "FAIL" } else { "PASS" };
+    let lower = money_flow_text.to_lowercase();
+    let generic = money_flow_text.trim().len() < 80
+        || [
+            "money comes from operating revenue when available",
+            "money goes to operating costs",
+            "costs and reinvestment",
+            "pay attention to cash flow",
+            "cash flow is important",
+        ]
+        .iter()
+        .any(|phrase| lower.contains(phrase));
+    let data_limited_specific = lower.contains("data gap")
+        || lower.contains("not fully verified")
+        || lower.contains("current compact payload requires manual")
+        || lower.contains("current locked data does not show");
+    let score = if generic && !data_limited_specific {
+        55
+    } else if data_limited_specific {
+        74
+    } else {
+        84
+    };
+    let status = if score < 60 {
+        "FAIL"
+    } else if score < 70 {
+        "WARNING"
+    } else {
+        "PASS"
+    };
     let map = json!({
         "schema_version": SCHEMA_VERSION,
         "sources": sources,
@@ -822,6 +917,17 @@ fn write_money_flow_map(
         "data_refs": ["income_statement", "cash_flow", "balance_sheet"]
     });
     write_json(&folder.metadata.join("money_flow_map.json"), &map)?;
+    write_json(
+        &folder.metadata.join("money_flow_specificity_score.json"),
+        &json!({
+            "schema_version": SCHEMA_VERSION,
+            "money_flow_specificity_score": score,
+            "status": status,
+            "generic_money_flow_detected": generic && !data_limited_specific,
+            "data_limited_specificity": data_limited_specific,
+            "report_status_can_be_pass": score >= 70
+        }),
+    )?;
     write_if_changed(
         &folder.audit.join("money_flow_quality_report.md"),
         &format!(
@@ -1156,8 +1262,43 @@ fn write_pdf_export_report(
         .join(format!("{}_research_report_cn.pdf", payload.ticker));
     let english_expected = lang == "en" || lang == "both";
     let chinese_expected = lang == "zh" || lang == "both";
-    let english_ok = !english_expected || english_pdf.exists();
-    let chinese_ok = !chinese_expected || chinese_pdf.exists();
+    let english_source = folder
+        .report
+        .join(format!("{}_research_report.md", payload.ticker));
+    let chinese_source = folder
+        .report
+        .join(format!("{}_research_report_cn.md", payload.ticker));
+    let source_size = if english_expected {
+        fs::metadata(&english_source).map(|m| m.len()).unwrap_or(0)
+    } else {
+        fs::metadata(&chinese_source).map(|m| m.len()).unwrap_or(0)
+    };
+    let english_pdf_size = fs::metadata(&english_pdf).map(|m| m.len()).unwrap_or(0);
+    let chinese_pdf_size = fs::metadata(&chinese_pdf).map(|m| m.len()).unwrap_or(0);
+    let english_title_ok = if english_expected {
+        fs::read(&english_pdf)
+            .map(|bytes| {
+                String::from_utf8_lossy(&bytes)
+                    .contains(&format!("{} Company Research Report", payload.ticker))
+            })
+            .unwrap_or(false)
+    } else {
+        true
+    };
+    let chinese_title_ok = if chinese_expected {
+        fs::read(&chinese_pdf)
+            .map(|bytes| {
+                String::from_utf8_lossy(&bytes)
+                    .contains(&format!("{} 公司研究报告", payload.ticker))
+            })
+            .unwrap_or(false)
+    } else {
+        true
+    };
+    let english_ok =
+        !english_expected || (english_pdf.exists() && english_pdf_size > 1024 && english_title_ok);
+    let chinese_ok =
+        !chinese_expected || (chinese_pdf.exists() && chinese_pdf_size > 1024 && chinese_title_ok);
     let status = if english_ok && chinese_ok {
         "PASS"
     } else {
@@ -1171,8 +1312,14 @@ fn write_pdf_export_report(
     write_if_changed(
         &folder.audit.join("pdf_export_report.md"),
         &format!(
-            "# PDF Export Report\n\nStatus: {}\n\n## Required Surface\n\n- Cover/title page: included as the report title.\n- Table of contents: included.\n- Page numbers: included by the basic exporter.\n- Generated/status card: included in the top status block.\n- Charts readable: chart references and explanation text are preserved; embedded PNG rendering depends on the local lightweight exporter.\n- Tables not broken: Markdown tables are converted into readable text blocks by the exporter.\n- Source notes: preserved.\n- AI self-review: preserved.\n- Disclaimer: preserved.\n\n## Details\n\n{}\n",
-            status, details
+            "# PDF Export Report\n\nStatus: {}\n\n## Source and Output\n\n| Item | Value |\n|---|---:|\n| Source file size | {} |\n| English PDF size | {} |\n| Chinese PDF size | {} |\n| English title check | {} |\n| Chinese title check | {} |\n\n## Required Surface\n\n- Cover/title page: included as the report title.\n- Table of contents: included.\n- Page numbers: included by the basic exporter.\n- Generated/status card: included in the top status block.\n- Charts readable: chart references and explanation text are preserved; embedded PNG rendering depends on the local lightweight exporter.\n- Tables not broken: Markdown tables are converted into readable text blocks by the exporter.\n- Source notes: preserved.\n- AI self-review: preserved.\n- Disclaimer: preserved.\n\n## Blank PDF Guard\n\nPDF_EXPORT_STATUS can only be PASS when the expected PDF exists, is larger than the minimum size, and contains the report title text. Otherwise status is WARNING and Markdown/HTML remain authoritative.\n\n## Details\n\n{}\n",
+            status,
+            source_size,
+            english_pdf_size,
+            chinese_pdf_size,
+            english_title_ok,
+            chinese_title_ok,
+            details
         ),
     )?;
     write_json(
@@ -1181,8 +1328,13 @@ fn write_pdf_export_report(
             "PDF_EXPORT_STATUS": status,
             "english_pdf_expected": english_expected,
             "english_pdf_exists": english_ok,
+            "english_pdf_size": english_pdf_size,
+            "english_title_check": english_title_ok,
             "chinese_pdf_expected": chinese_expected,
             "chinese_pdf_exists": chinese_ok,
+            "chinese_pdf_size": chinese_pdf_size,
+            "chinese_title_check": chinese_title_ok,
+            "source_file_size": source_size,
             "note": "Markdown and HTML remain authoritative if PDF export is unavailable."
         }),
     )?;

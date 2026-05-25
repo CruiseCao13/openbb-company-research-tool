@@ -554,3 +554,163 @@ fn low_language_quality_affects_report_status() {
         "WARNING" | "FAIL"
     ));
 }
+
+#[test]
+fn chart_explanation_not_generic() {
+    let payload = ProviderPayload {
+        ticker: "LUNR".into(),
+        company_profile: CompanyProfile {
+            name: "Intuitive Machines, Inc.".into(),
+            sector: "Industrials".into(),
+            industry: "Aerospace & Defense".into(),
+            description: "Space exploration company supporting lunar missions and NASA programs."
+                .into(),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    let understanding = CompanyUnderstanding {
+        company_identity: "LUNR requires a space / lunar infrastructure frame.".into(),
+        business_model: "Project-based aerospace services and mission execution.".into(),
+        revenue_engines: vec!["NASA or government-linked project revenue when verified".into()],
+        profit_pool: "Contract margin and cash runway.".into(),
+        key_growth_drivers: vec!["lunar mission milestones".into()],
+        key_risks: vec!["mission execution risk".into()],
+        not_this: vec!["telecom carrier economics".into()],
+        correct_research_frame: "Unknown / Data-Limited Screening with Aerospace extension".into(),
+        wrong_frames_to_avoid: vec!["telecom carrier frame".into()],
+        confidence: Confidence::LOW,
+        human_review_required: true,
+        ..Default::default()
+    };
+    let interpretation = FinancialInterpretation {
+        where_money_comes_from: "Money may come from project revenue and financing when verified."
+            .into(),
+        where_money_goes:
+            "Money goes to mission execution, engineering, and financing obligations.".into(),
+        revenue_explanation: "Revenue is data-limited.".into(),
+        margin_explanation: "Margins depend on project cost.".into(),
+        cash_flow_explanation: "Cash-flow data must be checked.".into(),
+        capex_or_rnd_pressure: "Engineering spend matters.".into(),
+        debt_and_financing: "Financing runway must be checked.".into(),
+        shareholder_return_quality: "Not core unless locked data supports it.".into(),
+        valuation_method_fit: "Use aerospace project execution framing.".into(),
+        ..Default::default()
+    };
+    let blueprint = ResearchBlueprint {
+        core_thesis: "The central research question is mission execution and cash runway.".into(),
+        asset_profile: "Unknown / Data-Limited Screening with Aerospace extension".into(),
+        secondary_profile: "Space / Lunar Infrastructure".into(),
+        must_analyze: vec!["NASA contract evidence".into(), "cash runway".into()],
+        must_not_analyze_as_core: vec!["telecom carrier economics".into()],
+        key_questions: vec!["Which contracts are disclosed?".into()],
+        red_flags: vec!["mission delay".into()],
+        valuation_frame: "Scenario and cash runway framing.".into(),
+        next_checks: vec!["Read latest filing.".into()],
+        ..Default::default()
+    };
+    let review = AiSelfReview {
+        framework_fit_check: CheckStatus::WARNING,
+        human_review_required: true,
+        ..Default::default()
+    };
+    let status = ReportStatus {
+        overall_status: "WARNING".into(),
+        provider_payload_valid: "PASS".into(),
+        company_understanding_present: "PASS".into(),
+        financial_interpretation_present: "PASS".into(),
+        research_blueprint_present: "PASS".into(),
+        ai_self_review_present: "PASS".into(),
+        money_flow_present: "PASS".into(),
+        human_review_required: true,
+        ai_mode: "compact".into(),
+        ai_calls: 4,
+        cache_hits: 0,
+        provider_status: "PASS".into(),
+        visual_lint_status: "PASS".into(),
+        pdf_export_status: "PASS".into(),
+        schema_version: SCHEMA_VERSION.into(),
+    };
+    let report = render_report(
+        &payload,
+        &understanding,
+        &interpretation,
+        &blueprint,
+        &review,
+        &status,
+    );
+    assert!(report.contains("A price chart cannot prove the stock is cheap"));
+    assert!(report.contains("operating cash flow, capital spending, financing flows"));
+    assert!(!report.contains("depending on the figure"));
+}
+
+#[test]
+fn lunr_chart_explanation_mentions_space_or_data_gap() {
+    let source = include_str!("markdown.rs");
+    assert!(source.contains("when those data are missing"));
+    assert!(source.contains("cash-flow bridge cannot prove future runway"));
+}
+
+#[test]
+fn chart_explanation_mentions_specific_metric() {
+    let source = include_str!("markdown.rs");
+    for phrase in [
+        "operating cash flow",
+        "capital spending",
+        "valuation metric",
+        "drawdowns",
+        "revenue, operating profit, free cash flow",
+    ] {
+        assert!(
+            source.contains(phrase),
+            "missing chart metric phrase {phrase}"
+        );
+    }
+}
+
+#[test]
+fn chart_explanation_forbids_template_placeholder() {
+    let source = include_str!("markdown.rs");
+    assert!(!source.contains("This figure is evidence for the section's main question"));
+    assert!(!source.contains("depending on the figure"));
+}
+
+#[test]
+fn dashboard_has_required_research_cards() {
+    let source = include_str!("dashboard.rs");
+    for phrase in [
+        "Company Identity",
+        "AI Source",
+        "Money Flow",
+        "Chart Grid",
+        "Research Blueprint",
+        "Product Quality",
+    ] {
+        assert!(source.contains(phrase), "dashboard missing {phrase}");
+    }
+}
+
+#[test]
+fn dashboard_not_link_only() {
+    let source = include_str!("dashboard.rs");
+    assert!(source.contains("{identity}"));
+    assert!(source.contains("{money_from}"));
+    assert!(source.contains("{cash_flow}"));
+    assert!(source.contains("charts/Figure_04_money_flow.png"));
+}
+
+#[test]
+fn pdf_export_status_cannot_pass_if_file_empty() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("english_pdf_size > 1024"));
+    assert!(source.contains("contains(&format!(\"{} Company Research Report\""));
+    assert!(source.contains("Blank PDF Guard"));
+}
+
+#[test]
+fn pdf_export_report_generated() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("pdf_export_report.md"));
+    assert!(source.contains("Source file size"));
+    assert!(source.contains("PDF_EXPORT_STATUS"));
+}

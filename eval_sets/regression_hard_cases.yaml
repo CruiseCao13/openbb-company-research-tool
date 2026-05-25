@@ -1,0 +1,77 @@
+name: regression_hard_cases
+description: v5 hard regression cases for framework, provenance, money-flow, and provider-boundary failures.
+groups:
+  us_space_aerospace_smallcap:
+    - LUNR
+    - ASTS
+  us_mega_cap_tech:
+    - AAPL
+    - GOOGL
+    - META
+  us_industrial_machinery:
+    - CAT
+  us_medical_devices:
+    - ISRG
+  us_healthcare_pharma:
+    - LLY
+  us_ai_semiconductor:
+    - AMD
+    - NVDA
+  us_telecom:
+    - T
+  us_transport_shipping_airlines:
+    - ZIM
+  us_semiconductor_turnaround:
+    - INTC
+  us_financials:
+    - JPM
+  cn_baijiu_consumer:
+    - 600519.SH
+  cn_banks:
+    - 000001.SZ
+rules:
+  LUNR:
+    allowed_frames:
+      - Space / Lunar Infrastructure
+      - Aerospace Services
+      - NASA-linked Project Execution
+      - Speculative Aerospace / Space Systems
+      - Project-Based Aerospace Services
+      - Unknown / Data-Limited Screening with Aerospace extension
+    must_not_contain:
+      - Telecom / Infrastructure Cash Flow
+      - wireless service revenue
+      - broadband / network revenue
+      - subscriber churn
+      - regulated telecom
+  GOOGL:
+    must_not_be:
+      - Financials
+  AAPL:
+    must_not_be:
+      - Aerospace / Defense
+  META:
+    must_not_be:
+      - Semiconductor seller
+      - AI Semiconductor unless semiconductor revenue evidence exists
+  CAT:
+    must_not_be:
+      - Insurance-like Screening
+  ISRG:
+    must_not_be:
+      - Biotech drug pipeline
+  LLY:
+    must_not_be:
+      - generic Unknown
+  AMD:
+    must_not_be:
+      - INTC-like manufacturing turnaround unless foundry/manufacturing evidence dominates
+  T:
+    must_not_be:
+      - ordinary Mature Compounder without telecom/debt context
+  ZIM:
+    must_not_be:
+      - Biotech-like Screening
+  JPM:
+    must_be:
+      - Financials / Bank-like Screening

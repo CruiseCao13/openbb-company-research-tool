@@ -7,10 +7,13 @@ use crate::paths::{
 use crate::provider::{discover_repo_root, discover_repo_root_from, resolve_provider_script};
 use crate::run_folder::RunFolder;
 use crate::types::{
-    AiSelfReview, CompanyProfile, CompanyUnderstanding, Confidence, FinancialInterpretation,
-    ProviderPayload, ResearchBlueprint, RunContext,
+    AiSelfReview, CheckStatus, CompanyProfile, CompanyUnderstanding, Confidence,
+    FinancialInterpretation, ProviderPayload, ResearchBlueprint, RunContext,
 };
-use crate::validation::{report_status, validate_ai_json, validate_provider_payload};
+use crate::validation::{
+    apply_framework_challenge_guard, detect_wrong_framework_conflicts, has_space_lunar_identity,
+    report_status, validate_ai_json, validate_provider_payload,
+};
 use std::sync::Mutex;
 
 static ENV_LOCK: Mutex<()> = Mutex::new(());
@@ -237,4 +240,153 @@ fn missing_not_this_boundary_is_ai_failure() {
     let review = AiSelfReview::default();
     let failures = validate_ai_json(&understanding, &interpretation, &blueprint, &review);
     assert!(failures.contains(&"missing_not_this_boundary".to_string()));
+}
+
+#[test]
+fn generic_money_flow_prevents_clean_ai_validation() {
+    let understanding = CompanyUnderstanding {
+        company_identity: "Specific company identity".into(),
+        correct_research_frame: "Specific frame".into(),
+        business_model: "Specific business model".into(),
+        not_this: vec!["bank".into()],
+        ..Default::default()
+    };
+    let interpretation = FinancialInterpretation {
+        where_money_comes_from: "Money comes from operating revenue when available.".into(),
+        where_money_goes: "Money goes to operating costs and reinvestment.".into(),
+        ..Default::default()
+    };
+    let blueprint = ResearchBlueprint {
+        core_thesis: "This is a specific enough thesis for validation checks.".into(),
+        asset_profile: "Specific Profile".into(),
+        must_analyze: vec!["specific driver".into()],
+        ..Default::default()
+    };
+    let failures = validate_ai_json(
+        &understanding,
+        &interpretation,
+        &blueprint,
+        &AiSelfReview::default(),
+    );
+    assert!(failures.contains(&"generic_money_flow".to_string()));
+}
+
+fn lunr_payload() -> ProviderPayload {
+    ProviderPayload {
+        ticker: "LUNR".into(),
+        market: "US".into(),
+        provider: "openbb".into(),
+        company_profile: CompanyProfile {
+            name: "Intuitive Machines, Inc.".into(),
+            sector: "Industrials".into(),
+            industry: "Aerospace & Defense".into(),
+            description: "Space exploration company supporting lunar missions, NASA programs, landers, and cislunar infrastructure.".into(),
+            ..Default::default()
+        },
+        ..Default::default()
+    }
+}
+
+fn bad_lunr_ai() -> (
+    CompanyUnderstanding,
+    FinancialInterpretation,
+    ResearchBlueprint,
+    AiSelfReview,
+) {
+    let understanding = CompanyUnderstanding {
+        company_identity: "LUNR is best treated as Telecom / Infrastructure Cash Flow.".into(),
+        business_model: "Debt-heavy regulated-like network business.".into(),
+        revenue_engines: vec![
+            "wireless service revenue".into(),
+            "broadband / network revenue".into(),
+        ],
+        profit_pool: "Subscriber economics.".into(),
+        key_growth_drivers: vec!["network scale".into()],
+        key_risks: vec!["subscriber churn".into()],
+        not_this: vec!["ordinary high-growth tech".into()],
+        correct_research_frame: "Telecom / Infrastructure Cash Flow".into(),
+        wrong_frames_to_avoid: vec![],
+        confidence: Confidence::MEDIUM,
+        human_review_required: false,
+        ..Default::default()
+    };
+    let interpretation = FinancialInterpretation {
+        where_money_comes_from:
+            "Money comes from wireless service revenue and broadband customers.".into(),
+        where_money_goes: "Money goes to regulated telecom network capex.".into(),
+        ..Default::default()
+    };
+    let blueprint = ResearchBlueprint {
+        core_thesis:
+            "The central research question is subscriber churn and regulated telecom cash flow."
+                .into(),
+        asset_profile: "Telecom / Infrastructure Cash Flow".into(),
+        must_analyze: vec!["subscriber churn".into(), "broadband revenue".into()],
+        ..Default::default()
+    };
+    let review = AiSelfReview::default();
+    (understanding, interpretation, blueprint, review)
+}
+
+#[test]
+fn lunr_detects_space_lunar_frame() {
+    let payload = lunr_payload();
+    assert!(has_space_lunar_identity(&payload));
+}
+
+#[test]
+fn wrong_framework_sets_human_review_required() {
+    let payload = lunr_payload();
+    let (mut understanding, mut interpretation, mut blueprint, mut review) = bad_lunr_ai();
+    let failures = apply_framework_challenge_guard(
+        &payload,
+        &mut understanding,
+        &mut interpretation,
+        &mut blueprint,
+        &mut review,
+    );
+    assert!(failures
+        .iter()
+        .any(|f| f.contains("wrong_framework_conflict")));
+    assert!(understanding.human_review_required);
+    assert!(blueprint.human_review_required);
+    assert!(review.human_review_required);
+    assert_eq!(review.framework_fit_check, CheckStatus::FAIL);
+}
+
+#[test]
+fn wrong_framework_cannot_pass_report_status() {
+    let review = AiSelfReview {
+        framework_fit_check: CheckStatus::FAIL,
+        wrong_framework_risk: vec!["space/lunar conflict".into()],
+        human_review_required: true,
+        ..Default::default()
+    };
+    let status = report_status(
+        &[],
+        &["wrong_framework_conflict:space_lunar_identity".into()],
+        &review,
+        "PASS".into(),
+        "compact".into(),
+        4,
+        0,
+    );
+    assert_eq!(status.overall_status, "FAIL");
+    assert!(status.human_review_required);
+}
+
+#[test]
+fn hallucinated_revenue_engines_detected() {
+    let payload = lunr_payload();
+    let (understanding, interpretation, blueprint, review) = bad_lunr_ai();
+    let conflicts = detect_wrong_framework_conflicts(
+        &payload,
+        &understanding,
+        &interpretation,
+        &blueprint,
+        &review,
+    );
+    assert!(conflicts
+        .iter()
+        .any(|f| f.contains("wrong_framework_conflict")));
 }

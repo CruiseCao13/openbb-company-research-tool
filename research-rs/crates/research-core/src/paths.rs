@@ -22,6 +22,14 @@ pub fn quality_runs_dir() -> Result<PathBuf> {
     Ok(reports_root()?.join("quality_runs"))
 }
 
+pub fn training_runs_dir() -> Result<PathBuf> {
+    Ok(reports_root()?.join("training_runs"))
+}
+
+pub fn training_root_dir() -> Result<PathBuf> {
+    Ok(discover_repo_root()?.join("training"))
+}
+
 pub fn samples_dir() -> Result<PathBuf> {
     Ok(reports_root()?.join("samples"))
 }

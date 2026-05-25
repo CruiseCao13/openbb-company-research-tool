@@ -3,7 +3,9 @@ use crate::io::write_json;
 use crate::provider::fetch_provider_payload;
 use crate::run_folder::RunFolder;
 use crate::types::*;
-use crate::validation::{report_status, validate_ai_json, validate_provider_payload};
+use crate::validation::{
+    apply_framework_challenge_guard, report_status, validate_ai_json, validate_provider_payload,
+};
 use anyhow::Result;
 use research_ai::run_local_compact_analyst;
 use research_report::pack::pack_run;
@@ -33,9 +35,21 @@ pub fn run_pipeline(ctx: &RunContext, config: &EngineConfig) -> Result<PipelineR
         "WARNING".to_string()
     };
 
-    let (understanding, interpretation, blueprint, review, ai_calls, cache_hits) =
+    let (mut understanding, mut interpretation, mut blueprint, mut review, ai_calls, cache_hits) =
         run_local_compact_analyst(&payload);
-    let ai_failures = validate_ai_json(&understanding, &interpretation, &blueprint, &review);
+    let mut ai_failures = apply_framework_challenge_guard(
+        &payload,
+        &mut understanding,
+        &mut interpretation,
+        &mut blueprint,
+        &mut review,
+    );
+    ai_failures.extend(validate_ai_json(
+        &understanding,
+        &interpretation,
+        &blueprint,
+        &review,
+    ));
     let status = report_status(
         &provider_failures,
         &ai_failures,

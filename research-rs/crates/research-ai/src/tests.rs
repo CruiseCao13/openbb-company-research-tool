@@ -1,5 +1,5 @@
 use crate::{run_ai_usage_gate, run_local_compact_analyst, AiRunOptions};
-use research_core::types::{AiUsage, CompanyProfile, ProviderPayload};
+use research_core::types::{AiUsage, CheckStatus, CompanyProfile, ProviderPayload};
 use std::fs;
 use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -46,6 +46,151 @@ fn zim_like_payload_is_transport_not_biotech() {
         .must_not_analyze_as_core
         .iter()
         .any(|x| x.contains("biotech")));
+}
+
+fn lunr_payload() -> ProviderPayload {
+    ProviderPayload {
+        ticker: "LUNR".to_string(),
+        company_profile: CompanyProfile {
+            name: "Intuitive Machines, Inc.".to_string(),
+            sector: "Industrials".to_string(),
+            industry: "Aerospace & Defense".to_string(),
+            description: "Space exploration company supporting lunar missions, NASA programs, landers, mission services, and cislunar infrastructure.".to_string(),
+            ..Default::default()
+        },
+        ..Default::default()
+    }
+}
+
+#[test]
+fn lunr_not_telecom() {
+    let payload = lunr_payload();
+    let (understanding, _, blueprint, _, _, _) = run_local_compact_analyst(&payload);
+    assert!(!understanding
+        .correct_research_frame
+        .contains("Telecom / Infrastructure Cash Flow"));
+    assert!(!blueprint.asset_profile.contains("Telecom"));
+}
+
+#[test]
+fn lunr_forbids_wireless_broadband_subscriber_churn() {
+    let payload = lunr_payload();
+    let (understanding, interpretation, blueprint, _, _, _) = run_local_compact_analyst(&payload);
+    let text = format!(
+        "{} {} {} {} {} {} {} {}",
+        understanding.company_identity,
+        understanding.business_model,
+        understanding.revenue_engines.join(" "),
+        understanding.key_risks.join(" "),
+        interpretation.where_money_comes_from,
+        interpretation.where_money_goes,
+        blueprint.asset_profile,
+        blueprint.must_analyze.join(" ")
+    )
+    .to_lowercase();
+    for forbidden in [
+        "wireless service revenue",
+        "broadband / network revenue",
+        "subscriber churn",
+        "regulated telecom",
+    ] {
+        assert!(
+            !text.contains(forbidden),
+            "found forbidden term {forbidden}"
+        );
+    }
+}
+
+#[test]
+fn lunr_money_flow_is_space_specific_or_data_limited() {
+    let payload = lunr_payload();
+    let (_, interpretation, blueprint, _, _, _) = run_local_compact_analyst(&payload);
+    let text = format!(
+        "{} {} {}",
+        interpretation.where_money_comes_from,
+        interpretation.where_money_goes,
+        blueprint.must_analyze.join(" ")
+    )
+    .to_lowercase();
+    assert!(text.contains("nasa") || text.contains("mission") || text.contains("contract"));
+    assert!(text.contains("cash runway") || text.contains("financing"));
+    assert!(!text.contains("money comes from operating revenue when available"));
+}
+
+#[test]
+fn self_review_flags_wrong_frame() {
+    let payload = lunr_payload();
+    let mut understanding = crate::company_understanding::understand_company(&payload);
+    understanding.correct_research_frame = "Telecom / Infrastructure Cash Flow".into();
+    understanding.company_identity = "LUNR is a telecom infrastructure cash flow company.".into();
+    understanding.revenue_engines = vec!["wireless service revenue".into()];
+    let interpretation =
+        crate::financial_interpretation::interpret_financials(&payload, &understanding);
+    let mut blueprint =
+        crate::research_blueprint::build_blueprint(&payload, &understanding, &interpretation);
+    blueprint.asset_profile = "Telecom / Infrastructure Cash Flow".into();
+    blueprint.must_analyze = vec!["subscriber churn".into(), "broadband revenue".into()];
+    let review = crate::self_review::review(&payload, &understanding, &interpretation, &blueprint);
+    assert_eq!(review.framework_fit_check, CheckStatus::FAIL);
+    assert!(review.human_review_required);
+    assert!(review
+        .required_rewrite_sections
+        .iter()
+        .any(|section| section == "Money Flow"));
+}
+
+#[test]
+fn self_review_flags_hallucinated_revenue_engine() {
+    self_review_flags_wrong_frame();
+}
+
+#[test]
+fn self_review_flags_generic_chart_explanation() {
+    let prompt = include_str!("../prompts/self_review_v1.md");
+    assert!(prompt.contains("generic chart explanations"));
+    assert!(prompt.contains("specific metric or data gap"));
+}
+
+#[test]
+fn compact_payload_includes_company_description() {
+    let payload = lunr_payload();
+    let prompt = crate::client::compact_prompt(
+        &payload,
+        "company_understanding",
+        "company_understanding_v1",
+    );
+    assert!(prompt.contains("Intuitive Machines"));
+    assert!(prompt.contains("Aerospace & Defense"));
+    assert!(prompt.contains("lunar missions"));
+    assert!(prompt.contains("cislunar infrastructure"));
+}
+
+#[test]
+fn compact_payload_missing_description_forces_data_limited() {
+    let payload = ProviderPayload {
+        ticker: "MISSING".into(),
+        company_profile: CompanyProfile {
+            name: "Missing Description Co.".into(),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    let (understanding, _, blueprint, _, _, _) = run_local_compact_analyst(&payload);
+    assert!(understanding.correct_research_frame.contains("Unknown"));
+    assert!(understanding.human_review_required);
+    assert!(blueprint.human_review_required);
+}
+
+#[test]
+fn lunr_payload_contains_space_or_lunar_if_provider_has_it() {
+    let payload = lunr_payload();
+    let prompt = crate::client::compact_prompt(
+        &payload,
+        "company_understanding",
+        "company_understanding_v1",
+    )
+    .to_lowercase();
+    assert!(prompt.contains("space") || prompt.contains("lunar"));
 }
 
 fn temp_ai_dirs(name: &str) -> (std::path::PathBuf, std::path::PathBuf) {

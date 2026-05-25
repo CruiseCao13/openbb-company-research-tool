@@ -130,6 +130,7 @@ pub fn score_report(run_folder: &Path, ticker: &str, frame: &str) -> QualityRevi
     let blueprint = read_json(&run_folder.join("metadata/research_blueprint.json"));
     let review = read_json(&run_folder.join("self_review/ai_self_review.json"));
     let status = read_json(&run_folder.join("metadata/report_status.json"));
+    let ai_usage = read_json(&run_folder.join("metadata/ai_usage.json"));
     let visual = read_text(&run_folder.join("audit/visual_lint_report.md"));
     let chart_manifest_exists = run_folder.join("charts/chart_manifest.json").exists();
 
@@ -284,7 +285,20 @@ pub fn score_report(run_folder: &Path, ticker: &str, frame: &str) -> QualityRevi
     }
     let grade = grade(total, &hard);
     let human_review_required = grade == "FAIL" || grade == "WEAK" || source_human_review_required;
-    let training_case_type = if hard.iter().any(|h| h.contains("money_flow")) {
+    let local_or_non_external = ai_usage
+        .get("local_mock_used")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false)
+        || ai_usage
+            .get("external_ai_used")
+            .and_then(|v| v.as_bool())
+            .map(|used| !used)
+            .unwrap_or(false);
+    let training_case_type = if local_or_non_external {
+        "local_mock_case"
+    } else if human_review_required {
+        "human_review_required_case"
+    } else if hard.iter().any(|h| h.contains("money_flow")) {
         "weak_money_flow"
     } else if hard.iter().any(|h| h.contains("chart")) {
         "chart_without_explanation"

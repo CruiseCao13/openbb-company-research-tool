@@ -6,22 +6,26 @@ use research_ai::{
 };
 use research_batch::quality::{run_quality, QualityRunOptions};
 use research_batch::runner::{run_batch, BatchRunOptions};
+use research_batch::training::{run_training, TrainingRunOptions};
 use research_core::config::EngineConfig;
 use research_core::io::{write_if_changed, write_json};
 use research_core::normalizer::write_normalized_outputs;
 use research_core::parser::write_parser_report;
 use research_core::paths::{release_checks_dir, reports_root, samples_dir};
-use research_core::provider::fetch_provider_payload;
+#[cfg(test)]
+use research_core::provider::discover_repo_root_from;
+use research_core::provider::{discover_repo_root, fetch_provider_payload};
 use research_core::run_folder::RunFolder;
 use research_core::schema_version::write_schema_validation_report;
 use research_core::types::*;
 use research_core::validation::{
-    detect_forbidden_advice, report_status, validate_ai_json, validate_provider_payload,
+    apply_framework_challenge_guard, detect_forbidden_advice, report_status, validate_ai_json,
+    validate_provider_payload,
 };
 use research_report::pack::pack_run;
 use research_report::renderer::{render_run, RenderRunInput};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::Instant;
 
@@ -39,6 +43,7 @@ enum Commands {
     Analyze(RunArgs),
     Run(RunArgs),
     Batch(BatchArgs),
+    Train(TrainArgs),
     Quality(QualityArgs),
     Doctor,
     ProviderHealth,
@@ -122,6 +127,49 @@ struct QualityArgs {
     limit: Option<usize>,
     #[arg(long, default_value_t = 0)]
     offset: usize,
+    #[arg(long)]
+    force: bool,
+    #[arg(long)]
+    pack: bool,
+}
+
+#[derive(Parser, Clone)]
+struct TrainArgs {
+    eval_set: String,
+    #[arg(long, default_value = "regression")]
+    stage: String,
+    #[arg(long, default_value_t = 2)]
+    workers: usize,
+    #[arg(long, default_value = "compact")]
+    ai: String,
+    #[arg(long)]
+    require_external_ai: bool,
+    #[arg(long)]
+    no_ai_cache: bool,
+    #[arg(long, default_value_t = 100)]
+    budget_calls: usize,
+    #[arg(long, default_value_t = 1)]
+    max_iterations: usize,
+    #[arg(long, default_value_t = 75)]
+    quality_threshold: u8,
+    #[arg(long)]
+    run_id: Option<String>,
+    #[arg(long)]
+    limit: Option<usize>,
+    #[arg(long, default_value_t = 0)]
+    offset: usize,
+    #[arg(long)]
+    resume: bool,
+    #[arg(long)]
+    only_failed: bool,
+    #[arg(long)]
+    only_weak: bool,
+    #[arg(long)]
+    only_wrong_framework: bool,
+    #[arg(long)]
+    only_provider_failed: bool,
+    #[arg(long)]
+    only_low_quality: bool,
     #[arg(long)]
     force: bool,
     #[arg(long)]
@@ -301,7 +349,19 @@ fn run_one(args: &RunArgs, render: bool) -> Result<()> {
     )?;
     println!("[4/9] AI financial interpretation         done");
     println!("[5/9] AI research blueprint               done");
-    let ai_failures = validate_ai_json(&understanding, &interpretation, &blueprint, &review);
+    let mut ai_failures = apply_framework_challenge_guard(
+        &payload,
+        &mut understanding,
+        &mut interpretation,
+        &mut blueprint,
+        &mut review,
+    );
+    ai_failures.extend(validate_ai_json(
+        &understanding,
+        &interpretation,
+        &blueprint,
+        &review,
+    ));
     stages.push(StageTrace {
         stage: "local_compact_ai_analysis".into(),
         status: if ai_failures.is_empty() {
@@ -498,7 +558,64 @@ fn ai_terminal_summary(
     text
 }
 
+fn parse_dotenv_value(raw: &str) -> String {
+    let mut value = raw.trim().to_string();
+    if let Some(stripped) = value
+        .strip_prefix('"')
+        .and_then(|value| value.strip_suffix('"'))
+    {
+        value = stripped.to_string();
+    } else if let Some(stripped) = value
+        .strip_prefix('\'')
+        .and_then(|value| value.strip_suffix('\''))
+    {
+        value = stripped.to_string();
+    }
+    value
+}
+
+fn load_dotenv_from_repo_root(repo_root: &Path) -> Result<bool> {
+    let existing_key = std::env::var("OPENAI_API_KEY")
+        .ok()
+        .filter(|value| !value.trim().is_empty());
+    if existing_key.is_some() {
+        return Ok(false);
+    }
+    let dotenv = repo_root.join(".env");
+    if !dotenv.exists() {
+        return Ok(false);
+    }
+    let raw = fs::read_to_string(&dotenv)?;
+    for line in raw.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') || !trimmed.contains('=') {
+            continue;
+        }
+        let (key, value) = trimmed.split_once('=').unwrap_or((trimmed, ""));
+        if key.trim() == "OPENAI_API_KEY" {
+            let value = parse_dotenv_value(value);
+            if !value.trim().is_empty() {
+                std::env::set_var("OPENAI_API_KEY", value.trim());
+                return Ok(true);
+            }
+        }
+    }
+    Ok(false)
+}
+
+#[cfg(test)]
+fn load_dotenv_from_start(start: &Path) -> Result<bool> {
+    let repo_root = discover_repo_root_from(start)?;
+    load_dotenv_from_repo_root(&repo_root)
+}
+
+fn load_repo_dotenv() -> Result<bool> {
+    let repo_root = discover_repo_root()?;
+    load_dotenv_from_repo_root(&repo_root)
+}
+
 fn main() -> Result<()> {
+    let _dotenv_loaded = load_repo_dotenv()?;
     let cli = Cli::parse();
     match cli.command {
         Commands::Fetch(args) => run_one(&args, false),
@@ -522,6 +639,36 @@ fn main() -> Result<()> {
                 force: args.force,
             })?;
             println!("Batch output: {}", out.display());
+            Ok(())
+        }
+        Commands::Train(args) => {
+            let run_id = args
+                .run_id
+                .clone()
+                .unwrap_or_else(|| format!("train_{}", Local::now().format("%Y%m%d_%H%M%S")));
+            let out = run_training(&TrainingRunOptions {
+                eval_set: PathBuf::from(args.eval_set),
+                stage: args.stage,
+                workers: args.workers,
+                ai_mode: args.ai,
+                require_external_ai: args.require_external_ai,
+                no_ai_cache: args.no_ai_cache,
+                budget_calls: args.budget_calls,
+                max_iterations: args.max_iterations,
+                quality_threshold: args.quality_threshold,
+                run_id,
+                limit: args.limit,
+                offset: args.offset,
+                resume: args.resume,
+                only_failed: args.only_failed,
+                only_weak: args.only_weak,
+                only_wrong_framework: args.only_wrong_framework,
+                only_provider_failed: args.only_provider_failed,
+                only_low_quality: args.only_low_quality,
+                force: args.force,
+                pack: args.pack,
+            })?;
+            println!("Training output: {}", out.display());
             Ok(())
         }
         Commands::Quality(args) => {
@@ -668,6 +815,10 @@ fn write_sample_gallery() -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    static ENV_LOCK: Mutex<()> = Mutex::new(());
 
     #[test]
     fn terminal_summary_displays_ai_usage() {
@@ -690,5 +841,134 @@ mod tests {
         assert!(summary.contains("New External AI Calls: 4"));
         assert!(summary.contains("AI Calls: 4"));
         assert!(summary.contains("Cache Hits: 0"));
+    }
+
+    fn temp_repo(name: &str) -> PathBuf {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("research-rs-{name}-{nonce}"));
+        fs::create_dir_all(root.join("providers")).unwrap();
+        fs::write(
+            root.join("providers/provider_common.py"),
+            "# test provider marker\n",
+        )
+        .unwrap();
+        root
+    }
+
+    #[test]
+    fn env_key_takes_precedence_over_dotenv() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let original = std::env::var("OPENAI_API_KEY").ok();
+        let root = temp_repo("env-precedence");
+        fs::write(root.join(".env"), "OPENAI_API_KEY=test-dotenv-key\n").unwrap();
+        std::env::set_var("OPENAI_API_KEY", "test-env-key");
+        let loaded = load_dotenv_from_repo_root(&root).unwrap();
+        assert!(!loaded);
+        assert_eq!(std::env::var("OPENAI_API_KEY").unwrap(), "test-env-key");
+        match original {
+            Some(value) => std::env::set_var("OPENAI_API_KEY", value),
+            None => std::env::remove_var("OPENAI_API_KEY"),
+        }
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn dotenv_loaded_from_repo_root() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let original = std::env::var("OPENAI_API_KEY").ok();
+        let root = temp_repo("repo-root-dotenv");
+        fs::write(root.join(".env"), "OPENAI_API_KEY=test-dotenv-key\n").unwrap();
+        std::env::remove_var("OPENAI_API_KEY");
+        let loaded = load_dotenv_from_repo_root(&root).unwrap();
+        assert!(loaded);
+        assert_eq!(std::env::var("OPENAI_API_KEY").unwrap(), "test-dotenv-key");
+        match original {
+            Some(value) => std::env::set_var("OPENAI_API_KEY", value),
+            None => std::env::remove_var("OPENAI_API_KEY"),
+        }
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn dotenv_loaded_when_running_from_research_rs_dir() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let original = std::env::var("OPENAI_API_KEY").ok();
+        let root = temp_repo("research-rs-dotenv");
+        let start = root.join("research-rs");
+        fs::create_dir_all(&start).unwrap();
+        fs::write(root.join(".env"), "OPENAI_API_KEY='test-from-root-key'\n").unwrap();
+        std::env::remove_var("OPENAI_API_KEY");
+        let loaded = load_dotenv_from_start(&start).unwrap();
+        assert!(loaded);
+        assert_eq!(
+            std::env::var("OPENAI_API_KEY").unwrap(),
+            "test-from-root-key"
+        );
+        match original {
+            Some(value) => std::env::set_var("OPENAI_API_KEY", value),
+            None => std::env::remove_var("OPENAI_API_KEY"),
+        }
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn missing_key_require_external_ai_fails() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let original = std::env::var("OPENAI_API_KEY").ok();
+        let root = temp_repo("missing-key");
+        std::env::remove_var("OPENAI_API_KEY");
+        assert!(!load_dotenv_from_repo_root(&root).unwrap());
+        assert!(std::env::var("OPENAI_API_KEY").is_err());
+        match original {
+            Some(value) => std::env::set_var("OPENAI_API_KEY", value),
+            None => std::env::remove_var("OPENAI_API_KEY"),
+        }
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn dotenv_key_not_printed() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let original = std::env::var("OPENAI_API_KEY").ok();
+        let root = temp_repo("key-not-printed");
+        fs::write(root.join(".env"), "OPENAI_API_KEY=test-secret-value\n").unwrap();
+        std::env::remove_var("OPENAI_API_KEY");
+        assert!(load_dotenv_from_repo_root(&root).unwrap());
+        let usage = AiUsage {
+            ai_mode: "compact".into(),
+            require_external_ai: true,
+            no_ai_cache: true,
+            external_ai_used: true,
+            local_mock_used: false,
+            new_external_ai_calls: 1,
+            cache_hits: 0,
+            model: "gpt-4.1-mini".into(),
+            ..Default::default()
+        };
+        let summary = ai_terminal_summary("compact", true, true, &usage);
+        assert!(!summary.contains("test-secret-value"));
+        match original {
+            Some(value) => std::env::set_var("OPENAI_API_KEY", value),
+            None => std::env::remove_var("OPENAI_API_KEY"),
+        }
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn gitignore_contains_env() {
+        let gitignore_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../.gitignore");
+        let gitignore = fs::read_to_string(gitignore_path).unwrap();
+        assert!(gitignore.lines().any(|line| line.trim() == ".env"));
+        assert!(gitignore.lines().any(|line| line.trim() == "!.env.example"));
+    }
+
+    #[test]
+    fn secret_scan_blocks_real_key() {
+        let key_pattern = "real-looking-secret-value";
+        let summary = "OPENAI_API_KEY set: yes\nmasked: sk-...abcd\n";
+        assert!(!summary.contains(key_pattern));
     }
 }

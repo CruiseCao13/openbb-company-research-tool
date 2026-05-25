@@ -44,13 +44,17 @@ fn group_family(group: &str) -> String {
         "aerospace_defense" | "us_aerospace_defense" | "cn_defense_aerospace" => {
             "Aerospace / Defense"
         }
-        "airlines_transport" | "shipping_logistics" | "us_transport_shipping" => {
-            "Shipping / Airlines / Transport Cycle"
-        }
+        "us_space_aerospace_smallcap" => "Speculative Aerospace / Space Systems",
+        "airlines_transport"
+        | "shipping_logistics"
+        | "us_transport_shipping"
+        | "us_transport_shipping_airlines" => "Shipping / Airlines / Transport Cycle",
         "consumer_retail" | "restaurants" | "luxury_apparel" | "us_consumer_retail"
         | "us_restaurants" | "cn_baijiu_consumer" => "Consumer / Retail",
         "utilities" | "us_telecom_utilities" | "cn_power_utilities" => "Utilities / Infrastructure",
-        "telecom_media" | "cn_media_internet" => "Telecom / Infrastructure Cash Flow",
+        "telecom_media" | "us_telecom" | "cn_media_internet" => {
+            "Telecom / Infrastructure Cash Flow"
+        }
         "payments_fintech" => "Payments / Fintech",
         "cn_new_energy_auto" | "cn_solar_power_equipment" => "Cyclical / Industrial Cycle",
         _ => "Unknown / Data-Limited Screening",
@@ -64,6 +68,7 @@ pub fn load_eval_set(path: &Path) -> Result<EvalSet> {
     let mut tickers = Vec::new();
     let mut expected_family = BTreeMap::new();
     let mut current_group: Option<String> = None;
+    let mut in_groups = false;
     for line in raw.lines() {
         let stripped = line.split('#').next().unwrap_or("").trim();
         if stripped.is_empty() {
@@ -71,9 +76,19 @@ pub fn load_eval_set(path: &Path) -> Result<EvalSet> {
         }
         if stripped.starts_with("name:") {
             name = stripped.split_once(':').unwrap().1.trim().to_string();
+        } else if stripped == "groups:" {
+            in_groups = true;
+            current_group = None;
+        } else if !line.starts_with(" ") && stripped.ends_with(':') {
+            in_groups = stripped == "groups:";
+            current_group = None;
         } else if line.starts_with("  ") && !line.starts_with("    ") && stripped.ends_with(':') {
-            current_group = Some(stripped.trim_end_matches(':').to_string());
-        } else if stripped.starts_with("- ") {
+            current_group = if in_groups {
+                Some(stripped.trim_end_matches(':').to_string())
+            } else {
+                None
+            };
+        } else if in_groups && stripped.starts_with("- ") {
             let ticker = stripped.trim_start_matches("- ").trim().to_uppercase();
             if !tickers.contains(&ticker) {
                 tickers.push(ticker.clone());

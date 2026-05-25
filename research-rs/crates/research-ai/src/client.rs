@@ -56,7 +56,11 @@ fn timeout_seconds() -> u64 {
         .unwrap_or(60)
 }
 
-fn compact_prompt(payload: &ProviderPayload, task: &str, prompt_version: &str) -> String {
+pub(crate) fn compact_prompt(
+    payload: &ProviderPayload,
+    task: &str,
+    prompt_version: &str,
+) -> String {
     let latest_income = payload
         .income_statement
         .iter()

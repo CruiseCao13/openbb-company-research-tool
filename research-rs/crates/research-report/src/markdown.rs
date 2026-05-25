@@ -21,6 +21,38 @@ fn chart_block(figure: usize, title: &str, file: &str, status: &str) -> String {
     } else {
         format!("[Figure {figure}. {title}](../charts/{file})")
     };
+    let (look_at, meaning, not_overread, next_check) = match figure {
+        1 => (
+            "Compare the company price path with the benchmark over the stated period, using the index level rather than the ending price alone.",
+            "This can show whether the stock has created relative price outperformance or lagged the opportunity-cost benchmark.",
+            "A price chart cannot prove the stock is cheap, cannot validate the business model, and cannot replace company-specific cash-flow work.",
+            "Check whether the same period also shows drawdown, revenue, margin, or cash-flow evidence that explains the price path.",
+        ),
+        2 => (
+            "Look for the depth and duration of drawdowns from prior highs.",
+            "This helps separate smooth compounding from a return path that depends on tolerating large interim losses.",
+            "Drawdown does not prove solvency risk or business failure; it only describes historical market path risk.",
+            "Compare drawdowns with financing needs, debt maturity, and business milestones before treating market stress as fundamental stress.",
+        ),
+        3 => (
+            "Read revenue, operating profit, free cash flow, and margin together instead of treating revenue growth as enough.",
+            "The useful question is whether growth is converting into operating profit and cash generation.",
+            "A financial trend chart cannot prove segment quality, customer concentration, or management guidance accuracy when those data are missing.",
+            "Verify segment drivers, gross margin bridge, and one-off items in the filing or provider source.",
+        ),
+        4 => (
+            "Focus on operating cash flow, capital spending, financing flows, dividends, and buybacks when available.",
+            "This is the evidence path for whether the business funds itself or depends on external capital.",
+            "A cash-flow bridge cannot prove future runway without backlog, debt terms, and committed spending data.",
+            "Reconcile cash-flow rows with debt, share issuance, working capital, and project or R&D spending.",
+        ),
+        _ => (
+            "Check which valuation metric is actually present and whether it fits the company profile.",
+            "The chart is useful only when the chosen metric matches the business model and profitability stage.",
+            "A multiple does not prove fair value by itself, and negative or non-meaningful multiples should not be normalized into a bullish or bearish claim.",
+            "Use the valuation method named in the research blueprint, then verify the missing data that would make that method meaningful.",
+        ),
+    };
     format!(
         r#"### Figure {figure}. {title}
 
@@ -30,16 +62,16 @@ Source: provider_payload.json
 Status: {status}
 
 What to look at:
-Use this figure to connect the section's claim to the locked data path.
+{look_at}
 
 What it means:
-It can support a question about price path, cash generation, reinvestment, or valuation fit depending on the figure.
+{meaning}
 
 What not to overread:
-The chart does not predict short-term price movement and does not create a buy/sell signal.
+{not_overread}
 
 Next check:
-If this signal drives the thesis, verify the underlying metric in the latest filing or provider source.
+{next_check}
 
 "#
     )
@@ -318,16 +350,8 @@ How to read this table: it tells you which locked data exists before relying on 
         ai_source = understanding.ai_provenance.source,
         external_ai_used = understanding.ai_provenance.external_ai_used,
         local_mock_used = understanding.ai_provenance.local_mock_used,
-        new_external_ai_calls = if understanding.ai_provenance.new_external_ai_call {
-            1
-        } else {
-            0
-        },
-        ai_cache_hits = if understanding.ai_provenance.cache_hit {
-            1
-        } else {
-            0
-        },
+        new_external_ai_calls = status.ai_calls,
+        ai_cache_hits = status.cache_hits,
         ai_model = understanding.ai_provenance.model,
         prompt_version = understanding.ai_provenance.prompt_version,
         ai_calls = status.ai_calls,
@@ -606,16 +630,8 @@ How to read this table：先看数据覆盖，再决定解释可信度。
         ai_source = understanding.ai_provenance.source,
         external_ai_used = understanding.ai_provenance.external_ai_used,
         local_mock_used = understanding.ai_provenance.local_mock_used,
-        new_external_ai_calls = if understanding.ai_provenance.new_external_ai_call {
-            1
-        } else {
-            0
-        },
-        ai_cache_hits = if understanding.ai_provenance.cache_hit {
-            1
-        } else {
-            0
-        },
+        new_external_ai_calls = status.ai_calls,
+        ai_cache_hits = status.cache_hits,
         ai_model = understanding.ai_provenance.model,
         prompt_version = understanding.ai_provenance.prompt_version,
         asset_profile = blueprint.asset_profile,

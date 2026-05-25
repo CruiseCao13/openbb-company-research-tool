@@ -15,7 +15,9 @@ use research_core::provider::fetch_provider_payload;
 use research_core::run_folder::RunFolder;
 use research_core::schema_version::write_schema_validation_report;
 use research_core::types::*;
-use research_core::validation::{report_status, validate_ai_json, validate_provider_payload};
+use research_core::validation::{
+    apply_framework_challenge_guard, report_status, validate_ai_json, validate_provider_payload,
+};
 use research_report::dashboard::render_batch_dashboard;
 use research_report::pack::pack_run;
 use research_report::renderer::{render_run, RenderRunInput};
@@ -153,7 +155,19 @@ pub fn run_batch(options: &BatchRunOptions) -> Result<PathBuf> {
                 ("ai_self_review", review.schema_version.clone()),
             ],
         )?;
-        let ai_failures = validate_ai_json(&understanding, &interpretation, &blueprint, &review);
+        let mut ai_failures = apply_framework_challenge_guard(
+            &payload,
+            &mut understanding,
+            &mut interpretation,
+            &mut blueprint,
+            &mut review,
+        );
+        ai_failures.extend(validate_ai_json(
+            &understanding,
+            &interpretation,
+            &blueprint,
+            &review,
+        ));
         let mut status = report_status(
             &provider_failures,
             &ai_failures,

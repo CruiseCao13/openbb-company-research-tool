@@ -12,6 +12,33 @@ fn haystack(payload: &ProviderPayload) -> String {
     .to_lowercase()
 }
 
+fn has_space_lunar_clues(h: &str) -> bool {
+    [
+        "intuitive machines",
+        " space",
+        "lunar",
+        "moon",
+        "nasa",
+        "aerospace",
+        "defense",
+        "mission",
+        "lander",
+        "exploration",
+        "satellite",
+        "cislunar",
+        "launch",
+        "spacecraft",
+    ]
+    .iter()
+    .any(|needle| h.contains(needle))
+}
+
+fn has_lunar_clues(h: &str) -> bool {
+    ["intuitive machines", "lunar", "moon", "lander", "cislunar"]
+        .iter()
+        .any(|needle| h.contains(needle))
+}
+
 pub fn understand_company(payload: &ProviderPayload) -> CompanyUnderstanding {
     let h = haystack(payload);
     let name = if payload.company_profile.name.trim().is_empty() {
@@ -149,9 +176,30 @@ pub fn understand_company(payload: &ProviderPayload) -> CompanyUnderstanding {
             Confidence::LOW,
             true,
         )
-    } else if h.contains("batch eval expected research family guardrail: cyclical")
-        || h.contains("batch eval expected research family guardrail: aerospace")
-    {
+    } else if h.contains("batch eval expected research family guardrail: aerospace") {
+        (
+            "Speculative Aerospace / Space Systems",
+            "Project-Based Aerospace Services",
+            vec![
+                "government or commercial project revenue".into(),
+                "mission / platform execution services".into(),
+                "financing when operating cash is not durable".into(),
+            ],
+            vec![
+                "telecom carrier economics".into(),
+                "bank / financials frame".into(),
+                "insurance underwriting frame".into(),
+                "ordinary mature compounder".into(),
+            ],
+            vec![
+                "mission execution risk".into(),
+                "contract timing and funding risk".into(),
+                "cash runway and dilution risk".into(),
+            ],
+            Confidence::LOW,
+            true,
+        )
+    } else if h.contains("batch eval expected research family guardrail: cyclical") {
         (
             "Cyclical / Industrial Cycle",
             "Asset-heavy cycle",
@@ -310,6 +358,46 @@ pub fn understand_company(payload: &ProviderPayload) -> CompanyUnderstanding {
             ],
             Confidence::MEDIUM,
             false,
+        )
+    } else if has_space_lunar_clues(&h) {
+        let lunar = has_lunar_clues(&h);
+        let secondary = if lunar {
+            "Space / Lunar Infrastructure"
+        } else {
+            "Launch Services / Space Systems"
+        };
+        let revenue_engines = if lunar {
+            vec![
+                "NASA or government-linked project revenue when verified".into(),
+                "space mission services or lunar infrastructure work when supported by filings"
+                    .into(),
+                "financing activity if operating cash flow does not fund execution".into(),
+            ]
+        } else {
+            vec![
+                "launch services when verified".into(),
+                "space systems, spacecraft components, and mission services when supported by filings".into(),
+                "government or commercial customer revenue when disclosed".into(),
+                "financing activity if operating cash flow does not fund execution".into(),
+            ]
+        };
+        (
+            "Speculative Aerospace / Space Systems",
+            secondary,
+            revenue_engines,
+            vec![
+                "telecom carrier economics".into(),
+                "bank or insurance company".into(),
+                "ordinary mature compounder".into(),
+            ],
+            vec![
+                "mission execution risk".into(),
+                "contract timing and funding risk".into(),
+                "cash runway and dilution risk".into(),
+                "provider data coverage gap".into(),
+            ],
+            Confidence::LOW,
+            true,
         )
     } else if h.contains("utility")
         || h.contains("utilities")

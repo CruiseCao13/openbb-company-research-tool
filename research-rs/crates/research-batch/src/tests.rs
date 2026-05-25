@@ -1,5 +1,6 @@
 use crate::eval_set::load_eval_set;
 use crate::quality::{grade, score_report, QualityScores};
+use crate::training::TrainingRunOptions;
 use std::path::Path;
 
 #[test]
@@ -24,6 +25,89 @@ fn broad_500_eval_set_loads() {
     assert_eq!(eval.tickers.len(), 500);
     assert!(eval.expected_family.contains_key("600519.SH"));
     assert!(eval.expected_family.contains_key("AAPL"));
+}
+
+#[test]
+fn regression_hard_cases_eval_set_loads() {
+    let eval = load_eval_set(Path::new("../eval_sets/regression_hard_cases.yaml"))
+        .or_else(|_| load_eval_set(Path::new("../../eval_sets/regression_hard_cases.yaml")))
+        .or_else(|_| load_eval_set(Path::new("../../../eval_sets/regression_hard_cases.yaml")))
+        .expect("regression hard cases should load");
+    assert!(eval.tickers.contains(&"LUNR".to_string()));
+    assert_eq!(
+        eval.expected_family.get("LUNR").unwrap(),
+        "Speculative Aerospace / Space Systems"
+    );
+    assert!(eval.tickers.contains(&"600519.SH".to_string()));
+}
+
+#[test]
+fn training_loop_outputs_required_artifact_names() {
+    let source = include_str!("training.rs");
+    for artifact in [
+        "training_summary.md",
+        "quality_matrix.csv",
+        "quality_matrix.json",
+        "issue_distribution.md",
+        "wrong_framework_cases.md",
+        "weak_money_flow_cases.md",
+        "weak_chart_table_cases.md",
+        "unsupported_claim_cases.md",
+        "provider_failure_cases.md",
+        "prompt_improvement_suggestions.md",
+        "validator_improvement_suggestions.md",
+        "training_cases_generated.jsonl",
+        "regression_cases_generated.jsonl",
+        "iteration_log.md",
+        "cost_report.md",
+        "final_acceptance.md",
+        "model_improvement_review.md",
+        "dashboard.html",
+    ] {
+        assert!(
+            source.contains(artifact),
+            "training output missing {artifact}"
+        );
+    }
+}
+
+#[test]
+fn training_cli_options_support_staged_filters() {
+    let options = TrainingRunOptions {
+        eval_set: "eval_sets/regression_hard_cases.yaml".into(),
+        stage: "regression".into(),
+        workers: 2,
+        ai_mode: "compact".into(),
+        require_external_ai: true,
+        no_ai_cache: true,
+        budget_calls: 100,
+        max_iterations: 5,
+        quality_threshold: 75,
+        run_id: "test".into(),
+        limit: Some(50),
+        offset: 0,
+        resume: true,
+        only_failed: true,
+        only_weak: true,
+        only_wrong_framework: true,
+        only_provider_failed: true,
+        only_low_quality: true,
+        force: false,
+        pack: false,
+    };
+    assert_eq!(options.stage, "regression");
+    assert!(options.require_external_ai);
+    assert!(options.only_wrong_framework);
+}
+
+#[test]
+fn issue_taxonomy_file_lists_blockers_and_fix_targets() {
+    let taxonomy = include_str!("../../../../training/issue_taxonomy/issue_types.yaml");
+    assert!(taxonomy.contains("wrong_profile"));
+    assert!(taxonomy.contains("hallucinated_revenue_engine"));
+    assert!(taxonomy.contains("unsupported_numeric_claim"));
+    assert!(taxonomy.contains("fix_target: validator"));
+    assert!(taxonomy.contains("training_use: negative"));
 }
 
 #[test]

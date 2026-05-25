@@ -1,12 +1,22 @@
 use research_core::types::*;
 
 pub fn build_blueprint(
-    _payload: &ProviderPayload,
+    payload: &ProviderPayload,
     understanding: &CompanyUnderstanding,
     interpretation: &FinancialInterpretation,
 ) -> ResearchBlueprint {
     let frame = understanding.correct_research_frame.clone();
     let lower = frame.to_lowercase();
+    let profile_text = format!(
+        "{} {} {}",
+        payload.company_profile.name,
+        payload.company_profile.industry,
+        payload.company_profile.description
+    )
+    .to_lowercase();
+    let lunar_context = ["intuitive machines", "lunar", "moon", "lander", "cislunar"]
+        .iter()
+        .any(|needle| profile_text.contains(needle));
     let (must, must_not, questions, red_flags, valuation, gaps, next) = if lower
         .contains("semiconductor")
     {
@@ -18,6 +28,68 @@ pub fn build_blueprint(
             "Use revenue growth, gross margin durability, capex intensity, and valuation premium risk; do not use a target price.".into(),
             vec!["segment revenue / margin".into(), "customer concentration".into(), "supply constraints".into()],
             vec!["Verify data center / AI revenue split.".into(), "Check gross margin bridge and capacity commentary.".into(), "Review export-control and customer concentration disclosures.".into()],
+        )
+    } else if lower.contains("aerospace") || lower.contains("space") || lower.contains("lunar") {
+        (
+            if lunar_context {
+                vec![
+                    "NASA or government-linked contract evidence".into(),
+                    "mission milestone execution".into(),
+                    "project margin and cost overrun risk".into(),
+                    "cash burn and financing runway".into(),
+                    "customer or contract concentration".into(),
+                ]
+            } else {
+                vec![
+                    "launch services and space systems revenue split".into(),
+                    "spacecraft components and mission services evidence".into(),
+                    "launch cadence and mission execution".into(),
+                    "cash burn and financing runway".into(),
+                    "customer or contract concentration".into(),
+                ]
+            },
+            vec![
+                "telecom carrier economics".into(),
+                "bank / financials metrics".into(),
+                "insurance underwriting metrics".into(),
+                "ordinary mature-compounder shortcut".into(),
+            ],
+            vec![
+                "Which missions, customers, and contracts are actually disclosed?".into(),
+                "Does operating cash flow cover engineering and mission execution spend?".into(),
+                "How much financing or dilution is needed if project receipts are delayed?".into(),
+            ],
+            vec![
+                "mission delay or failure".into(),
+                "contract funding gap".into(),
+                "cash runway pressure".into(),
+                "unsupported revenue-engine claims".into(),
+            ],
+            "Use project execution, backlog/contract quality when available, cash runway, dilution risk, and scenario framing. Do not force telecom, bank, insurance, or mature-compounder multiples.".into(),
+            if lunar_context {
+                vec![
+                    "NASA/customer contract details".into(),
+                    "backlog and milestone timing".into(),
+                    "mission-level cost and margin".into(),
+                    "cash runway and financing terms".into(),
+                ]
+            } else {
+                vec![
+                    "customer contract details".into(),
+                    "launch backlog and cadence".into(),
+                    "space systems margin and component mix".into(),
+                    "cash runway and financing terms".into(),
+                ]
+            },
+            vec![
+                "Read the latest filing for contract revenue, backlog, and customer concentration.".into(),
+                if lunar_context {
+                    "Map mission milestones to expected cash receipts and execution spend.".into()
+                } else {
+                    "Map launch cadence, space systems orders, and mission milestones to expected cash receipts and execution spend.".into()
+                },
+                "Calculate cash runway from operating cash flow, engineering/project spend, and financing availability.".into(),
+            ],
         )
     } else if lower.contains("financial") || lower.contains("bank") {
         (
