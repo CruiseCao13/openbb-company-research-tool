@@ -123,6 +123,140 @@ pub fn interpret_financials(
         };
     }
 
+    if payload.market.eq_ignore_ascii_case("CN_A")
+        && (frame_lower.contains("battery") || frame_lower.contains("new energy"))
+    {
+        return FinancialInterpretation {
+            schema_version: SCHEMA_VERSION.to_string(),
+            ai_provenance: AiProvenance::default(),
+            revenue_explanation: match revenue {
+                Some(v) => format!("锁定数据给出最近一期营业收入约 {:.1} CNY。电池制造公司要把增长和动力电池/储能需求、客户项目、海外扩张联系起来，不能只看收入增速。", v),
+                None => "当前 provider 没有给出营业收入；不能验证电池业务增长来源。".into(),
+            },
+            margin_explanation: match (gross_margin, net_margin) {
+                (Some(g), Some(n)) => format!("毛利率约 {:.2}%，净利率约 {:.2}%。电池制造的关键是价格周期、材料成本、产能利用率和客户议价，而不是消费品牌式定价权。", g, n),
+                _ => "毛利率或净利率缺失；不能验证电池周期中的利润弹性。".into(),
+            },
+            cash_flow_explanation: match op_cf {
+                Some(v) => format!("provider 给出经营现金流相关指标约 {:.2}。电池制造需要同时看 capex、存货、应收账款和客户回款，判断增长是否吞噬现金。", v),
+                None => "经营现金流缺失；不能判断电池产能扩张是否自我造血。".into(),
+            },
+            where_money_comes_from: "钱主要来自动力电池、储能电池和相关系统产品销售；当前 locked data 只能支持收入和利润层面的初筛，客户集中度、海外扩张和产品结构仍需年报核查。".into(),
+            where_money_goes: "钱主要花在生产成本、产能建设、研发、存货和应收账款占用上；如果 capex 和营运资本扩张快于现金流，增长质量要降级。".into(),
+            capex_or_rnd_pressure: "capex、产能利用率和研发是核心，不应套普通消费品牌或软件平台框架。".into(),
+            debt_and_financing: match debt {
+                Some(v) => format!("负债相关指标约 {:.1}。需要结合 capex、产能建设和经营现金流判断融资压力。", v),
+                None => "有息负债和融资压力不完整；产能扩张的资金来源需要人工核查。".into(),
+            },
+            shareholder_return_quality: "电池制造公司优先检查再投资和现金流，不应先把分红/回购当作核心质量证据。".into(),
+            valuation_method_fit: "适合用制造业周期、产能、毛利率、营运资本、客户集中度和 RMB 估值语境；不适合银行、保险、消费品牌或软件平台框架。".into(),
+            unsupported_due_to_missing_data: {
+                let mut gaps = unsupported;
+                gaps.push("客户集中度、海外收入、产品结构、材料成本和 capex 项目明细仍需年报核查。".into());
+                gaps
+            },
+        };
+    }
+
+    if payload.market.eq_ignore_ascii_case("CN_A") && frame_lower.contains("insurance") {
+        return FinancialInterpretation {
+            schema_version: SCHEMA_VERSION.to_string(),
+            ai_provenance: AiProvenance::default(),
+            revenue_explanation: match revenue {
+                Some(v) => format!("锁定数据给出最近一期营业收入约 {:.1} CNY。保险集团收入需要继续拆成保费、投资收益和金融服务收入，不能按普通工业收入看。", v),
+                None => "当前 provider 没有给出收入；不能验证保费或投资收益结构。".into(),
+            },
+            margin_explanation: "保险利润质量取决于承保、投资收益、准备金和资本充足，而不是工业毛利率。当前 public payload 对保险专用指标覆盖有限，必须保留边界。".into(),
+            cash_flow_explanation: match op_cf {
+                Some(v) => format!("provider 给出经营现金流相关指标约 {:.2}。保险现金流和准备金/投资资产口径复杂，本报告不把它等同于工业 FCF。", v),
+                None => "经营现金流缺失；保险现金流质量需要保费、赔付、准备金和投资资产明细。".into(),
+            },
+            where_money_comes_from: "钱主要来自保费收入、投资收益和金融服务收入；当前 locked data 无法完整拆分寿险、财险和投资端贡献。".into(),
+            where_money_goes: "钱主要流向赔付、准备金、运营费用、投资资产配置和资本占用；资产负债久期错配和投资收益波动是核心风险。".into(),
+            capex_or_rnd_pressure: "保险不是工业 capex 模型；重点是承保质量、投资收益、偿付能力和资产负债管理。".into(),
+            debt_and_financing: "资本充足、偿付能力和准备金比净债务/EBITDA 更适合作为保险风险入口；当前 provider 专用指标不足，需要年报核查。".into(),
+            shareholder_return_quality: "分红需要在偿付能力、资本充足和投资收益可持续性下判断；当前不能写成已验证的强结论。".into(),
+            valuation_method_fit: "适合保险/综合金融框架，关注 P/B、ROE、保费、承保、投资收益、偿付能力和资产负债风险；不适合普通工业 FCF 框架。".into(),
+            unsupported_due_to_missing_data: {
+                let mut gaps = unsupported;
+                gaps.push("保费收入、承保利润、综合成本率、内含价值、偿付能力和投资组合明细仍需年报核查。".into());
+                gaps
+            },
+        };
+    }
+
+    if payload.market.eq_ignore_ascii_case("CN_A")
+        && (frame_lower.contains("innovative drug") || frame_lower.contains("pharma"))
+    {
+        return FinancialInterpretation {
+            schema_version: SCHEMA_VERSION.to_string(),
+            ai_provenance: AiProvenance::default(),
+            revenue_explanation: match revenue {
+                Some(v) => format!("锁定数据给出最近一期营业收入约 {:.1} CNY。医药公司要进一步拆产品组合、核心药品放量和新适应症贡献。", v),
+                None => "当前 provider 没有给出营业收入；不能验证药品组合收入。".into(),
+            },
+            margin_explanation: match (gross_margin, net_margin) {
+                (Some(g), Some(n)) => format!("毛利率约 {:.2}%，净利率约 {:.2}%。医药利润质量要和研发、集采/医保控费、产品生命周期一起看。", g, n),
+                _ => "毛利率或净利率缺失；不能验证药品组合盈利质量。".into(),
+            },
+            cash_flow_explanation: match op_cf {
+                Some(v) => format!("provider 给出经营现金流相关指标约 {:.2}。医药公司要看研发投入是否转化成获批产品和销售回款，而不是只看现金流单点。", v),
+                None => "经营现金流缺失；不能验证药品销售是否转成现金。".into(),
+            },
+            where_money_comes_from: "钱主要来自已上市药品组合销售和可能的新品放量；当前 locked data 不足以验证具体药品、适应症和审批节奏。".into(),
+            where_money_goes: "钱主要花在研发、销售推广、生产成本、临床/注册和营运资金上；研发不是简单费用，而是药品组合更新能力的核心。".into(),
+            capex_or_rnd_pressure: "研发投入、审批进度和医保/集采压力是核心，不应把它简化成早期 biotech 现金跑道。".into(),
+            debt_and_financing: match debt {
+                Some(v) => format!("负债相关指标约 {:.1}。需要结合研发强度、现金余额和产品销售回款判断资金压力。", v),
+                None => "债务和现金余额明细不足；研发资金来源需要人工核查。".into(),
+            },
+            shareholder_return_quality: "分红或回购不是核心，除非现金流、研发投入和产品生命周期同时支持。".into(),
+            valuation_method_fit: "适合用大型 pharma / 创新药组合框架：产品组合、R&D、审批、医保/集采、专利和竞争风险；不要只用早期 biotech cash runway。".into(),
+            unsupported_due_to_missing_data: {
+                let mut gaps = unsupported;
+                gaps.push("核心药品收入、pipeline、审批节点、医保/集采影响和专利竞争仍需年报与公告核查。".into());
+                gaps
+            },
+        };
+    }
+
+    if payload.market.eq_ignore_ascii_case("CN_A")
+        && (frame_lower.contains("mining")
+            || frame_lower.contains("nonferrous")
+            || frame_lower.contains("commodity cycle"))
+    {
+        return FinancialInterpretation {
+            schema_version: SCHEMA_VERSION.to_string(),
+            ai_provenance: AiProvenance::default(),
+            revenue_explanation: match revenue {
+                Some(v) => format!("锁定数据给出最近一期营业收入约 {:.1} CNY。矿业公司收入要拆金、铜等资源品价格和产量，不能只看总收入。", v),
+                None => "当前 provider 没有给出营业收入；不能验证矿产品收入。".into(),
+            },
+            margin_explanation: match (gross_margin, net_margin) {
+                (Some(g), Some(n)) => format!("毛利率约 {:.2}%，净利率约 {:.2}%。矿业利润受商品价格、品位、成本曲线和汇率影响，单期利润不能外推。", g, n),
+                _ => "毛利率或净利率缺失；不能验证矿业周期利润。".into(),
+            },
+            cash_flow_explanation: match op_cf {
+                Some(v) => format!("provider 给出经营现金流相关指标约 {:.2}。矿业现金流要和 capex、矿山建设、商品价格周期一起看。", v),
+                None => "经营现金流缺失；不能验证资源品周期下的造血能力。".into(),
+            },
+            where_money_comes_from: "钱主要来自黄金、铜等矿产资源生产和销售；当前 locked data 未拆金属品种、产量、价格和地区贡献。".into(),
+            where_money_goes: "钱主要花在采矿/冶炼成本、矿山建设、capex、并购、债务和营运资金上；资源储量和矿山寿命是关键缺口。".into(),
+            capex_or_rnd_pressure: "矿业重点是 capex、矿山投产、成本曲线和资源储量，不是软件或医药研发框架。".into(),
+            debt_and_financing: match debt {
+                Some(v) => format!("负债相关指标约 {:.1}。需要结合商品价格下行情景和 capex 项目判断财务弹性。", v),
+                None => "债务和项目融资明细不足；矿山建设资金压力需要人工核查。".into(),
+            },
+            shareholder_return_quality: "资源股分红质量取决于周期位置、capex 和债务压力；当前不能把高利润周期当成永久现金流。".into(),
+            valuation_method_fit: "适合商品周期和资源生产商框架：金/铜价格、产量、成本、capex、储量、债务和地区风险；不适合 biotech、软件、银行或保险框架。".into(),
+            unsupported_due_to_missing_data: {
+                let mut gaps = unsupported;
+                gaps.push("金属品种收入、产量、储量、矿山寿命、地区/汇率风险和 capex 项目明细仍需年报核查。".into());
+                gaps
+            },
+        };
+    }
+
     if payload.market.eq_ignore_ascii_case("CN_A") {
         return FinancialInterpretation {
             schema_version: SCHEMA_VERSION.to_string(),

@@ -91,6 +91,80 @@ pub fn build_blueprint(
                 "Calculate cash runway from operating cash flow, engineering/project spend, and financing availability.".into(),
             ],
         )
+    } else if lower.contains("battery") || lower.contains("new energy") {
+        (
+            vec![
+                "revenue growth by battery and energy-storage demand".into(),
+                "gross margin pressure from battery-cycle pricing".into(),
+                "capex, capacity utilization, and manufacturing scale".into(),
+                "inventory and receivables quality".into(),
+                "customer concentration and overseas expansion if disclosed".into(),
+            ],
+            vec![
+                "bank metrics".into(),
+                "insurance underwriting metrics".into(),
+                "ordinary consumer-brand shortcut".into(),
+                "software platform margin logic".into(),
+            ],
+            vec![
+                "Is growth supported by battery demand and customer programs rather than working-capital stretch?".into(),
+                "Are margins holding as battery pricing and materials costs move?".into(),
+                "Does capex create productive capacity or cash-flow pressure?".into(),
+            ],
+            vec![
+                "battery-cycle margin compression".into(),
+                "inventory and receivables build".into(),
+                "capex overbuild or utilization risk".into(),
+            ],
+            "Use an A-share battery manufacturing frame: revenue growth, gross margin, capex, working capital, customer concentration, EV demand, and RMB reporting context.".into(),
+            vec![
+                "customer concentration".into(),
+                "overseas revenue and capacity split".into(),
+                "battery materials cost bridge".into(),
+            ],
+            vec![
+                "Check annual report for product mix, customer concentration, and overseas expansion.".into(),
+                "Compare revenue growth with inventory and receivables movement.".into(),
+                "Review capex, capacity utilization, and gross margin bridge.".into(),
+            ],
+        )
+    } else if lower.contains("insurance") {
+        (
+            vec![
+                "premium income and underwriting result".into(),
+                "investment income and asset-liability risk".into(),
+                "solvency / capital adequacy if available".into(),
+                "life insurance and property insurance mix".into(),
+                "financial services mix".into(),
+            ],
+            vec![
+                "industrial FCF as core".into(),
+                "net debt / EBITDA as core".into(),
+                "consumer-brand framework".into(),
+                "ordinary bank-only framework".into(),
+            ],
+            vec![
+                "Is profit driven by underwriting, investment income, or one-off financial-market effects?".into(),
+                "Are solvency and capital buffers sufficient?".into(),
+                "How does the life/property/financial-services mix change risk?".into(),
+            ],
+            vec![
+                "underwriting deterioration".into(),
+                "investment yield pressure".into(),
+                "asset-liability mismatch".into(),
+            ],
+            "Use insurance and integrated-financial metrics: premium income, underwriting, investment income, solvency, capital adequacy, and asset-liability risk.".into(),
+            vec![
+                "premium income split".into(),
+                "combined ratio / embedded value if available".into(),
+                "solvency and investment portfolio detail".into(),
+            ],
+            vec![
+                "Pull premium income and underwriting profitability by segment.".into(),
+                "Check solvency, capital adequacy, and investment yield disclosures.".into(),
+                "Separate insurance economics from bank or industrial FCF metrics.".into(),
+            ],
+        )
     } else if lower.contains("financial") || lower.contains("bank") {
         (
             vec![
@@ -203,6 +277,87 @@ pub fn build_blueprint(
                 "Check procedure growth and instruments/accessories revenue mix.".into(),
                 "Review system placement and installed-base disclosures.".into(),
                 "Compare hospital capital spending pressure with system demand.".into(),
+            ],
+        )
+    } else if lower.contains("innovative drug")
+        || lower.contains("large pharma")
+        || lower.contains("pharma /")
+    {
+        (
+            vec![
+                "approved drug portfolio revenue".into(),
+                "R&D intensity and pipeline renewal".into(),
+                "regulatory approvals and reimbursement pressure".into(),
+                "patent / generic competition risk".into(),
+                "margin and commercialization quality".into(),
+            ],
+            vec![
+                "early biotech cash runway as the only core frame".into(),
+                "bank metrics".into(),
+                "insurance underwriting metrics".into(),
+                "consumer-brand shortcut".into(),
+            ],
+            vec![
+                "Does the current drug portfolio support revenue and margin?".into(),
+                "Is R&D producing approvals or only consuming cash?".into(),
+                "Which products face reimbursement, patent, or competition pressure?".into(),
+            ],
+            vec![
+                "pipeline execution risk".into(),
+                "reimbursement and price pressure".into(),
+                "patent and competition risk".into(),
+            ],
+            "Use a pharma portfolio frame: drug revenue, R&D, pipeline/approvals, reimbursement, patent/competition risk, and margin quality. Do not reduce it to an early-biotech cash-runway-only frame.".into(),
+            vec![
+                "drug portfolio revenue split".into(),
+                "pipeline and approval timetable".into(),
+                "R&D capitalization/expense detail".into(),
+            ],
+            vec![
+                "Map major drugs, indications, and approval/reimbursement status.".into(),
+                "Compare R&D spending with new product approvals and revenue contribution.".into(),
+                "Check patent, generic, and centralized procurement exposure.".into(),
+            ],
+        )
+    } else if lower.contains("mining")
+        || lower.contains("nonferrous")
+        || lower.contains("commodity cycle")
+        || lower.contains("resource producer")
+    {
+        (
+            vec![
+                "commodity price cycle".into(),
+                "gold/copper or mineral production volume".into(),
+                "capex and mine development".into(),
+                "operating cash flow and debt".into(),
+                "reserves / mine life if available".into(),
+            ],
+            vec![
+                "biotech pipeline".into(),
+                "software platform economics".into(),
+                "bank metrics".into(),
+                "insurance underwriting metrics".into(),
+            ],
+            vec![
+                "Which commodities drive revenue and profit?".into(),
+                "Is cash flow durable through the commodity cycle?".into(),
+                "Are capex, debt, jurisdiction, or FX risks rising?".into(),
+            ],
+            vec![
+                "commodity price reversal".into(),
+                "capex overrun and mine execution".into(),
+                "jurisdiction / FX / reserve-life risk".into(),
+            ],
+            "Use a mining and commodity-cycle frame: commodity exposure, production volume, operating cash flow, capex, debt, reserves, and jurisdiction risk.".into(),
+            vec![
+                "production volume by metal".into(),
+                "reserve and mine-life detail".into(),
+                "jurisdiction and FX exposure".into(),
+            ],
+            vec![
+                "Break down revenue and margin by gold, copper, and other metals.".into(),
+                "Check capex, project pipeline, reserves, and mine life.".into(),
+                "Stress cash flow against commodity price moves and FX/jurisdiction risk.".into(),
             ],
         )
     } else if lower.contains("biotech") || lower.contains("pharma") {

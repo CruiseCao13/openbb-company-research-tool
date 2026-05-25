@@ -89,6 +89,233 @@ fn lunr_payload() -> ProviderPayload {
     }
 }
 
+fn cn_payload(
+    ticker: &str,
+    name: &str,
+    sector: &str,
+    industry: &str,
+    description: &str,
+) -> ProviderPayload {
+    ProviderPayload {
+        ticker: ticker.to_string(),
+        market: "CN_A".to_string(),
+        company_profile: CompanyProfile {
+            name: name.to_string(),
+            sector: sector.to_string(),
+            industry: industry.to_string(),
+            description: description.to_string(),
+            currency: "CNY".to_string(),
+            ..Default::default()
+        },
+        ..Default::default()
+    }
+}
+
+#[test]
+fn cn_catl_battery_not_unknown() {
+    let payload = cn_payload(
+        "300750.SZ",
+        "宁德时代新能源科技股份有限公司",
+        "电气设备",
+        "制造业-电气机械和器材制造业",
+        "锂离子电池、动力电池、储能电池、电池管理系统及新能源行业投资。",
+    );
+    let (understanding, interpretation, blueprint, _, _, _) = run_local_compact_analyst(&payload);
+    assert!(understanding
+        .correct_research_frame
+        .contains("New Energy / Battery Manufacturing"));
+    assert!(!understanding.correct_research_frame.contains("Unknown"));
+    assert!(interpretation.where_money_comes_from.contains("动力电池"));
+    assert!(blueprint
+        .must_analyze
+        .iter()
+        .any(|item| item.to_lowercase().contains("capex")));
+}
+
+#[test]
+fn cn_catl_not_bank_or_consumer() {
+    let payload = cn_payload(
+        "300750.SZ",
+        "宁德时代新能源科技股份有限公司",
+        "电气设备",
+        "制造业-电气机械和器材制造业",
+        "动力电池、储能电池、电池管理系统及可充电电池包。",
+    );
+    let (understanding, _, blueprint, _, _, _) = run_local_compact_analyst(&payload);
+    let text = format!(
+        "{} {}",
+        understanding.correct_research_frame,
+        blueprint.must_not_analyze_as_core.join(" ")
+    )
+    .to_lowercase();
+    assert!(!understanding.correct_research_frame.contains("Bank"));
+    assert!(text.contains("bank"));
+    assert!(text.contains("consumer"));
+}
+
+#[test]
+fn cn_pingan_insurance_not_unknown() {
+    let payload = cn_payload(
+        "601318.SH",
+        "中国平安保险(集团)股份有限公司",
+        "金融",
+        "金融业-保险业",
+        "投资保险企业，开展保险资金运用业务，开展国内、国际保险业务。",
+    );
+    let (understanding, interpretation, blueprint, _, _, _) = run_local_compact_analyst(&payload);
+    assert!(understanding
+        .correct_research_frame
+        .contains("Insurance / Integrated Financials"));
+    assert!(!understanding.correct_research_frame.contains("Unknown"));
+    assert!(interpretation.where_money_comes_from.contains("保费"));
+    assert!(blueprint
+        .must_analyze
+        .iter()
+        .any(|item| item.to_lowercase().contains("premium")));
+}
+
+#[test]
+fn cn_pingan_not_industrial_fcf() {
+    let payload = cn_payload(
+        "601318.SH",
+        "中国平安保险(集团)股份有限公司",
+        "金融",
+        "金融业-保险业",
+        "寿险、财产保险、保险资金运用和综合金融服务。",
+    );
+    let (understanding, _, blueprint, _, _, _) = run_local_compact_analyst(&payload);
+    assert!(understanding
+        .not_this
+        .iter()
+        .any(|item| item.to_lowercase().contains("industrial free cash flow")));
+    assert!(blueprint
+        .must_not_analyze_as_core
+        .iter()
+        .any(|item| item.to_lowercase().contains("industrial fcf")));
+}
+
+#[test]
+fn cn_hengrui_pharma_not_unknown() {
+    let payload = cn_payload(
+        "600276.SH",
+        "江苏恒瑞医药股份有限公司",
+        "医药生物",
+        "制造业-医药制造业",
+        "片剂、抗肿瘤药、原料药、创新药研发、生产和销售。",
+    );
+    let (understanding, interpretation, blueprint, _, _, _) = run_local_compact_analyst(&payload);
+    assert!(understanding
+        .correct_research_frame
+        .contains("Pharma / Innovative Drug Portfolio"));
+    assert!(!understanding.correct_research_frame.contains("Unknown"));
+    assert!(interpretation.where_money_comes_from.contains("药"));
+    assert!(blueprint
+        .must_analyze
+        .iter()
+        .any(|item| item.to_lowercase().contains("r&d")));
+}
+
+#[test]
+fn cn_hengrui_not_early_biotech_only() {
+    let payload = cn_payload(
+        "600276.SH",
+        "江苏恒瑞医药股份有限公司",
+        "医药生物",
+        "制造业-医药制造业",
+        "抗肿瘤药、创新药、药品研发和商业化销售。",
+    );
+    let (understanding, interpretation, blueprint, _, _, _) = run_local_compact_analyst(&payload);
+    assert!(understanding
+        .not_this
+        .iter()
+        .any(|item| item.contains("early biotech")));
+    assert!(blueprint
+        .must_not_analyze_as_core
+        .iter()
+        .any(|item| item.contains("early biotech")));
+    assert!(!interpretation
+        .valuation_method_fit
+        .to_lowercase()
+        .contains("cash runway only"));
+}
+
+#[test]
+fn cn_zijin_mining_not_unknown() {
+    let payload = cn_payload(
+        "601899.SH",
+        "紫金矿业集团股份有限公司",
+        "有色金属",
+        "采矿业-有色金属矿采选业",
+        "金矿采选、金冶炼、铜矿采选、铜冶炼和矿产资源勘查。",
+    );
+    let (understanding, interpretation, blueprint, _, _, _) = run_local_compact_analyst(&payload);
+    assert!(understanding
+        .correct_research_frame
+        .contains("Mining / Nonferrous Metals"));
+    assert!(!understanding.correct_research_frame.contains("Unknown"));
+    assert!(interpretation.where_money_comes_from.contains("黄金"));
+    assert!(blueprint
+        .must_analyze
+        .iter()
+        .any(|item| item.to_lowercase().contains("commodity")));
+}
+
+#[test]
+fn cn_zijin_not_biotech_or_software() {
+    let payload = cn_payload(
+        "601899.SH",
+        "紫金矿业集团股份有限公司",
+        "有色金属",
+        "采矿业-有色金属矿采选业",
+        "矿产资源勘查、金矿采选、铜矿采选和有色金属冶炼。",
+    );
+    let (understanding, _, blueprint, _, _, _) = run_local_compact_analyst(&payload);
+    assert!(understanding
+        .not_this
+        .iter()
+        .any(|item| item.to_lowercase().contains("biotech")));
+    assert!(understanding
+        .not_this
+        .iter()
+        .any(|item| item.to_lowercase().contains("software")));
+    assert!(blueprint
+        .must_not_analyze_as_core
+        .iter()
+        .any(|item| item.to_lowercase().contains("software")));
+}
+
+#[test]
+fn a_share_sector_frame_guard_uses_cn_ticker_and_profile() {
+    let payload = cn_payload(
+        "300750.SZ",
+        "Example Battery Co.",
+        "制造业",
+        "制造业",
+        "generic manufacturing description",
+    );
+    let (understanding, _, _, _, _, _) = run_local_compact_analyst(&payload);
+    assert!(understanding
+        .correct_research_frame
+        .contains("Battery Manufacturing"));
+}
+
+#[test]
+fn a_share_unknown_only_when_profile_missing_or_conflicting() {
+    let payload = ProviderPayload {
+        ticker: "399999.SZ".to_string(),
+        market: "CN_A".to_string(),
+        company_profile: CompanyProfile {
+            name: "Unknown A-share Co.".to_string(),
+            currency: "CNY".to_string(),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    let (understanding, _, _, _, _, _) = run_local_compact_analyst(&payload);
+    assert!(understanding.correct_research_frame.contains("Unknown"));
+    assert!(understanding.human_review_required);
+}
+
 #[test]
 fn lunr_not_telecom() {
     let payload = lunr_payload();

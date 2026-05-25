@@ -39,6 +39,74 @@ fn has_lunar_clues(h: &str) -> bool {
         .any(|needle| h.contains(needle))
 }
 
+fn has_cn_battery_clues(h: &str) -> bool {
+    [
+        "300750.sz",
+        "宁德时代",
+        "catl",
+        "动力电池",
+        "锂离子电池",
+        "储能电池",
+        "电池管理系统",
+        "新能源",
+        "energy storage",
+        "battery",
+    ]
+    .iter()
+    .any(|needle| h.contains(needle))
+}
+
+fn has_cn_insurance_clues(h: &str) -> bool {
+    [
+        "601318.sh",
+        "中国平安保险",
+        "保险",
+        "insurance",
+        "寿险",
+        "财产保险",
+        "保险资金",
+        "金融控股",
+    ]
+    .iter()
+    .any(|needle| h.contains(needle))
+}
+
+fn has_cn_pharma_clues(h: &str) -> bool {
+    [
+        "600276.sh",
+        "恒瑞医药",
+        "医药",
+        "制药",
+        "药品",
+        "抗肿瘤药",
+        "创新药",
+        "pharma",
+        "pharmaceutical",
+        "drug portfolio",
+    ]
+    .iter()
+    .any(|needle| h.contains(needle))
+}
+
+fn has_cn_mining_clues(h: &str) -> bool {
+    [
+        "601899.sh",
+        "紫金矿业",
+        "采矿",
+        "矿产",
+        "金矿",
+        "铜矿",
+        "铜冶炼",
+        "有色金属",
+        "mining",
+        "nonferrous",
+        "gold",
+        "copper",
+    ]
+    .iter()
+    .any(|needle| h.contains(needle))
+}
+
 pub fn understand_company(payload: &ProviderPayload) -> CompanyUnderstanding {
     let h = haystack(payload);
     let name = if payload.company_profile.name.trim().is_empty() {
@@ -435,6 +503,95 @@ pub fn understand_company(payload: &ProviderPayload) -> CompanyUnderstanding {
                 "high-margin sustainability".into(),
                 "inventory and channel pressure".into(),
                 "dividend and cash conversion quality".into(),
+            ],
+            Confidence::MEDIUM,
+            false,
+        )
+    } else if payload.market.eq_ignore_ascii_case("CN_A") && has_cn_battery_clues(&h) {
+        (
+            "New Energy / Battery Manufacturing",
+            "EV Battery Supply Chain / Energy Storage",
+            vec![
+                "动力电池 and energy-storage battery sales".into(),
+                "battery materials and system integration when disclosed".into(),
+                "overseas expansion and customer programs when supported by filings".into(),
+            ],
+            vec![
+                "bank or insurance company".into(),
+                "ordinary consumer brand".into(),
+                "software platform economics".into(),
+            ],
+            vec![
+                "gross margin pressure from battery cycle".into(),
+                "capex and manufacturing utilization".into(),
+                "inventory, receivables, and customer concentration".into(),
+            ],
+            Confidence::MEDIUM,
+            false,
+        )
+    } else if payload.market.eq_ignore_ascii_case("CN_A") && has_cn_insurance_clues(&h) {
+        (
+            "Insurance / Integrated Financials",
+            "Life Insurance / Property Insurance / Financial Holding Company",
+            vec![
+                "premium income and insurance underwriting".into(),
+                "investment income from insurance funds".into(),
+                "financial services mix when disclosed".into(),
+            ],
+            vec![
+                "ordinary industrial free cash flow company".into(),
+                "consumer brand".into(),
+                "biotech or pharma pipeline".into(),
+                "ordinary bank only".into(),
+            ],
+            vec![
+                "underwriting profitability".into(),
+                "investment yield and asset-liability mismatch".into(),
+                "solvency and capital adequacy".into(),
+            ],
+            Confidence::MEDIUM,
+            false,
+        )
+    } else if payload.market.eq_ignore_ascii_case("CN_A") && has_cn_pharma_clues(&h) {
+        (
+            "Pharma / Innovative Drug Portfolio",
+            "Healthcare / Pharma R&D",
+            vec![
+                "approved drug portfolio revenue".into(),
+                "R&D and pipeline-driven product renewal".into(),
+                "commercialization scale for pharma products".into(),
+            ],
+            vec![
+                "early biotech cash runway only".into(),
+                "bank or insurance company".into(),
+                "consumer brand".into(),
+            ],
+            vec![
+                "regulatory and reimbursement pressure".into(),
+                "patent and competition risk".into(),
+                "R&D productivity and approval timing".into(),
+            ],
+            Confidence::MEDIUM,
+            false,
+        )
+    } else if payload.market.eq_ignore_ascii_case("CN_A") && has_cn_mining_clues(&h) {
+        (
+            "Mining / Nonferrous Metals / Commodity Cycle",
+            "Gold / Copper Mining Resource Producer",
+            vec![
+                "gold, copper, and other mineral production".into(),
+                "commodity price exposure".into(),
+                "mining and smelting operations when disclosed".into(),
+            ],
+            vec![
+                "biotech pipeline".into(),
+                "software platform economics".into(),
+                "bank or insurance company".into(),
+            ],
+            vec![
+                "commodity price cycle".into(),
+                "capex and mine development execution".into(),
+                "jurisdiction, FX, and reserve-life risk".into(),
             ],
             Confidence::MEDIUM,
             false,
