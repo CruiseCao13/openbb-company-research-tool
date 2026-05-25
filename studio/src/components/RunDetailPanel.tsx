@@ -175,8 +175,12 @@ function MoneyFlowSankey({ detail }: { detail: RunDetail }): JSX.Element {
   const path = sankeyLinkHorizontal<SankeyNodeDatum, SankeyLinkDatum>();
 
   return (
-    <DetailSection badge="UNKNOWN" title="D3 Money Flow Sankey">
+      <DetailSection badge="UNKNOWN" title="D3 Money Flow Sankey">
       <div className="sankey-panel">
+        <div className="sankey-mode-badge">
+          <span>Qualitative flow map</span>
+          <small>Not amount-scaled</small>
+        </div>
         <svg className="sankey-svg" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Qualitative money flow Sankey">
           <defs>
             <linearGradient id="sankey-link-gradient" x1="0%" x2="100%" y1="0%" y2="0%">
@@ -396,7 +400,7 @@ function AuditTrailPanel({ detail }: { detail: RunDetail }): JSX.Element {
     setMessage(`Opening ${stage} artifact...`);
     try {
       const result = await openArtifact(artifactPath);
-      setMessage(`${result.message}: ${result.path}`);
+      setMessage(result.ok ? `${stage} artifact opened.` : `${stage} artifact action returned a warning.`);
     } catch (error: unknown) {
       const text = error instanceof Error ? error.message : String(error);
       setMessage(text.includes("__TAURI__") ? "Desktop runtime required for audit artifact actions." : text);
@@ -465,7 +469,7 @@ function ChartGrid({ detail }: { detail: RunDetail }): JSX.Element {
     setMessage(`Opening chart artifact: ${title}...`);
     try {
       const result = await openArtifact(imagePath);
-      setMessage(`${result.message}: ${result.path}`);
+      setMessage(result.ok ? `${title} chart opened.` : `${title} chart action returned a warning.`);
     } catch (error: unknown) {
       const text = error instanceof Error ? error.message : String(error);
       setMessage(text.includes("__TAURI__") ? "Desktop runtime required for chart opening." : text);
@@ -592,7 +596,7 @@ function ArtifactLinksPanel({ detail }: { detail: RunDetail }): JSX.Element {
     try {
       const result =
         config.action === "open" ? await openArtifact(config.path) : await revealInFolder(config.path);
-      setMessage(`${result.message}: ${result.path}`);
+      setMessage(result.ok ? `${config.label} ${config.action === "open" ? "opened" : "revealed"}.` : `${config.label} action returned a warning.`);
     } catch (error: unknown) {
       const text = error instanceof Error ? error.message : String(error);
       setMessage(text.includes("__TAURI__") ? "Desktop runtime required for artifact actions." : text);
@@ -610,7 +614,7 @@ function ArtifactLinksPanel({ detail }: { detail: RunDetail }): JSX.Element {
             disabled={!config.path || isBusy !== null}
             key={config.label}
             onClick={() => void handleArtifactAction(config)}
-            title={config.path ? config.path : `${config.label} artifact is missing`}
+            title={config.path ? `${config.label} artifact is available` : `${config.label} artifact is missing`}
             type="button"
           >
             <span>{config.label}</span>

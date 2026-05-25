@@ -1,4 +1,4 @@
-import { type CSSProperties, type ReactNode, useEffect, useMemo, useState } from "react";
+import { type CSSProperties, type PointerEvent, type ReactNode, useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { AppInfoCard } from "./components/AppInfoCard";
@@ -46,6 +46,7 @@ type StudioMode = "landing" | "runs" | "matrix";
 type StudioDensity = "compact" | "comfortable";
 type StudioMotion = "on" | "off";
 type StudioGlass = "low" | "medium" | "high";
+type MatrixFilter = "ALL" | "PASS" | "WARNING" | "FAIL" | "DATA_GAP" | "LOCAL" | "EXTERNAL";
 type TrainingRunsStatus = "idle" | "loading" | "ready" | "empty" | "failed" | "browser-preview";
 type MatrixStatus = "idle" | "loading" | "ready" | "empty" | "failed" | "browser-preview";
 
@@ -94,6 +95,36 @@ function runKey(run: RunSummary): string {
 
 function shortRunId(runId: string): string {
   return runId.length > 28 ? `${runId.slice(0, 25)}...` : runId;
+}
+
+function tickerMonogram(ticker: string | null | undefined): string {
+  if (!ticker) {
+    return "RS";
+  }
+  return ticker
+    .replace(/\.(SH|SZ)$/u, "")
+    .split(/[^A-Z0-9]+/u)
+    .filter(Boolean)
+    .join("")
+    .slice(0, 3)
+    .toUpperCase();
+}
+
+function CompanyMonogram({
+  market,
+  status,
+  ticker
+}: {
+  market: string | null | undefined;
+  status: string | null | undefined;
+  ticker: string | null | undefined;
+}): JSX.Element {
+  return (
+    <div className={`company-monogram company-monogram--${statusToBadge(status ?? null).toLowerCase()}`} aria-hidden="true">
+      <strong>{tickerMonogram(ticker)}</strong>
+      <span>{market ?? "MKT"}</span>
+    </div>
+  );
 }
 
 function booleanLabel(value: boolean | null): string {
@@ -233,10 +264,12 @@ function StudioTopBar({
 
 function LandingHero({
   onEnter,
-  onOpenLatest
+  onOpenLatest,
+  onOpenMatrix
 }: {
   onEnter: () => void;
   onOpenLatest: () => void;
+  onOpenMatrix: () => void;
 }): JSX.Element {
   const { t } = useTranslation();
 
@@ -257,6 +290,9 @@ function LandingHero({
           </button>
           <button className="hero-cta" onClick={onOpenLatest} type="button">
             {t("openLatestRun")}
+          </button>
+          <button className="hero-cta" onClick={onOpenMatrix} type="button">
+            View Quality Matrix
           </button>
         </div>
       </div>
@@ -283,9 +319,13 @@ function SettingsCenter({
   onFontScale,
   onGlass,
   onLanguage,
+  onMatrixDefault,
   onMotion,
+  onStartLatest,
   onWarningsFirst,
+  openMatrixByDefault,
   open,
+  startOnLatest,
   warningsFirst
 }: {
   defaultLanding: boolean;
@@ -300,9 +340,13 @@ function SettingsCenter({
   onFontScale: (value: number) => void;
   onGlass: (value: StudioGlass) => void;
   onLanguage: (value: StudioLanguage) => void;
+  onMatrixDefault: (value: boolean) => void;
   onMotion: (value: StudioMotion) => void;
+  onStartLatest: (value: boolean) => void;
   onWarningsFirst: (value: boolean) => void;
+  openMatrixByDefault: boolean;
   open: boolean;
+  startOnLatest: boolean;
   warningsFirst: boolean;
 }): JSX.Element | null {
   const { t } = useTranslation();
@@ -386,6 +430,18 @@ function SettingsCenter({
               <span>{defaultLanding ? t("on") : t("off")}</span>
             </label>
           </SettingGroup>
+          <SettingGroup title="Start on latest run">
+            <label className="settings-toggle">
+              <input checked={startOnLatest} onChange={(event) => onStartLatest(event.target.checked)} type="checkbox" />
+              <span>{startOnLatest ? t("on") : t("off")}</span>
+            </label>
+          </SettingGroup>
+          <SettingGroup title="Open matrix by default">
+            <label className="settings-toggle">
+              <input checked={openMatrixByDefault} onChange={(event) => onMatrixDefault(event.target.checked)} type="checkbox" />
+              <span>{openMatrixByDefault ? t("on") : t("off")}</span>
+            </label>
+          </SettingGroup>
         </div>
       </aside>
     </div>
@@ -430,6 +486,7 @@ function Sidebar({
   error,
   mode,
   onChangeMode,
+  onOpenSettings,
   onSearch,
   onSelectRun,
   runs,
@@ -440,6 +497,7 @@ function Sidebar({
   error: string | null;
   mode: StudioMode;
   onChangeMode: (mode: StudioMode) => void;
+  onOpenSettings: () => void;
   onSearch: (search: string) => void;
   onSelectRun: (run: RunSummary) => void;
   runs: RunSummary[];
@@ -470,6 +528,9 @@ function Sidebar({
           type="button"
         >
           {t("matrix")}
+        </button>
+        <button className="mode-switch__button" onClick={onOpenSettings} type="button">
+          {t("settings")}
         </button>
       </div>
 
@@ -541,7 +602,10 @@ function RunList({
             type="button"
           >
             <span className="run-list-item__topline">
-              <strong>{run.ticker}</strong>
+              <span className="run-list-item__identity">
+                <CompanyMonogram market={run.market} status={run.status} ticker={run.ticker} />
+                <strong>{run.ticker}</strong>
+              </span>
               <StatusBadge variant={statusToBadge(run.status)} />
             </span>
             <span className="run-list-item__run-id">{shortRunId(run.run_id)}</span>
@@ -582,7 +646,7 @@ function PrimaryActionBar({ detail }: { detail: RunDetail | null }): JSX.Element
     setMessage(`${action === "open" ? "Opening" : "Revealing"} ${label}...`);
     try {
       const result = action === "open" ? await openArtifact(path) : await revealInFolder(path);
-      setMessage(`${result.message}: ${result.path}`);
+      setMessage(result.ok ? `${label} ready.` : `${label} action returned a warning.`);
     } catch (error: unknown) {
       const text = error instanceof Error ? error.message : String(error);
       setMessage(text.includes("__TAURI__") ? "Desktop runtime required for artifact actions." : text);
@@ -600,7 +664,7 @@ function PrimaryActionBar({ detail }: { detail: RunDetail | null }): JSX.Element
             disabled={!action.path || busyLabel !== null}
             key={action.label}
             onClick={() => void handleAction(action.label, action.path, action.action)}
-            title={action.path ? action.path : `${action.label} unavailable for this run`}
+            title={action.path ? `${action.label} is available` : `${action.label} unavailable for this run`}
             type="button"
           >
             <span>{action.label}</span>
@@ -634,6 +698,11 @@ function RunWorkspaceHeader({
       <div className="workspace-hero__identity">
         <p className="eyebrow">{t("reportWorkspace")}</p>
         <div className="workspace-hero__title-row">
+          <CompanyMonogram
+            market={detail?.provider.market ?? selectedRun?.market}
+            status={detail?.status.overall_status ?? selectedRun?.status}
+            ticker={selectedRun?.ticker}
+          />
           <h2>{selectedRun?.ticker ?? t("noRunSelected")}</h2>
           {detail?.company.name ? <span>{detail.company.name}</span> : null}
         </div>
@@ -833,6 +902,28 @@ function RegressionMatrixHub({
   trainingStatus: TrainingRunsStatus;
 }): JSX.Element {
   const { t } = useTranslation();
+  const [activeFilter, setActiveFilter] = useState<MatrixFilter>("ALL");
+  const rows = useMemo(() => {
+    const allRows = matrix?.rows ?? [];
+    if (activeFilter === "ALL") {
+      return allRows;
+    }
+    return allRows.filter((row) => {
+      const status = `${row.status ?? ""} ${row.issue_types.join(" ")} ${row.hard_failures.join(" ")}`.toUpperCase();
+      if (activeFilter === "LOCAL") {
+        return (row.ai_source ?? "").toLowerCase().includes("local");
+      }
+      if (activeFilter === "EXTERNAL") {
+        return (row.ai_source ?? "").toLowerCase().includes("external");
+      }
+      return status.includes(activeFilter);
+    });
+  }, [activeFilter, matrix?.rows]);
+  const totalRows = matrix?.rows ?? [];
+  const hardFailures = rows.reduce((count, row) => count + row.hard_failures.length, 0);
+  const providerFailures = countProviderFailures(rows);
+  const warningsCount = (matrix?.warnings.length ?? 0) + rows.filter((row) => row.issue_types.length > 0).length;
+
   if (trainingStatus === "loading") {
     return <EmptyState title="Loading training runs" detail="Scanning reports/training_runs through Tauri IPC." />;
   }
@@ -845,11 +936,6 @@ function RegressionMatrixHub({
   if (runs.length === 0) {
     return <EmptyState title="No training runs found" detail="No reports/training_runs folders were discovered." />;
   }
-
-  const rows = matrix?.rows ?? [];
-  const hardFailures = rows.reduce((count, row) => count + row.hard_failures.length, 0);
-  const providerFailures = countProviderFailures(rows);
-  const warningsCount = (matrix?.warnings.length ?? 0) + rows.filter((row) => row.issue_types.length > 0).length;
 
   return (
     <section className="matrix-workspace" aria-label="Regression Matrix Hub">
@@ -882,7 +968,7 @@ function RegressionMatrixHub({
       {matrixStatus === "ready" || matrixStatus === "empty" ? (
         <>
           <div className="matrix-summary-grid">
-            <MatrixSummaryCard label="Total tickers" value={rows.length} />
+            <MatrixSummaryCard label="Total tickers" value={`${rows.length}/${totalRows.length}`} />
             <MatrixSummaryCard label="Average quality" value={averageQuality(rows)} />
             <MatrixSummaryCard label="Warnings" value={warningsCount} />
             <MatrixSummaryCard label="Hard failures" value={hardFailures} />
@@ -895,6 +981,19 @@ function RegressionMatrixHub({
             <span><i className="legend-dot legend-dot--weak" />60-69</span>
             <span><i className="legend-dot legend-dot--fail" />&lt;60</span>
             <span><i className="legend-dot legend-dot--unknown" />missing</span>
+          </div>
+
+          <div className="matrix-filter-chips" aria-label="Matrix filters">
+            {(["ALL", "PASS", "WARNING", "FAIL", "DATA_GAP", "LOCAL", "EXTERNAL"] as MatrixFilter[]).map((filter) => (
+              <button
+                className={activeFilter === filter ? "matrix-filter-chip matrix-filter-chip--active" : "matrix-filter-chip"}
+                key={filter}
+                onClick={() => setActiveFilter(filter)}
+                type="button"
+              >
+                {filter}
+              </button>
+            ))}
           </div>
 
           <div className="matrix-layout">
@@ -1044,12 +1143,21 @@ function AppShell({
   glass: StudioGlass;
   motion: StudioMotion;
 }): JSX.Element {
+  function handlePointerMove(event: PointerEvent<HTMLElement>): void {
+    if (motion === "off") {
+      return;
+    }
+    event.currentTarget.style.setProperty("--pointer-x", `${event.clientX}px`);
+    event.currentTarget.style.setProperty("--pointer-y", `${event.clientY}px`);
+  }
+
   return (
     <main
       className="studio-shell"
       data-density={density}
       data-glass={glass}
       data-motion={motion}
+      onPointerMove={handlePointerMove}
       style={{ "--studio-font-scale": fontScale } as CSSProperties}
     >
       {children}
@@ -1080,6 +1188,8 @@ export function App(): JSX.Element {
   const [fontScale, setFontScale] = useState<number>(1);
   const [warningsFirst, setWarningsFirst] = useState<boolean>(true);
   const [defaultLanding, setDefaultLanding] = useState<boolean>(true);
+  const [startOnLatest, setStartOnLatest] = useState<boolean>(false);
+  const [openMatrixByDefault, setOpenMatrixByDefault] = useState<boolean>(false);
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
   const [trainingRuns, setTrainingRuns] = useState<TrainingRunSummary[]>([]);
   const [trainingRunsStatus, setTrainingRunsStatus] = useState<TrainingRunsStatus>("idle");
@@ -1099,6 +1209,54 @@ export function App(): JSX.Element {
   }, [runSearch, runs]);
 
   const selectedRun = runs.find((run) => runKey(run) === selectedRunKey) ?? null;
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem("v6-studio-ui-settings");
+    if (!saved) {
+      return;
+    }
+    try {
+      const parsed = JSON.parse(saved) as Partial<{
+        defaultLanding: boolean;
+        density: StudioDensity;
+        fontScale: number;
+        glass: StudioGlass;
+        language: StudioLanguage;
+        motion: StudioMotion;
+        openMatrixByDefault: boolean;
+        startOnLatest: boolean;
+        warningsFirst: boolean;
+      }>;
+      if (parsed.language === "en" || parsed.language === "zh") setLanguage(parsed.language);
+      if (parsed.density === "compact" || parsed.density === "comfortable") setDensity(parsed.density);
+      if (parsed.motion === "on" || parsed.motion === "off") setMotion(parsed.motion);
+      if (parsed.glass === "low" || parsed.glass === "medium" || parsed.glass === "high") setGlass(parsed.glass);
+      if (typeof parsed.fontScale === "number") setFontScale(parsed.fontScale);
+      if (typeof parsed.warningsFirst === "boolean") setWarningsFirst(parsed.warningsFirst);
+      if (typeof parsed.defaultLanding === "boolean") setDefaultLanding(parsed.defaultLanding);
+      if (typeof parsed.startOnLatest === "boolean") setStartOnLatest(parsed.startOnLatest);
+      if (typeof parsed.openMatrixByDefault === "boolean") setOpenMatrixByDefault(parsed.openMatrixByDefault);
+    } catch {
+      window.localStorage.removeItem("v6-studio-ui-settings");
+    }
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      "v6-studio-ui-settings",
+      JSON.stringify({
+        defaultLanding,
+        density,
+        fontScale,
+        glass,
+        language,
+        motion,
+        openMatrixByDefault,
+        startOnLatest,
+        warningsFirst
+      })
+    );
+  }, [defaultLanding, density, fontScale, glass, language, motion, openMatrixByDefault, startOnLatest, warningsFirst]);
 
   function openLatestRun(): void {
     const latest = runs[0];
@@ -1157,6 +1315,14 @@ export function App(): JSX.Element {
           setRunsStatus(loadedRuns.length > 0 ? "ready" : "empty");
           setRunsError(null);
           setSelectedRunKey((current) => current ?? (loadedRuns[0] ? runKey(loadedRuns[0]) : null));
+          if (openMatrixByDefault) {
+            setMode("matrix");
+          } else if (startOnLatest && loadedRuns[0]) {
+            setMode("runs");
+            setDetailTab("charts");
+          } else if (!defaultLanding) {
+            setMode("runs");
+          }
         }
       })
       .catch((error: unknown) => {
@@ -1283,6 +1449,7 @@ export function App(): JSX.Element {
         search={runSearch}
         selectedRunKey={selectedRunKey}
         onChangeMode={setMode}
+        onOpenSettings={() => setSettingsOpen(true)}
         onSearch={setRunSearch}
         onSelectRun={(run) => setSelectedRunKey(runKey(run))}
       />
@@ -1309,7 +1476,7 @@ export function App(): JSX.Element {
         />
 
         {mode === "landing" ? (
-          <LandingHero onEnter={enterStudio} onOpenLatest={openLatestRun} />
+          <LandingHero onEnter={enterStudio} onOpenLatest={openLatestRun} onOpenMatrix={() => setMode("matrix")} />
         ) : mode === "runs" ? (
           <>
             <RunWorkspaceHeader
@@ -1383,8 +1550,12 @@ export function App(): JSX.Element {
         onFontScale={setFontScale}
         onGlass={setGlass}
         onLanguage={setLanguage}
+        onMatrixDefault={setOpenMatrixByDefault}
         onMotion={setMotion}
+        onStartLatest={setStartOnLatest}
         onWarningsFirst={setWarningsFirst}
+        openMatrixByDefault={openMatrixByDefault}
+        startOnLatest={startOnLatest}
       />
     </AppShell>
   );

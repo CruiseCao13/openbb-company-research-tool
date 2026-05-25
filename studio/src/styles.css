@@ -157,7 +157,7 @@ select:focus-visible {
 
 .mode-switch {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 4px;
   border: 1px solid rgba(30, 41, 59, 0.9);
   background: rgba(2, 6, 23, 0.58);
@@ -277,6 +277,61 @@ select:focus-visible {
   gap: 8px;
 }
 
+.run-list-item__identity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.company-monogram {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(143, 211, 255, 0.24);
+  border-radius: 16px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.075), rgba(15, 23, 42, 0.5)),
+    radial-gradient(circle at 28% 18%, rgba(143, 211, 255, 0.22), transparent 42%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 12px 30px rgba(0, 0, 0, 0.2);
+}
+
+.company-monogram strong,
+.company-monogram span {
+  font-family: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+  line-height: 1;
+}
+
+.company-monogram strong {
+  color: var(--text-main);
+  font-size: 12px;
+}
+
+.company-monogram span {
+  color: var(--text-muted);
+  font-size: 7px;
+  text-transform: uppercase;
+}
+
+.company-monogram--warning,
+.company-monogram--data_gap {
+  border-color: rgba(251, 146, 60, 0.36);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 0 24px rgba(251, 146, 60, 0.11);
+}
+
+.company-monogram--fail {
+  border-color: rgba(244, 63, 94, 0.44);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 0 26px rgba(244, 63, 94, 0.14);
+}
+
 .run-list-item__topline strong,
 .run-list-item__run-id,
 .run-list-item__meta {
@@ -361,6 +416,12 @@ select:focus-visible {
 .workspace-hero__title-row h2 {
   font-size: 30px;
   line-height: 1;
+}
+
+.workspace-hero__title-row .company-monogram {
+  width: 54px;
+  height: 54px;
+  border-radius: 20px;
 }
 
 .workspace-hero__title-row span {
@@ -1049,6 +1110,30 @@ select:focus-visible {
   gap: 6px;
 }
 
+.matrix-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.matrix-filter-chip {
+  border: 1px solid rgba(143, 211, 255, 0.2);
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.34);
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 7px 10px;
+  font-family: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+  font-size: 10px;
+}
+
+.matrix-filter-chip--active {
+  border-color: rgba(143, 211, 255, 0.54);
+  background: rgba(143, 211, 255, 0.12);
+  color: var(--info);
+  box-shadow: 0 0 20px rgba(143, 211, 255, 0.1);
+}
+
 .legend-dot {
   width: 9px;
   height: 9px;
@@ -1440,6 +1525,21 @@ select:focus-visible {
   gap: 12px;
   padding-right: 12px;
   font-size: calc(13px * var(--studio-font-scale, 1));
+  position: relative;
+  isolation: isolate;
+}
+
+.studio-shell::before {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(520px circle at var(--pointer-x, 50%) var(--pointer-y, 42%), rgba(143, 211, 255, 0.12), transparent 58%),
+    radial-gradient(circle at 18% 8%, rgba(143, 211, 255, 0.1), transparent 28%),
+    radial-gradient(circle at 82% 92%, rgba(52, 211, 153, 0.065), transparent 30%);
+  content: "";
+  transition: opacity 180ms ease;
 }
 
 .studio-shell[data-density="compact"] {
@@ -1761,6 +1861,7 @@ select:focus-visible {
 }
 
 .sankey-panel {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 280px;
   gap: 14px;
@@ -1769,6 +1870,34 @@ select:focus-visible {
     radial-gradient(circle at 20% 20%, rgba(143, 211, 255, 0.08), transparent 28%),
     rgba(2, 6, 23, 0.36);
   padding: 12px;
+}
+
+.sankey-mode-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 1;
+  display: inline-grid;
+  gap: 3px;
+  border: 1px solid rgba(251, 146, 60, 0.3);
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.62);
+  backdrop-filter: blur(14px);
+  padding: 6px 10px;
+  font-family: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+}
+
+.sankey-mode-badge span {
+  color: var(--warning);
+  font-size: 10px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.sankey-mode-badge small {
+  color: var(--text-muted);
+  font-size: 9px;
+  line-height: 1;
 }
 
 .sankey-svg {
@@ -1780,6 +1909,8 @@ select:focus-visible {
   fill: none;
   stroke: url("#sankey-link-gradient");
   stroke-opacity: 0.34;
+  stroke-dasharray: 10 12;
+  animation: sankey-flow 4.5s linear infinite;
   transition: stroke-opacity 160ms ease;
 }
 
@@ -1921,6 +2052,15 @@ select:focus-visible {
   }
   to {
     transform: rotate(360deg) translateX(8px) rotate(-360deg);
+  }
+}
+
+@keyframes sankey-flow {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -44;
   }
 }
 
