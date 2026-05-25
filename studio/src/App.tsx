@@ -2,7 +2,7 @@ import { type ReactNode, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { AppInfoCard } from "./components/AppInfoCard";
 import { RunDetailPanel } from "./components/RunDetailPanel";
-import { getAppInfo, listRuns, loadRunDetail } from "./lib/tauri";
+import { getAppInfo, listRuns, loadRunDetail, openArtifact } from "./lib/tauri";
 import type { AppInfo, AppInfoStatus, RunDetail, RunDetailStatus, RunsStatus, RunSummary } from "./types/app";
 
 type StudioPing = {
@@ -10,7 +10,17 @@ type StudioPing = {
   message: string;
 };
 
-type BadgeVariant = "PASS" | "WARNING" | "FAIL" | "DATA_GAP" | "EXTERNAL_AI" | "LOCAL_MOCK" | "UNKNOWN";
+type BadgeVariant =
+  | "PASS"
+  | "WARNING"
+  | "FAIL"
+  | "DATA_GAP"
+  | "EXTERNAL_AI"
+  | "LOCAL_MOCK"
+  | "HUMAN_REVIEW"
+  | "PROVIDER_MOCK"
+  | "CACHE"
+  | "UNKNOWN";
 
 type ResearchCardConfig = {
   title: string;
@@ -203,6 +213,36 @@ function TopStatusStrip({ ipcMessage }: { ipcMessage: string }): JSX.Element {
   );
 }
 
+function booleanLabel(value: boolean | null): string {
+  if (value === null) {
+    return "unknown";
+  }
+  return value ? "yes" : "no";
+}
+
+function compactList(items: string[], limit = 4): { visible: string[]; remaining: number } {
+  return {
+    visible: items.slice(0, limit),
+    remaining: Math.max(0, items.length - limit)
+  };
+}
+
+function ProvenanceList({ emptyLabel, items }: { emptyLabel: string; items: string[] }): JSX.Element {
+  const { remaining, visible } = compactList(items);
+  if (visible.length === 0) {
+    return <p>{emptyLabel}</p>;
+  }
+
+  return (
+    <ul className="bottom-compact-list">
+      {visible.map((item) => (
+        <li key={item}>{item}</li>
+      ))}
+      {remaining > 0 ? <li>{remaining} more</li> : null}
+    </ul>
+  );
+}
+
 function ResearchCard({ card, wide }: { card: ResearchCardConfig; wide: boolean }): JSX.Element {
   return (
     <article className={`detail-card${wide ? " detail-card--wide" : ""}`}>
@@ -215,23 +255,185 @@ function ResearchCard({ card, wide }: { card: ResearchCardConfig; wide: boolean 
   );
 }
 
-function BottomProvenanceBar(): JSX.Element {
+function provenanceWarnings(detail: RunDetail): string[] {
+  const warnings = new Set<string>([
+    ...detail.blueprint.data_gaps,
+    ...detail.provider.missing_fields,
+    ...detail.warnings
+  ]);
+
+  if (detail.status.human_review_required || detail.self_review.human_review_required) {
+    warnings.add("Human review required");
+  }
+  if (detail.ai_usage.local_mock_used) {
+    warnings.add("Local/mock AI output is not external AI proof");
+  }
+  if (detail.provider.mock) {
+    warnings.add("Provider metadata says mock data was used");
+  }
+  for (const value of [
+    detail.status.overall_status,
+    detail.status.provider_status,
+    detail.status.visual_lint_status,
+    detail.self_review.framework_fit_check,
+    detail.self_review.numeric_consistency_check,
+    detail.self_review.money_flow_check
+  ]) {
+    const normalized = value?.toLowerCase() ?? "";
+    if (normalized.includes("unsupported")) {
+      warnings.add(value ?? "Unsupported claim warning");
+    }
+  }
+
+  return Array.from(warnings);
+}
+
+function BottomProvenanceBar({
+  detail,
+  status
+}: {
+  detail: RunDetail | null;
+  status: RunDetailStatus;
+}): JSX.Element {
+  const [message, setMessage] = useState<string>("No provenance artifact action yet.");
+  const isReady = status === "ready" && detail !== null;
+  const warnings = detail ? provenanceWarnings(detail) : [];
+  const badge: BadgeVariant = !isReady
+    ? "DATA_GAP"
+    : detail.provider.mock
+      ? "FAIL"
+      : detail.status.human_review_required || detail.self_review.human_review_required || warnings.length > 0
+        ? "WARNING"
+        : detail.ai_usage.external_ai_used
+          ? "EXTERNAL_AI"
+          : detail.ai_usage.local_mock_used
+            ? "LOCAL_MOCK"
+            : "UNKNOWN";
+
+  async function handleOpen(label: string, path: string | null | undefined): Promise<void> {
+    if (!path) {
+      return;
+    }
+    setMessage(`Opening ${label}...`);
+    try {
+      const result = await openArtifact(path);
+      setMessage(`${result.message}: ${result.path}`);
+    } catch (error: unknown) {
+      const text = error instanceof Error ? error.message : String(error);
+      const browserPreview = text.includes("__TAURI__")
+        ? "Tauri IPC is unavailable in browser preview. Artifact opening requires the desktop runtime."
+        : text;
+      setMessage(`Artifact action failed: ${browserPreview}`);
+    }
+  }
+
   return (
     <section className="bottom-bar" aria-label="Provenance and data gaps">
       <div className="bottom-bar__header">
         <h3>Provenance &amp; Data Gaps</h3>
-        <StatusBadge variant="DATA_GAP" />
-      </div>
-      <div className="bottom-bar__grid">
-        <div className="provenance-cell">
-          <span>AI provenance</span>
-          <p>AI provenance will appear here</p>
+        <div className="bottom-badge-row">
+          <StatusBadge variant={badge} />
+          {detail?.ai_usage.external_ai_used ? <StatusBadge variant="EXTERNAL_AI" /> : null}
+          {detail?.ai_usage.local_mock_used ? <StatusBadge variant="LOCAL_MOCK" /> : null}
+          {detail?.ai_usage.cache_hits ? <StatusBadge variant="CACHE" /> : null}
+          {detail?.status.human_review_required || detail?.self_review.human_review_required ? (
+            <StatusBadge variant="HUMAN_REVIEW" />
+          ) : null}
+          {detail?.provider.mock ? <StatusBadge variant="PROVIDER_MOCK" /> : null}
         </div>
-        <div className="provenance-cell">
-          <span>Data gaps</span>
-          <p>Data gaps will appear here</p>
-        </div>
       </div>
+
+      {!isReady ? (
+        <div className="bottom-bar__empty">
+          <strong>{status === "loading" ? "Loading run provenance..." : "Select a run to inspect AI provenance and data gaps."}</strong>
+          <span>No external API, provider, or filesystem read is triggered from this panel.</span>
+        </div>
+      ) : (
+        <div className="bottom-bar__grid">
+          <div className="provenance-cell">
+            <span>AI provenance</span>
+            <dl className="bottom-kv">
+              <div>
+                <dt>Source</dt>
+                <dd>{detail.ai_usage.source ?? "UNKNOWN"}</dd>
+              </div>
+              <div>
+                <dt>External</dt>
+                <dd>{booleanLabel(detail.ai_usage.external_ai_used)}</dd>
+              </div>
+              <div>
+                <dt>Local mock</dt>
+                <dd>{booleanLabel(detail.ai_usage.local_mock_used)}</dd>
+              </div>
+              <div>
+                <dt>New calls</dt>
+                <dd>{detail.ai_usage.new_external_ai_calls ?? "unknown"}</dd>
+              </div>
+              <div>
+                <dt>Cache hits</dt>
+                <dd>{detail.ai_usage.cache_hits ?? "unknown"}</dd>
+              </div>
+              <div>
+                <dt>Model</dt>
+                <dd>{detail.ai_usage.model ?? "unknown"}</dd>
+              </div>
+            </dl>
+            <ProvenanceList emptyLabel="No prompt versions reported." items={detail.ai_usage.prompt_versions} />
+            <button
+              className="bottom-action"
+              disabled={!detail.artifacts.ai_usage_path}
+              onClick={() => void handleOpen("AI usage", detail.artifacts.ai_usage_path)}
+              type="button"
+            >
+              Open AI Usage
+            </button>
+          </div>
+
+          <div className="provenance-cell">
+            <span>Provider source</span>
+            <dl className="bottom-kv">
+              <div>
+                <dt>Provider</dt>
+                <dd>{detail.provider.provider ?? "UNKNOWN"}</dd>
+              </div>
+              <div>
+                <dt>Source</dt>
+                <dd>{detail.provider.source ?? "unknown"}</dd>
+              </div>
+              <div>
+                <dt>Adapter</dt>
+                <dd>{detail.provider.provider_adapter ?? "unknown"}</dd>
+              </div>
+              <div>
+                <dt>Package</dt>
+                <dd>{booleanLabel(detail.provider.package_used)}</dd>
+              </div>
+              <div>
+                <dt>Mock</dt>
+                <dd>{booleanLabel(detail.provider.mock)}</dd>
+              </div>
+              <div>
+                <dt>Market</dt>
+                <dd>{detail.provider.market ?? "unknown"} / {detail.provider.currency ?? "unknown"}</dd>
+              </div>
+            </dl>
+            <ProvenanceList emptyLabel="No provider limitations reported." items={detail.provider.limitations} />
+          </div>
+          <div className="provenance-cell">
+            <span>Data gaps / warnings</span>
+            <ProvenanceList emptyLabel="No data gaps, missing fields, or warnings reported." items={warnings} />
+            <button
+              className="bottom-action"
+              disabled={!detail.artifacts.blueprint_path}
+              onClick={() => void handleOpen("research blueprint", detail.artifacts.blueprint_path)}
+              type="button"
+            >
+              Open Blueprint
+            </button>
+            <p className="bottom-message">{message}</p>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
@@ -384,7 +586,7 @@ export function App(): JSX.Element {
           ))}
         </section>
 
-        <BottomProvenanceBar />
+        <BottomProvenanceBar detail={activeRunDetail} status={runDetailStatus} />
       </section>
     </AppShell>
   );
