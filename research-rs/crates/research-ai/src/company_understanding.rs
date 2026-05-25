@@ -1030,13 +1030,52 @@ pub fn understand_company(payload: &ProviderPayload) -> CompanyUnderstanding {
         )
     };
 
+    let profile = &payload.company_profile;
+    let description_anchor = if profile.description.trim().is_empty() {
+        "provider description is missing; identity is data-limited".to_string()
+    } else {
+        profile
+            .description
+            .split_whitespace()
+            .take(28)
+            .collect::<Vec<_>>()
+            .join(" ")
+    };
+    let sector_anchor = [profile.sector.as_str(), profile.industry.as_str()]
+        .iter()
+        .filter(|value| !value.trim().is_empty())
+        .copied()
+        .collect::<Vec<_>>()
+        .join(" / ");
+    let sector_anchor = if sector_anchor.is_empty() {
+        "sector/industry unavailable".to_string()
+    } else {
+        sector_anchor
+    };
+    let gap_anchor = if payload.missing_fields.is_empty() {
+        "no provider-declared missing fields".to_string()
+    } else {
+        payload.missing_fields.join(", ")
+    };
+    let revenue_anchor = if revenue_engines.is_empty() {
+        "no locked revenue-engine terms identified".to_string()
+    } else {
+        revenue_engines.join("; ")
+    };
+
     CompanyUnderstanding {
         schema_version: SCHEMA_VERSION.to_string(),
         ai_provenance: AiProvenance::default(),
-        company_identity: format!("{name} is best treated as {frame} based on the locked provider profile and financial context."),
-        business_model: format!("The research frame is {frame}. The report should explain how the company earns money before interpreting valuation."),
+        company_identity: format!(
+            "{name} is classified as {frame} because the locked profile says sector/industry = {sector_anchor} and describes the business as: {description_anchor}."
+        ),
+        business_model: format!(
+            "Local fallback revenue evidence for {name}: {revenue_anchor}. Missing fields to keep explicit: {gap_anchor}."
+        ),
         revenue_engines,
-        profit_pool: format!("Profit pool assessment should focus on the economics implied by {frame}, not a generic template."),
+        profit_pool: format!(
+            "Profit pool assessment must connect {name}'s locked revenue, cash-flow, cost, and capital-allocation facts to the {frame} frame; unsupported economics stay as data gaps."
+        ),
         key_growth_drivers: vec![secondary.into()],
         key_risks: risks,
         not_this,

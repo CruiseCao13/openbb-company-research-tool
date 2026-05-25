@@ -31,6 +31,63 @@ fn missing_provider_fields(payload: &ProviderPayload) -> String {
     }
 }
 
+fn latest_metric_line(rows: &[StatementRow], label: &str, needles: &[&str]) -> String {
+    rows.iter()
+        .find(|row| {
+            let metric = row.metric.to_lowercase();
+            row.value.is_some()
+                && needles
+                    .iter()
+                    .any(|needle| metric.contains(&needle.to_lowercase()))
+        })
+        .map(|row| {
+            format!(
+                "- {label}: {} {} = {:.1} {}\n",
+                row.metric,
+                row.period,
+                row.value.unwrap_or_default(),
+                row.unit
+            )
+        })
+        .unwrap_or_else(|| format!("- {label}: missing from locked data\n"))
+}
+
+fn money_flow_fact_anchors(payload: &ProviderPayload) -> String {
+    [
+        latest_metric_line(
+            &payload.income_statement,
+            "Revenue / operating income base",
+            &["revenue", "total revenue", "营业收入"],
+        ),
+        latest_metric_line(
+            &payload.cash_flow,
+            "Operating cash flow",
+            &["operating cash flow", "cash from operations", "经营现金流"],
+        ),
+        latest_metric_line(
+            &payload.cash_flow,
+            "Capex / reinvestment",
+            &["capital expenditure", "capex", "资本开支", "购建固定资产"],
+        ),
+        latest_metric_line(
+            &payload.cash_flow,
+            "Free cash flow",
+            &["free cash flow", "fcf", "自由现金流"],
+        ),
+        latest_metric_line(
+            &payload.balance_sheet,
+            "Debt / balance-sheet pressure",
+            &["debt", "borrowings", "有息负债", "负债合计"],
+        ),
+        latest_metric_line(
+            &payload.balance_sheet,
+            "Working-capital check",
+            &["inventory", "receivable", "存货", "应收"],
+        ),
+    ]
+    .join("")
+}
+
 fn chart_block(figure: usize, title: &str, file: &str, status: &str) -> String {
     let link = if file.ends_with(".png") {
         format!("![Figure {figure}. {title}](../charts/{file})")
@@ -159,6 +216,13 @@ pub fn render_report(
             "Shows reinvestment and cash pressure",
         ),
     ]);
+    let money_flow_fact_anchors = money_flow_fact_anchors(payload);
+    let company_specific_question = blueprint.key_questions.first().cloned().unwrap_or_else(|| {
+        format!(
+            "Which missing field would most change the money-flow read for {}?",
+            payload.ticker
+        )
+    });
     format!(
         r#"# {ticker} Company Research Report
 
@@ -260,7 +324,7 @@ Profit pool:
 
 Table 2. Money flow summary  
 Unit: text  
-Source: provider_payload.json and financial_interpretation.json  
+Source: provider_payload.json, metadata/company_fact_sheet.json, metadata/revenue_engine_map.json, metadata/cost_structure_map.json, metadata/capital_allocation_map.json, metadata/money_flow_mechanism.json, and financial_interpretation.json
 How to read this table: each row links a money-flow signal to why it matters.
 
 | Flow | Signal | Unit | Why it matters |
@@ -271,7 +335,15 @@ How to read this table: each row links a money-flow signal to why it matters.
 
 **Where money goes:** {money_goes}
 
-This matters because growth is not automatically valuable. The report needs to distinguish operating cash generation from financing, reinvestment, R&D, capex, working capital, buybacks, and debt service.
+Company-specific locked-data anchors:
+
+{money_flow_fact_anchors}
+
+Company-specific question:
+
+- {company_specific_question}
+
+Money-flow interpretation must stay inside these anchors and explicit data gaps. If a revenue engine, cost item, shareholder return, or financing claim is not in the fact-map artifacts, treat it as a manual check rather than a conclusion.
 
 ## 5. Financial Statement Interpretation
 

@@ -67,6 +67,7 @@ pub fn render_run(input: RenderRunInput<'_>) -> Result<()> {
     write_chart_plan(folder, payload)?;
     write_table_plan(folder)?;
     write_section_source_map(folder, payload)?;
+    write_company_specific_artifacts(folder, payload, understanding, interpretation, blueprint)?;
     write_money_flow_map(folder, payload, interpretation)?;
     write_evidence_map(folder, payload, understanding, interpretation, blueprint)?;
     write_lunr_root_cause_report(
@@ -148,6 +149,7 @@ pub fn render_run(input: RenderRunInput<'_>) -> Result<()> {
         blueprint,
         &primary_report,
     )?;
+    let template_status = write_template_leakage_check(folder, &primary_report, payload)?;
     let pdf_status = write_pdf_export_report(folder, payload, lang)?;
     let mut final_status = status.clone();
     final_status.pdf_export_status = pdf_status.clone();
@@ -159,6 +161,13 @@ pub fn render_run(input: RenderRunInput<'_>) -> Result<()> {
         final_status.overall_status = "FAIL".to_string();
         final_status.human_review_required = true;
     } else if accuracy_status.has_warnings && final_status.overall_status == "PASS" {
+        final_status.overall_status = "WARNING".to_string();
+        final_status.human_review_required = true;
+    }
+    if template_status == "FAIL" {
+        final_status.overall_status = "FAIL".to_string();
+        final_status.human_review_required = true;
+    } else if template_status == "WARNING" && final_status.overall_status == "PASS" {
         final_status.overall_status = "WARNING".to_string();
         final_status.human_review_required = true;
     }
@@ -434,6 +443,452 @@ fn metric_value(rows: &[StatementRow], needles: &[&str]) -> Option<f64> {
         } else {
             None
         }
+    })
+}
+
+fn metric_fact(rows: &[StatementRow], field: &str, needles: &[&str]) -> serde_json::Value {
+    if let Some(row) = rows.iter().find(|row| {
+        let metric = row.metric.to_lowercase();
+        row.value.is_some()
+            && needles
+                .iter()
+                .any(|needle| metric.contains(&needle.to_lowercase()))
+    }) {
+        json!({
+            "field": field,
+            "status": "available",
+            "metric": row.metric,
+            "period": row.period,
+            "value": row.value,
+            "unit": row.unit,
+            "evidence_ref": format!("provider_payload.{}", field)
+        })
+    } else {
+        json!({
+            "field": field,
+            "status": "missing",
+            "missing_reason": format!("{field} not present in locked provider payload"),
+            "evidence_ref": serde_json::Value::Null
+        })
+    }
+}
+
+fn fact_status(fact: &serde_json::Value) -> &str {
+    fact.get("status")
+        .and_then(|value| value.as_str())
+        .unwrap_or("missing")
+}
+
+fn fact_value_line(fact: &serde_json::Value) -> Option<String> {
+    if fact_status(fact) != "available" {
+        return None;
+    }
+    let field = fact.get("field")?.as_str().unwrap_or("field");
+    let metric = fact.get("metric")?.as_str().unwrap_or(field);
+    let period = fact.get("period").and_then(|v| v.as_str()).unwrap_or("");
+    let value = fact.get("value").and_then(|v| v.as_f64())?;
+    let unit = fact.get("unit").and_then(|v| v.as_str()).unwrap_or("");
+    Some(format!("{field}: {metric} {period} = {value:.1} {unit}"))
+}
+
+fn available_lines(facts: &[serde_json::Value]) -> Vec<String> {
+    facts.iter().filter_map(fact_value_line).collect()
+}
+
+fn missing_fields_from_facts(facts: &[serde_json::Value]) -> Vec<String> {
+    facts
+        .iter()
+        .filter(|fact| fact_status(fact) != "available")
+        .filter_map(|fact| {
+            fact.get("field")
+                .and_then(|value| value.as_str())
+                .map(|value| value.to_string())
+        })
+        .collect()
+}
+
+fn write_company_specific_artifacts(
+    folder: &RunFolder,
+    payload: &ProviderPayload,
+    understanding: &CompanyUnderstanding,
+    interpretation: &FinancialInterpretation,
+    blueprint: &ResearchBlueprint,
+) -> Result<()> {
+    let revenue = metric_fact(
+        &payload.income_statement,
+        "income_statement.revenue",
+        &["revenue", "total revenue", "营业收入"],
+    );
+    let gross_profit = metric_fact(
+        &payload.income_statement,
+        "income_statement.gross_profit",
+        &["gross profit", "毛利"],
+    );
+    let operating_income = metric_fact(
+        &payload.income_statement,
+        "income_statement.operating_income",
+        &["operating income", "营业利润"],
+    );
+    let net_income = metric_fact(
+        &payload.income_statement,
+        "income_statement.net_income",
+        &["net income", "归母净利润", "净利润"],
+    );
+    let r_and_d = metric_fact(
+        &payload.income_statement,
+        "income_statement.r_and_d",
+        &["research", "r&d", "研发"],
+    );
+    let sga = metric_fact(
+        &payload.income_statement,
+        "income_statement.sga",
+        &["selling", "general", "administrative", "销售", "管理"],
+    );
+    let cogs = metric_fact(
+        &payload.income_statement,
+        "income_statement.cogs_or_equivalent",
+        &["cost of revenue", "cost of goods", "营业成本"],
+    );
+    let ocf = metric_fact(
+        &payload.cash_flow,
+        "cash_flow.operating_cash_flow",
+        &["operating cash flow", "cash from operations", "经营现金流"],
+    );
+    let capex = metric_fact(
+        &payload.cash_flow,
+        "cash_flow.capex",
+        &["capital expenditure", "capex", "资本开支", "购建固定资产"],
+    );
+    let fcf = metric_fact(
+        &payload.cash_flow,
+        "cash_flow.free_cash_flow",
+        &["free cash flow", "fcf", "自由现金流"],
+    );
+    let dividends = metric_fact(
+        &payload.cash_flow,
+        "cash_flow.dividends",
+        &["dividend", "分红"],
+    );
+    let buybacks = metric_fact(
+        &payload.cash_flow,
+        "cash_flow.buybacks",
+        &["repurchase", "buyback", "回购"],
+    );
+    let debt = metric_fact(
+        &payload.balance_sheet,
+        "balance_sheet.debt",
+        &["debt", "borrowings", "有息负债", "负债合计"],
+    );
+    let inventory = metric_fact(
+        &payload.balance_sheet,
+        "balance_sheet.inventory",
+        &["inventory", "存货"],
+    );
+    let receivables = metric_fact(
+        &payload.balance_sheet,
+        "balance_sheet.receivables",
+        &["receivable", "应收"],
+    );
+    let cash = metric_fact(
+        &payload.balance_sheet,
+        "balance_sheet.cash",
+        &["cash", "货币资金"],
+    );
+    let bank_metrics = vec![
+        metric_fact(&payload.balance_sheet, "bank.roe", &["roe", "净资产收益率"]),
+        metric_fact(&payload.balance_sheet, "bank.roa", &["roa", "总资产收益率"]),
+        metric_fact(&payload.balance_sheet, "bank.nim", &["nim", "净息差"]),
+        metric_fact(&payload.balance_sheet, "bank.npl", &["npl", "不良贷款率"]),
+        metric_fact(
+            &payload.balance_sheet,
+            "bank.capital_ratio",
+            &["capital adequacy", "资本充足率"],
+        ),
+    ];
+
+    let key_facts = available_lines(&[
+        revenue.clone(),
+        gross_profit.clone(),
+        operating_income.clone(),
+        net_income.clone(),
+        ocf.clone(),
+        capex.clone(),
+        fcf.clone(),
+        debt.clone(),
+        inventory.clone(),
+        receivables.clone(),
+    ]);
+    let mut key_missing = missing_fields_from_facts(&[
+        revenue.clone(),
+        ocf.clone(),
+        capex.clone(),
+        fcf.clone(),
+        debt.clone(),
+        inventory.clone(),
+        receivables.clone(),
+    ]);
+    key_missing.extend(payload.missing_fields.clone());
+    key_missing.sort();
+    key_missing.dedup();
+
+    let data_limited_reason = if key_missing.is_empty() {
+        String::new()
+    } else {
+        format!("Missing or incomplete fields: {}", key_missing.join(", "))
+    };
+    let confidence = if key_facts.len() >= 5 {
+        "medium"
+    } else if key_facts.len() >= 2 {
+        "low"
+    } else {
+        "data_limited"
+    };
+
+    let company_fact_sheet = json!({
+        "schema_version": SCHEMA_VERSION,
+        "ticker": payload.ticker,
+        "company_name": payload.company_profile.name,
+        "market": payload.market,
+        "currency": payload.company_profile.currency,
+        "provider_source": payload.metadata.source,
+        "business_description": payload.company_profile.description,
+        "sector": payload.company_profile.sector,
+        "industry": payload.company_profile.industry,
+        "research_frame": understanding.correct_research_frame,
+        "not_this": understanding.not_this,
+        "key_available_facts": key_facts,
+        "key_missing_facts": key_missing,
+        "confidence": confidence,
+        "data_limited_reason": data_limited_reason
+    });
+    write_json(
+        &folder.metadata.join("company_fact_sheet.json"),
+        &company_fact_sheet,
+    )?;
+
+    let primary_revenue_sources = if fact_status(&revenue) == "available" {
+        vec![json!({
+            "source": "reported revenue",
+            "fact": revenue.clone(),
+            "mechanism": interpretation.revenue_explanation,
+            "evidence_ref": "provider_payload.income_statement"
+        })]
+    } else {
+        Vec::new()
+    };
+    let revenue_engine_map = json!({
+        "schema_version": SCHEMA_VERSION,
+        "primary_revenue_sources": primary_revenue_sources,
+        "secondary_revenue_sources": understanding.revenue_engines,
+        "revenue_evidence_refs": ["raw/provider_payload.json", "metadata/company_understanding.json", "data/normalized_financials.json"],
+        "unsupported_revenue_claims": interpretation.unsupported_due_to_missing_data,
+        "missing_revenue_fields": missing_fields_from_facts(std::slice::from_ref(&revenue)),
+        "confidence": if fact_status(&revenue) == "available" { "medium" } else { "data_limited" }
+    });
+    write_json(
+        &folder.metadata.join("revenue_engine_map.json"),
+        &revenue_engine_map,
+    )?;
+
+    let cost_facts = vec![
+        cogs.clone(),
+        r_and_d.clone(),
+        sga.clone(),
+        capex.clone(),
+        inventory.clone(),
+        receivables.clone(),
+    ];
+    let cost_structure_map = json!({
+        "schema_version": SCHEMA_VERSION,
+        "major_cost_items": available_lines(&cost_facts),
+        "r_and_d": r_and_d.clone(),
+        "sga": sga.clone(),
+        "cogs_or_equivalent": cogs.clone(),
+        "capex": capex.clone(),
+        "working_capital_items": {
+            "inventory": inventory.clone(),
+            "receivables": receivables.clone()
+        },
+        "cost_evidence_refs": ["raw/provider_payload.json", "data/normalized_financials.json"],
+        "missing_cost_fields": missing_fields_from_facts(&cost_facts),
+        "confidence": if available_lines(&cost_facts).len() >= 2 { "medium" } else { "data_limited" }
+    });
+    write_json(
+        &folder.metadata.join("cost_structure_map.json"),
+        &cost_structure_map,
+    )?;
+
+    let bank_available = available_lines(&bank_metrics);
+    let financing_need = match (
+        ocf.get("value").and_then(|v| v.as_f64()),
+        capex.get("value").and_then(|v| v.as_f64()),
+        fcf.get("value").and_then(|v| v.as_f64()),
+    ) {
+        (_, _, Some(f)) if f < 0.0 => {
+            "free cash flow is negative; financing or cash balance needs review"
+        }
+        (Some(o), Some(c), _) if o + c < 0.0 => {
+            "OCF plus capex is negative; financing or cash balance needs review"
+        }
+        _ => "not indicated by compact locked data",
+    };
+    let capital_facts = vec![
+        ocf.clone(),
+        capex.clone(),
+        fcf.clone(),
+        debt.clone(),
+        dividends.clone(),
+        buybacks.clone(),
+        cash.clone(),
+    ];
+    let capital_allocation_map = json!({
+        "schema_version": SCHEMA_VERSION,
+        "operating_cash_flow": ocf.clone(),
+        "capex": capex.clone(),
+        "free_cash_flow": fcf.clone(),
+        "debt": debt.clone(),
+        "dividends": dividends.clone(),
+        "buybacks": buybacks.clone(),
+        "cash": cash.clone(),
+        "financing_need": financing_need,
+        "bank_or_insurance_specific_capital_metrics": bank_available,
+        "evidence_refs": ["raw/provider_payload.json", "data/normalized_financials.json", "metadata/unit_policy.json"],
+        "missing_fields": missing_fields_from_facts(&capital_facts)
+    });
+    write_json(
+        &folder.metadata.join("capital_allocation_map.json"),
+        &capital_allocation_map,
+    )?;
+
+    let mechanism_gaps = {
+        let mut gaps = blueprint.data_gaps.clone();
+        gaps.extend(payload.missing_fields.clone());
+        gaps.extend(missing_fields_from_facts(&[
+            revenue.clone(),
+            ocf.clone(),
+            capex.clone(),
+            fcf.clone(),
+        ]));
+        gaps.sort();
+        gaps.dedup();
+        gaps
+    };
+    let mut should_not_say = understanding.wrong_frames_to_avoid.clone();
+    should_not_say.extend(understanding.not_this.clone());
+    should_not_say.extend([
+        "Do not claim a revenue engine without revenue_engine_map support.".to_string(),
+        "Do not claim buybacks, dividends, or financing quality without capital_allocation_map support.".to_string(),
+        "Do not use polished generic prose when company_fact_sheet confidence is data_limited.".to_string(),
+    ]);
+    let money_flow_mechanism = json!({
+        "schema_version": SCHEMA_VERSION,
+        "money_source_mechanism": interpretation.where_money_comes_from,
+        "money_use_mechanism": interpretation.where_money_goes,
+        "cash_conversion_mechanism": interpretation.cash_flow_explanation,
+        "capital_intensity": interpretation.capex_or_rnd_pressure,
+        "financing_or_liquidity_pressure": interpretation.debt_and_financing,
+        "company_specific_data_gaps": mechanism_gaps,
+        "next_checks": blueprint.next_checks,
+        "should_not_say": should_not_say,
+        "confidence": confidence,
+        "source_artifacts": [
+            "metadata/company_fact_sheet.json",
+            "metadata/revenue_engine_map.json",
+            "metadata/cost_structure_map.json",
+            "metadata/capital_allocation_map.json"
+        ]
+    });
+    write_json(
+        &folder.metadata.join("money_flow_mechanism.json"),
+        &money_flow_mechanism,
+    )?;
+
+    let questions = build_company_specific_questions(
+        payload,
+        understanding,
+        blueprint,
+        &available_lines(&[
+            revenue.clone(),
+            ocf.clone(),
+            capex.clone(),
+            fcf.clone(),
+            debt.clone(),
+            inventory.clone(),
+            receivables.clone(),
+        ]),
+        &mechanism_gaps,
+    );
+    write_json(
+        &folder.metadata.join("company_specific_questions.json"),
+        &questions,
+    )?;
+    Ok(())
+}
+
+fn build_company_specific_questions(
+    payload: &ProviderPayload,
+    understanding: &CompanyUnderstanding,
+    blueprint: &ResearchBlueprint,
+    available_fact_lines: &[String],
+    gaps: &[String],
+) -> serde_json::Value {
+    let name = if payload.company_profile.name.is_empty() {
+        payload.ticker.as_str()
+    } else {
+        payload.company_profile.name.as_str()
+    };
+    let fact_anchor = available_fact_lines
+        .first()
+        .cloned()
+        .unwrap_or_else(|| "no numeric locked fact available".to_string());
+    let gap_anchor = gaps
+        .first()
+        .cloned()
+        .unwrap_or_else(|| "segment detail / management filing support".to_string());
+    let frame = &understanding.correct_research_frame;
+    let mut key_questions = vec![
+        format!("For {name}, does {fact_anchor} support the {frame} frame, or does it only prove scale?"),
+        format!("Which missing field would most change the {payload_ticker} money-flow read: {gap_anchor}?", payload_ticker = payload.ticker),
+        format!("Does {name}'s cash conversion match its stated frame, or is financing/working capital doing the work?"),
+    ];
+    key_questions.extend(
+        blueprint
+            .key_questions
+            .iter()
+            .filter(|question| !question.trim().is_empty())
+            .take(4)
+            .cloned(),
+    );
+    key_questions.sort();
+    key_questions.dedup();
+    let data_needed = if gaps.is_empty() {
+        vec![
+            "No critical data gap was flagged; verify provider values against filings.".to_string(),
+        ]
+    } else {
+        gaps.iter().take(8).cloned().collect()
+    };
+    let why_each_question_matters = key_questions
+        .iter()
+        .map(|question| {
+            json!({
+                "question": question,
+                "why_it_matters": "It forces the local fallback to tie the report to this company's locked facts, missing fields, and research frame instead of selecting a reusable sector paragraph."
+            })
+        })
+        .collect::<Vec<_>>();
+    json!({
+        "schema_version": SCHEMA_VERSION,
+        "key_questions": key_questions,
+        "data_needed": data_needed,
+        "why_each_question_matters": why_each_question_matters,
+        "related_sections": [
+            "Company Identity",
+            "Business Model",
+            "Money Flow",
+            "Financial Statement Interpretation",
+            "Data Gaps"
+        ]
     })
 }
 
@@ -1116,6 +1571,129 @@ fn write_output_consistency(
     Ok(())
 }
 
+fn sentence_counts(report: &str) -> std::collections::BTreeMap<String, usize> {
+    let mut counts = std::collections::BTreeMap::new();
+    for part in report.split(['.', '!', '?']) {
+        let sentence = part
+            .split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ")
+            .trim()
+            .to_string();
+        if sentence.len() < 48 {
+            continue;
+        }
+        *counts.entry(sentence).or_insert(0) += 1;
+    }
+    counts
+}
+
+fn write_template_leakage_check(
+    folder: &RunFolder,
+    report: &str,
+    payload: &ProviderPayload,
+) -> Result<&'static str> {
+    let allowed_repeated = [
+        "not investment advice",
+        "target price",
+        "buy/sell recommendation",
+        "provider limitations",
+        "source:",
+    ];
+    let repeated_sentences = sentence_counts(report)
+        .into_iter()
+        .filter(|(sentence, count)| {
+            *count > 1
+                && !allowed_repeated
+                    .iter()
+                    .any(|allowed| sentence.to_lowercase().contains(allowed))
+        })
+        .map(|(sentence, count)| json!({"sentence": sentence, "count": count}))
+        .collect::<Vec<_>>();
+    let lower = report.to_lowercase();
+    let generic_phrases = [
+        "money comes from operating revenue when available",
+        "money goes to costs and reinvestment",
+        "cash flow matters",
+        "growth is not automatically valuable",
+        "the report should explain how the company earns money before interpreting valuation",
+    ]
+    .iter()
+    .filter(|phrase| lower.contains(**phrase))
+    .map(|phrase| phrase.to_string())
+    .collect::<Vec<_>>();
+    let company_name = payload.company_profile.name.to_lowercase();
+    let description_terms = payload
+        .company_profile
+        .description
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|term| term.len() >= 5)
+        .take(12)
+        .map(|term| term.to_lowercase())
+        .collect::<Vec<_>>();
+    let company_specific_hits = description_terms
+        .iter()
+        .filter(|term| lower.contains(term.as_str()))
+        .count()
+        + if !company_name.is_empty() && lower.contains(&company_name) {
+            1
+        } else {
+            0
+        };
+    let mut warnings = Vec::new();
+    if !generic_phrases.is_empty() {
+        warnings.push("generic money-flow or business-model phrase detected".to_string());
+    }
+    if company_specific_hits == 0 && !payload.company_profile.description.is_empty() {
+        warnings
+            .push("report does not appear to reuse company-specific description terms".to_string());
+    }
+    if repeated_sentences.len() > 3 {
+        warnings.push("multiple repeated non-disclosure sentences detected".to_string());
+    }
+    let status = if generic_phrases.len() >= 2 {
+        "FAIL"
+    } else if warnings.is_empty() {
+        "PASS"
+    } else {
+        "WARNING"
+    };
+    write_json(
+        &folder.metadata.join("template_leakage_check.json"),
+        &json!({
+            "schema_version": SCHEMA_VERSION,
+            "status": status,
+            "generic_phrases": generic_phrases,
+            "repeated_sentences": repeated_sentences,
+            "company_specific_description_terms_checked": description_terms,
+            "company_specific_hits": company_specific_hits,
+            "warnings": warnings,
+            "allowed_repeated_text": [
+                "legal disclaimer",
+                "provider limitations",
+                "not investment advice",
+                "standard headings",
+                "field labels"
+            ]
+        }),
+    )?;
+    let findings = if warnings.is_empty() {
+        "- No blocking template leakage was detected by the deterministic scan.\n".to_string()
+    } else {
+        warnings
+            .iter()
+            .map(|warning| format!("- {warning}\n"))
+            .collect::<String>()
+    };
+    write_if_changed(
+        &folder.audit.join("template_leakage_report.md"),
+        &format!(
+            "# Template Leakage Report\n\nStatus: {status}\n\n## Findings\n\n{findings}\n## Policy\n\nRepeated legal disclaimers, provider limitations, standard headings, and field labels are allowed. Repeated analytical sentences, frame-label-only identity, and generic money-flow prose are not allowed.\n"
+        ),
+    )?;
+    Ok(status)
+}
+
 pub(crate) struct CoreDataAccuracyStatus {
     pub has_failures: bool,
     pub has_warnings: bool,
@@ -1429,16 +2007,25 @@ fn write_section_source_map(folder: &RunFolder, payload: &ProviderPayload) -> Re
         "ticker": payload.ticker,
         "section_1_report_status": ["metadata/report_status.json", "metadata/ai_usage.json"],
         "section_2_company_identity": [
+            "metadata/company_fact_sheet.json",
             "metadata/company_understanding.json:company_identity",
             "metadata/company_understanding.json:correct_research_frame",
             "metadata/company_understanding.json:not_this"
         ],
         "section_3_business_model": [
+            "metadata/company_fact_sheet.json",
+            "metadata/revenue_engine_map.json",
             "metadata/company_understanding.json:business_model",
             "metadata/company_understanding.json:revenue_engines",
             "metadata/company_understanding.json:profit_pool"
         ],
         "section_4_money_flow": [
+            "metadata/company_fact_sheet.json",
+            "metadata/revenue_engine_map.json",
+            "metadata/cost_structure_map.json",
+            "metadata/capital_allocation_map.json",
+            "metadata/money_flow_mechanism.json",
+            "metadata/company_specific_questions.json",
             "metadata/financial_interpretation.json:where_money_comes_from",
             "metadata/financial_interpretation.json:where_money_goes"
         ],

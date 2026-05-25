@@ -174,6 +174,79 @@ fn money_flow_map_and_output_consistency_are_generated() {
 }
 
 #[test]
+fn company_specific_analysis_artifacts_are_generated() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("company_fact_sheet.json"));
+    assert!(source.contains("revenue_engine_map.json"));
+    assert!(source.contains("cost_structure_map.json"));
+    assert!(source.contains("capital_allocation_map.json"));
+    assert!(source.contains("money_flow_mechanism.json"));
+    assert!(source.contains("company_specific_questions.json"));
+}
+
+#[test]
+fn local_fallback_uses_company_fact_sheet_and_money_flow_mechanism() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("write_company_specific_artifacts"));
+    assert!(source.contains("source_artifacts"));
+    assert!(source.contains("metadata/company_fact_sheet.json"));
+    assert!(source.contains("metadata/money_flow_mechanism.json"));
+}
+
+#[test]
+fn money_flow_not_only_sector_template() {
+    let report_source = include_str!("markdown.rs");
+    assert!(report_source.contains("Company-specific locked-data anchors"));
+    assert!(report_source.contains("metadata/revenue_engine_map.json"));
+    assert!(report_source.contains("metadata/capital_allocation_map.json"));
+    assert!(!report_source.contains("growth is not automatically valuable"));
+}
+
+#[test]
+fn repeated_sentence_patterns_are_flagged() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("template_leakage_check.json"));
+    assert!(source.contains("write_template_leakage_check"));
+    assert!(source.contains("generic_phrases"));
+    assert!(source.contains("repeated_sentences"));
+}
+
+#[test]
+fn aapl_and_googl_money_flow_not_near_identical() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("company_specific_description_terms_checked"));
+    assert!(source.contains("company_specific_hits"));
+    assert!(source.contains("company_specific_data_gaps"));
+}
+
+#[test]
+fn cat_and_isrg_money_flow_not_near_identical() {
+    let source = include_str!("markdown.rs");
+    assert!(source.contains("Company-specific question"));
+    assert!(source.contains("Working-capital check"));
+    assert!(source.contains("Debt / balance-sheet pressure"));
+}
+
+#[test]
+fn data_limited_company_does_not_get_polished_generic_analysis() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("data_limited_reason"));
+    assert!(source.contains("Do not use polished generic prose"));
+    assert!(source.contains("confidence\": confidence"));
+}
+
+#[test]
+fn template_leakage_report_detects_generic_phrases() {
+    let source = include_str!("renderer.rs");
+    assert!(
+        source.contains("audit/template_leakage_report.md")
+            || source.contains("template_leakage_report.md")
+    );
+    assert!(source.contains("money comes from operating revenue when available"));
+    assert!(source.contains("frame-label-only identity"));
+}
+
+#[test]
 fn product_quality_score_includes_ai_money_flow_and_evidence_dimensions() {
     let source = include_str!("renderer.rs");
     assert!(source.contains("ai_provenance_score"));
