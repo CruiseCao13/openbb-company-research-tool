@@ -1,4 +1,6 @@
 import { type ReactNode, useState } from "react";
+import { sankey, sankeyLinkHorizontal, type SankeyGraph } from "d3-sankey";
+import { useTranslation } from "react-i18next";
 import { artifactImageSrc, openArtifact, revealInFolder } from "../lib/tauri";
 import type { RunDetail, RunDetailStatus } from "../types/app";
 
@@ -72,6 +74,149 @@ function DetailSection({
       </div>
       {children}
     </section>
+  );
+}
+
+type SankeyNodeDatum = {
+  name: string;
+};
+
+type SankeyLinkDatum = {
+  source: number;
+  target: number;
+  value: number;
+  label: string;
+};
+
+function compactText(value: string | null | undefined, fallback: string): string {
+  const text = value?.trim();
+  if (!text) {
+    return fallback;
+  }
+  return text.length > 92 ? `${text.slice(0, 89)}...` : text;
+}
+
+function buildMoneyFlowGraph(detail: RunDetail): SankeyGraph<SankeyNodeDatum, SankeyLinkDatum> | null {
+  const sourceText = detail.financial_interpretation.where_money_comes_from;
+  const useText = detail.financial_interpretation.where_money_goes;
+  const cashText = detail.financial_interpretation.cash_flow_explanation;
+  const debtText = detail.financial_interpretation.debt_and_financing;
+  const hasMechanism = Boolean(sourceText || useText || cashText || debtText);
+
+  if (!hasMechanism) {
+    return null;
+  }
+
+  return {
+    nodes: [
+      { name: "Money source" },
+      { name: "Operating engine" },
+      { name: "Cash uses" },
+      { name: "Financing / liquidity" },
+      { name: "Data gaps" }
+    ],
+    links: [
+      {
+        source: 0,
+        target: 1,
+        value: 1,
+        label: compactText(sourceText, "Revenue or operating source not specified.")
+      },
+      {
+        source: 1,
+        target: 2,
+        value: 1,
+        label: compactText(useText, "Cash uses not specified.")
+      },
+      {
+        source: 1,
+        target: 3,
+        value: debtText ? 1 : 0.45,
+        label: compactText(debtText, "Financing pressure not specified.")
+      },
+      {
+        source: 1,
+        target: 4,
+        value: detail.blueprint.data_gaps.length || detail.provider.missing_fields.length ? 0.75 : 0.25,
+        label: compactText([...detail.blueprint.data_gaps, ...detail.provider.missing_fields].join("; "), "No explicit data gap reported.")
+      }
+    ]
+  };
+}
+
+function MoneyFlowSankey({ detail }: { detail: RunDetail }): JSX.Element {
+  const { t } = useTranslation();
+  const graph = buildMoneyFlowGraph(detail);
+
+  if (!graph) {
+    return (
+      <DetailSection badge="DATA_GAP" title="Money Flow Sankey">
+        <div className="sankey-empty">
+          <strong>{t("moneyFlow")}</strong>
+          <span>Money-flow mechanism fields are not available for this run.</span>
+        </div>
+      </DetailSection>
+    );
+  }
+
+  const width = 720;
+  const height = 300;
+  const layout = sankey<SankeyNodeDatum, SankeyLinkDatum>()
+    .nodeWidth(14)
+    .nodePadding(22)
+    .extent([
+      [16, 18],
+      [width - 18, height - 18]
+    ]);
+  const rendered = layout({
+    nodes: graph.nodes.map((node) => ({ ...node })),
+    links: graph.links.filter((link) => link.value > 0).map((link) => ({ ...link }))
+  });
+  const path = sankeyLinkHorizontal<SankeyNodeDatum, SankeyLinkDatum>();
+
+  return (
+    <DetailSection badge="UNKNOWN" title="D3 Money Flow Sankey">
+      <div className="sankey-panel">
+        <svg className="sankey-svg" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Qualitative money flow Sankey">
+          <defs>
+            <linearGradient id="sankey-link-gradient" x1="0%" x2="100%" y1="0%" y2="0%">
+              <stop offset="0%" stopColor="rgba(143, 211, 255, 0.72)" />
+              <stop offset="100%" stopColor="rgba(52, 211, 153, 0.5)" />
+            </linearGradient>
+          </defs>
+          {rendered.links.map((link, index) => (
+            <path
+              className="sankey-link"
+              d={path(link) ?? undefined}
+              key={`${link.index ?? index}-${link.label}`}
+              strokeWidth={Math.max(8, link.width ?? 8)}
+            >
+              <title>{link.label}</title>
+            </path>
+          ))}
+          {rendered.nodes.map((node) => (
+            <g className="sankey-node" key={node.name}>
+              <rect height={(node.y1 ?? 0) - (node.y0 ?? 0)} rx="6" width={(node.x1 ?? 0) - (node.x0 ?? 0)} x={node.x0} y={node.y0} />
+              <text
+                textAnchor={(node.x0 ?? 0) < width / 2 ? "start" : "end"}
+                x={(node.x0 ?? 0) < width / 2 ? (node.x1 ?? 0) + 10 : (node.x0 ?? 0) - 10}
+                y={((node.y0 ?? 0) + (node.y1 ?? 0)) / 2}
+              >
+                {node.name}
+              </text>
+            </g>
+          ))}
+        </svg>
+        <div className="sankey-sidecar">
+          <span className="subsection-title">{t("limitation")}</span>
+          <p>{t("qualitativeSankey")}</p>
+          <span className="subsection-title">{t("source")}</span>
+          <p>metadata/financial_interpretation.json + metadata/blueprint/data gaps loaded through Tauri IPC.</p>
+          <span className="subsection-title">{t("nextCheck")}</span>
+          <p>{detail.blueprint.next_checks[0] ?? "Open the report and validator audit before using this view for review."}</p>
+        </div>
+      </div>
+    </DetailSection>
   );
 }
 
@@ -308,6 +453,7 @@ function chartLimitation(chart: RunDetail["charts"][number]): string {
 }
 
 function ChartGrid({ detail }: { detail: RunDetail }): JSX.Element {
+  const { t } = useTranslation();
   const [message, setMessage] = useState<string>("Chart grid uses existing artifacts only.");
   const [isBusy, setIsBusy] = useState<string | null>(null);
 
@@ -330,51 +476,57 @@ function ChartGrid({ detail }: { detail: RunDetail }): JSX.Element {
 
   if (detail.charts.length === 0) {
     return (
-      <DetailSection badge="DATA_GAP" title="Charts">
-        <div className="chart-empty-state">
-          <strong>No chart manifest found for this run.</strong>
-          <span>The studio will only display existing chart artifacts; it does not generate charts.</span>
-        </div>
-      </DetailSection>
+      <>
+        <MoneyFlowSankey detail={detail} />
+        <DetailSection badge="DATA_GAP" title={t("charts")}>
+          <div className="chart-empty-state">
+            <strong>No chart manifest found for this run.</strong>
+            <span>The studio will only display existing chart artifacts; it does not generate charts.</span>
+          </div>
+        </DetailSection>
+      </>
     );
   }
 
   return (
-    <DetailSection badge="UNKNOWN" title={`Charts (${detail.charts.length})`}>
-      <div className="chart-grid">
-        {detail.charts.map((chart) => (
-          <article className="chart-card" key={`${chart.title}-${chart.image_path ?? "missing"}`}>
-            <div className="chart-card__header">
-              <strong>{chart.title}</strong>
-              <StatusBadge variant={chart.image_exists ? statusToBadge(chart.status) : "WARNING"} />
-            </div>
-            {chart.image_exists && chart.image_path ? (
-              <img alt={`${chart.title} chart preview`} className="chart-preview" src={artifactImageSrc(chart.image_path)} />
-            ) : (
-              <div className="chart-missing">Chart image missing, manifest available.</div>
-            )}
-            <dl className="chart-facts">
-              <KeyValueRow label="Source" value={chart.source ?? "unknown"} />
-              <KeyValueRow label="Look at" value={chart.what_to_look_at ?? "not specified"} />
-              <KeyValueRow label="Means" value={chart.what_it_means ?? "not specified"} />
-              <KeyValueRow label="Do not overread" value={chartLimitation(chart)} />
-              <KeyValueRow label="Next check" value={chart.next_check ?? "not specified"} />
-            </dl>
-            {chart.why_selected ? <p className="detail-copy">{chart.why_selected}</p> : null}
-            <button
-              className="artifact-button chart-open-button"
-              disabled={!chart.image_exists || !chart.image_path || isBusy !== null}
-              onClick={() => void handleOpen(chart.title, chart.image_path)}
-              type="button"
-            >
-              <span>Open Chart</span>
-              <small>{chart.image_exists ? "open" : "missing"}</small>
-            </button>
-          </article>
-        ))}
-      </div>
-      <p className="artifact-message">{message}</p>
-    </DetailSection>
+    <>
+      <MoneyFlowSankey detail={detail} />
+      <DetailSection badge="UNKNOWN" title={`${t("charts")} (${detail.charts.length})`}>
+        <div className="chart-gallery">
+          {detail.charts.map((chart) => (
+            <article className="chart-card" key={`${chart.title}-${chart.image_path ?? "missing"}`}>
+              <div className="chart-card__header">
+                <strong>{chart.title}</strong>
+                <StatusBadge variant={chart.image_exists ? statusToBadge(chart.status) : "WARNING"} />
+              </div>
+              {chart.image_exists && chart.image_path ? (
+                <img alt={`${chart.title} chart preview`} className="chart-preview" src={artifactImageSrc(chart.image_path)} />
+              ) : (
+                <div className="chart-missing">Chart image missing, manifest available.</div>
+              )}
+              <dl className="chart-facts">
+                <KeyValueRow label={t("source")} value={chart.source ?? "unknown"} />
+                <KeyValueRow label="Look at" value={chart.what_to_look_at ?? "not specified"} />
+                <KeyValueRow label="Means" value={chart.what_it_means ?? "not specified"} />
+                <KeyValueRow label="Do not overread" value={chartLimitation(chart)} />
+                <KeyValueRow label={t("nextCheck")} value={chart.next_check ?? "not specified"} />
+              </dl>
+              {chart.why_selected ? <p className="detail-copy">{chart.why_selected}</p> : null}
+              <button
+                className="artifact-button chart-open-button"
+                disabled={!chart.image_exists || !chart.image_path || isBusy !== null}
+                onClick={() => void handleOpen(chart.title, chart.image_path)}
+                type="button"
+              >
+                <span>Open Chart</span>
+                <small>{chart.image_exists ? "open" : "missing"}</small>
+              </button>
+            </article>
+          ))}
+        </div>
+        <p className="artifact-message">{message}</p>
+      </DetailSection>
+    </>
   );
 }
 

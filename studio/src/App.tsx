@@ -1,7 +1,9 @@
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type CSSProperties, type ReactNode, useEffect, useMemo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { useTranslation } from "react-i18next";
 import { AppInfoCard } from "./components/AppInfoCard";
 import { RunDetailPanel, type RunDetailTab } from "./components/RunDetailPanel";
+import i18n, { type StudioLanguage } from "./i18n";
 import {
   getAppInfo,
   listRuns,
@@ -40,16 +42,19 @@ type BadgeVariant =
   | "CACHE"
   | "UNKNOWN";
 
-type StudioMode = "runs" | "matrix";
+type StudioMode = "landing" | "runs" | "matrix";
+type StudioDensity = "compact" | "comfortable";
+type StudioMotion = "on" | "off";
+type StudioGlass = "low" | "medium" | "high";
 type TrainingRunsStatus = "idle" | "loading" | "ready" | "empty" | "failed" | "browser-preview";
 type MatrixStatus = "idle" | "loading" | "ready" | "empty" | "failed" | "browser-preview";
 
-const detailTabs: Array<{ id: RunDetailTab; label: string }> = [
-  { id: "summary", label: "Summary" },
-  { id: "charts", label: "Charts" },
-  { id: "audit", label: "Audit Trail" },
-  { id: "gaps", label: "Data Gaps" },
-  { id: "artifacts", label: "Artifacts" }
+const detailTabs: Array<{ id: RunDetailTab; labelKey: string }> = [
+  { id: "summary", labelKey: "summary" },
+  { id: "charts", labelKey: "charts" },
+  { id: "audit", labelKey: "auditTrail" },
+  { id: "gaps", labelKey: "dataGaps" },
+  { id: "artifacts", labelKey: "artifacts" }
 ];
 
 function StatusBadge({ variant }: { variant: BadgeVariant }): JSX.Element {
@@ -157,6 +162,270 @@ function artifactCount(detail: RunDetail | null): { available: number; total: nu
   };
 }
 
+function StudioTopBar({
+  density,
+  language,
+  mode,
+  motion,
+  onOpenSettings,
+  onQuickSearch,
+  onSetDensity,
+  onSetLanguage,
+  quickSearch
+}: {
+  density: StudioDensity;
+  language: StudioLanguage;
+  mode: StudioMode;
+  motion: StudioMotion;
+  onOpenSettings: () => void;
+  onQuickSearch: (value: string) => void;
+  onSetDensity: (density: StudioDensity) => void;
+  onSetLanguage: (language: StudioLanguage) => void;
+  quickSearch: string;
+}): JSX.Element {
+  const { t } = useTranslation();
+
+  return (
+    <header className="studio-topbar" aria-label="Studio controls">
+      <div className="topbar-mode">
+        <span>{t("currentMode")}</span>
+        <strong>{mode === "landing" ? "Landing" : mode === "matrix" ? t("matrix") : t("runs")}</strong>
+      </div>
+      <label className="quick-search">
+        <span>{t("quickSearch")}</span>
+        <input
+          onChange={(event) => onQuickSearch(event.target.value)}
+          placeholder="AAPL / RKLB / 600519"
+          type="search"
+          value={quickSearch}
+        />
+      </label>
+      <div className="topbar-controls">
+        <button
+          className={language === "en" ? "topbar-chip topbar-chip--active" : "topbar-chip"}
+          onClick={() => onSetLanguage("en")}
+          type="button"
+        >
+          EN
+        </button>
+        <button
+          className={language === "zh" ? "topbar-chip topbar-chip--active" : "topbar-chip"}
+          onClick={() => onSetLanguage("zh")}
+          type="button"
+        >
+          中文
+        </button>
+        <button
+          className="topbar-chip"
+          onClick={() => onSetDensity(density === "compact" ? "comfortable" : "compact")}
+          type="button"
+        >
+          {density === "compact" ? t("compact") : t("comfortable")}
+        </button>
+        <span className="topbar-chip topbar-chip--readout">{motion === "on" ? t("motion") : `${t("motion")} ${t("off")}`}</span>
+        <button className="topbar-chip topbar-chip--settings" onClick={onOpenSettings} type="button">
+          {t("settings")}
+        </button>
+      </div>
+    </header>
+  );
+}
+
+function LandingHero({
+  onEnter,
+  onOpenLatest
+}: {
+  onEnter: () => void;
+  onOpenLatest: () => void;
+}): JSX.Element {
+  const { t } = useTranslation();
+
+  return (
+    <section className="landing-hero" aria-label="Studio landing">
+      <div className="hero-orbit" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+      </div>
+      <div className="landing-hero__content">
+        <p className="eyebrow">v6 Tauri Research Studio</p>
+        <h2>{t("heroTitle")}</h2>
+        <p>{t("heroSubtitle")}</p>
+        <div className="landing-hero__actions">
+          <button className="hero-cta hero-cta--primary" onClick={onEnter} type="button">
+            {t("enterStudio")}
+          </button>
+          <button className="hero-cta" onClick={onOpenLatest} type="button">
+            {t("openLatestRun")}
+          </button>
+        </div>
+      </div>
+      <div className="landing-hero__terminal" aria-label="Research terminal preview">
+        <div><span>01</span><strong>Trace the business model</strong></div>
+        <div><span>02</span><strong>Verify locked numbers</strong></div>
+        <div><span>03</span><strong>Follow the cash conversion</strong></div>
+        <div><span>04</span><strong>Inspect provenance and gaps</strong></div>
+      </div>
+    </section>
+  );
+}
+
+function SettingsCenter({
+  defaultLanding,
+  density,
+  fontScale,
+  glass,
+  language,
+  motion,
+  onClose,
+  onDefaultLanding,
+  onDensity,
+  onFontScale,
+  onGlass,
+  onLanguage,
+  onMotion,
+  onWarningsFirst,
+  open,
+  warningsFirst
+}: {
+  defaultLanding: boolean;
+  density: StudioDensity;
+  fontScale: number;
+  glass: StudioGlass;
+  language: StudioLanguage;
+  motion: StudioMotion;
+  onClose: () => void;
+  onDefaultLanding: (value: boolean) => void;
+  onDensity: (value: StudioDensity) => void;
+  onFontScale: (value: number) => void;
+  onGlass: (value: StudioGlass) => void;
+  onLanguage: (value: StudioLanguage) => void;
+  onMotion: (value: StudioMotion) => void;
+  onWarningsFirst: (value: boolean) => void;
+  open: boolean;
+  warningsFirst: boolean;
+}): JSX.Element | null {
+  const { t } = useTranslation();
+  if (!open) {
+    return null;
+  }
+
+  return (
+    <div className="settings-backdrop" role="presentation">
+      <aside className="settings-center" aria-label="Settings center">
+        <div className="settings-center__header">
+          <div>
+            <p className="eyebrow">Studio Control</p>
+            <h2>{t("settings")}</h2>
+          </div>
+          <button className="topbar-chip" onClick={onClose} type="button">
+            Close
+          </button>
+        </div>
+        <div className="settings-grid">
+          <SettingGroup title={t("language")}>
+            <SegmentedChoice
+              options={[
+                ["en", "English"],
+                ["zh", "中文"]
+              ]}
+              value={language}
+              onChange={(value) => onLanguage(value as StudioLanguage)}
+            />
+          </SettingGroup>
+          <SettingGroup title={t("density")}>
+            <SegmentedChoice
+              options={[
+                ["compact", t("compact")],
+                ["comfortable", t("comfortable")]
+              ]}
+              value={density}
+              onChange={(value) => onDensity(value as StudioDensity)}
+            />
+          </SettingGroup>
+          <SettingGroup title={t("motion")}>
+            <SegmentedChoice
+              options={[
+                ["on", t("on")],
+                ["off", t("off")]
+              ]}
+              value={motion}
+              onChange={(value) => onMotion(value as StudioMotion)}
+            />
+          </SettingGroup>
+          <SettingGroup title={t("glass")}>
+            <SegmentedChoice
+              options={[
+                ["low", t("low")],
+                ["medium", t("medium")],
+                ["high", t("high")]
+              ]}
+              value={glass}
+              onChange={(value) => onGlass(value as StudioGlass)}
+            />
+          </SettingGroup>
+          <SettingGroup title={t("fontScale")}>
+            <input
+              max="1.12"
+              min="0.92"
+              onChange={(event) => onFontScale(Number(event.target.value))}
+              step="0.02"
+              type="range"
+              value={fontScale}
+            />
+          </SettingGroup>
+          <SettingGroup title={t("warningsFirst")}>
+            <label className="settings-toggle">
+              <input checked={warningsFirst} onChange={(event) => onWarningsFirst(event.target.checked)} type="checkbox" />
+              <span>{warningsFirst ? t("on") : t("off")}</span>
+            </label>
+          </SettingGroup>
+          <SettingGroup title={t("defaultLanding")}>
+            <label className="settings-toggle">
+              <input checked={defaultLanding} onChange={(event) => onDefaultLanding(event.target.checked)} type="checkbox" />
+              <span>{defaultLanding ? t("on") : t("off")}</span>
+            </label>
+          </SettingGroup>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+function SettingGroup({ children, title }: { children: ReactNode; title: string }): JSX.Element {
+  return (
+    <section className="setting-group">
+      <span>{title}</span>
+      {children}
+    </section>
+  );
+}
+
+function SegmentedChoice({
+  onChange,
+  options,
+  value
+}: {
+  onChange: (value: string) => void;
+  options: Array<[string, string]>;
+  value: string;
+}): JSX.Element {
+  return (
+    <div className="segmented-choice">
+      {options.map(([optionValue, label]) => (
+        <button
+          className={value === optionValue ? "segmented-choice__button segmented-choice__button--active" : "segmented-choice__button"}
+          key={optionValue}
+          onClick={() => onChange(optionValue)}
+          type="button"
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function Sidebar({
   error,
   mode,
@@ -178,12 +447,13 @@ function Sidebar({
   search: string;
   selectedRunKey: string | null;
 }): JSX.Element {
+  const { t } = useTranslation();
   return (
     <aside className="nav-rail" aria-label="Studio navigation">
       <div className="brand-block">
         <p className="eyebrow">v6 desktop studio</p>
-        <h1>Research Studio</h1>
-        <span>Browse v5 run folders</span>
+        <h1>{t("studioTitle")}</h1>
+        <span>{t("browseRuns")}</span>
       </div>
 
       <div className="mode-switch" role="tablist" aria-label="Workspace mode">
@@ -192,19 +462,19 @@ function Sidebar({
           onClick={() => onChangeMode("runs")}
           type="button"
         >
-          Runs
+          {t("runs")}
         </button>
         <button
           className={mode === "matrix" ? "mode-switch__button mode-switch__button--active" : "mode-switch__button"}
           onClick={() => onChangeMode("matrix")}
           type="button"
         >
-          Matrix
+          {t("matrix")}
         </button>
       </div>
 
       <label className="run-search">
-        <span>Filter runs</span>
+        <span>{t("filterRuns")}</span>
         <input
           onChange={(event) => onSearch(event.target.value)}
           placeholder="Ticker or run id"
@@ -290,17 +560,18 @@ function RunList({
 }
 
 function PrimaryActionBar({ detail }: { detail: RunDetail | null }): JSX.Element {
-  const [message, setMessage] = useState<string>("Choose an artifact action.");
+  const { t } = useTranslation();
+  const [message, setMessage] = useState<string>(t("chooseArtifact"));
   const [busyLabel, setBusyLabel] = useState<string | null>(null);
 
   const actions = [
-    { label: "Open Report", path: detail?.artifacts.markdown_report_path ?? null, action: "open" as const },
-    { label: "Open Dashboard", path: detail?.artifacts.dashboard_path ?? null, action: "open" as const },
-    { label: "Open PDF", path: detail?.artifacts.pdf_report_path ?? null, action: "open" as const },
-    { label: "Reveal Folder", path: detail?.run_folder ?? null, action: "reveal" as const },
-    { label: "Open AI Usage", path: detail?.artifacts.ai_usage_path ?? null, action: "open" as const },
-    { label: "Open Validator Audit", path: detail?.artifacts.validator_report_path ?? null, action: "open" as const },
-    { label: "Open Provider Payload", path: detail?.artifacts.provider_payload_path ?? null, action: "open" as const }
+    { label: t("openReport"), path: detail?.artifacts.markdown_report_path ?? null, action: "open" as const },
+    { label: t("openDashboard"), path: detail?.artifacts.dashboard_path ?? null, action: "open" as const },
+    { label: t("openPdf"), path: detail?.artifacts.pdf_report_path ?? null, action: "open" as const },
+    { label: t("revealFolder"), path: detail?.run_folder ?? null, action: "reveal" as const },
+    { label: t("openAiUsage"), path: detail?.artifacts.ai_usage_path ?? null, action: "open" as const },
+    { label: t("openValidator"), path: detail?.artifacts.validator_report_path ?? null, action: "open" as const },
+    { label: t("openProvider"), path: detail?.artifacts.provider_payload_path ?? null, action: "open" as const }
   ];
 
   async function handleAction(label: string, path: string | null, action: "open" | "reveal"): Promise<void> {
@@ -353,6 +624,7 @@ function RunWorkspaceHeader({
   ipcMessage: string;
   selectedRun: RunSummary | null;
 }): JSX.Element {
+  const { t } = useTranslation();
   const warnings = collectWarnings(detail);
   const chartCount = detail?.charts.length ?? 0;
   const artifacts = artifactCount(detail);
@@ -360,12 +632,12 @@ function RunWorkspaceHeader({
   return (
     <header className="workspace-hero">
       <div className="workspace-hero__identity">
-        <p className="eyebrow">Report Workspace</p>
+        <p className="eyebrow">{t("reportWorkspace")}</p>
         <div className="workspace-hero__title-row">
-          <h2>{selectedRun?.ticker ?? "No run selected"}</h2>
+          <h2>{selectedRun?.ticker ?? t("noRunSelected")}</h2>
           {detail?.company.name ? <span>{detail.company.name}</span> : null}
         </div>
-        <p className="mono-path">{selectedRun ? selectedRun.run_id : "Select a run from the rail"}</p>
+        <p className="mono-path">{selectedRun ? selectedRun.run_id : t("selectRun")}</p>
       </div>
       <div className="workspace-hero__signals">
         <StatusBadge variant={detailStatus === "ready" ? statusToBadge(detail?.status.overall_status ?? null) : "UNKNOWN"} />
@@ -398,6 +670,7 @@ function DetailTabs({
   onChange: (tab: RunDetailTab) => void;
   warningCount: number;
 }): JSX.Element {
+  const { t } = useTranslation();
   function tabMeta(id: RunDetailTab): string | null {
     if (id === "charts") {
       return String(chartCount);
@@ -417,7 +690,7 @@ function DetailTabs({
           onClick={() => onChange(tab.id)}
           type="button"
         >
-          <span>{tab.label}</span>
+          <span>{t(tab.labelKey)}</span>
           {tabMeta(tab.id) ? <small>{tabMeta(tab.id)}</small> : null}
         </button>
       ))}
@@ -432,6 +705,7 @@ function DiagnosticsDrawer({
   detail: RunDetail | null;
   status: RunDetailStatus;
 }): JSX.Element {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState<boolean>(false);
   const warnings = collectWarnings(detail);
   const dataGapCount = countDataGaps(detail);
@@ -440,7 +714,7 @@ function DiagnosticsDrawer({
   return (
     <aside className={`diagnostics-drawer${expanded ? " diagnostics-drawer--expanded" : ""}`} aria-label="Diagnostics drawer">
       <button className="diagnostics-strip" onClick={() => setExpanded((current) => !current)} type="button">
-        <span>Diagnostics</span>
+        <span>{t("diagnostics")}</span>
         <StatusBadge variant={detail?.ai_usage.external_ai_used ? "EXTERNAL_AI" : detail?.ai_usage.local_mock_used ? "LOCAL_MOCK" : "UNKNOWN"} />
         <span>{detail?.provider.provider ?? "provider unknown"}</span>
         <span>warnings {warnings.length}</span>
@@ -448,7 +722,7 @@ function DiagnosticsDrawer({
         {detail?.status.human_review_required || detail?.self_review.human_review_required ? (
           <StatusBadge variant="HUMAN_REVIEW" />
         ) : null}
-        <small>{expanded ? "Collapse" : "Expand"}</small>
+        <small>{expanded ? t("collapse") : t("expand")}</small>
       </button>
       {expanded ? (
         <div className="diagnostics-panel">
@@ -457,7 +731,7 @@ function DiagnosticsDrawer({
           ) : (
             <>
               <section>
-                <h3>AI Provenance</h3>
+                <h3>{t("aiProvenance")}</h3>
                 <dl className="diagnostic-kv">
                   <div><dt>Source</dt><dd>{detail.ai_usage.source ?? "unknown"}</dd></div>
                   <div><dt>External AI</dt><dd>{booleanLabel(detail.ai_usage.external_ai_used)}</dd></div>
@@ -468,7 +742,7 @@ function DiagnosticsDrawer({
                 </dl>
               </section>
               <section>
-                <h3>Provider</h3>
+                <h3>{t("provider")}</h3>
                 <dl className="diagnostic-kv">
                   <div><dt>Provider</dt><dd>{detail.provider.provider ?? "unknown"}</dd></div>
                   <div><dt>Source</dt><dd>{detail.provider.source ?? "unknown"}</dd></div>
@@ -479,7 +753,7 @@ function DiagnosticsDrawer({
                 </dl>
               </section>
               <section>
-                <h3>Data Gaps & Warnings</h3>
+                <h3>{t("dataGaps")} & {t("warnings")}</h3>
                 {warnings.length === 0 ? (
                   <p className="muted-copy">No data gaps, missing fields, or warnings reported.</p>
                 ) : (
@@ -558,6 +832,7 @@ function RegressionMatrixHub({
   selectedTrainingRunId: string | null;
   trainingStatus: TrainingRunsStatus;
 }): JSX.Element {
+  const { t } = useTranslation();
   if (trainingStatus === "loading") {
     return <EmptyState title="Loading training runs" detail="Scanning reports/training_runs through Tauri IPC." />;
   }
@@ -581,11 +856,11 @@ function RegressionMatrixHub({
       <header className="matrix-hero">
         <div>
           <p className="eyebrow">Quality control board</p>
-          <h2>Regression Matrix Hub</h2>
+          <h2>{t("regressionHub")}</h2>
           <p>Read existing training run quality matrices. No training or external API calls are performed.</p>
         </div>
         <label className="training-selector">
-          <span>Training run</span>
+          <span>{t("trainingRun")}</span>
           <select
             aria-label="Training run selector"
             onChange={(event) => onSelectRun(event.target.value)}
@@ -722,11 +997,68 @@ function SimpleList({ emptyLabel, items }: { emptyLabel: string; items: string[]
   );
 }
 
-function AppShell({ children }: { children: ReactNode }): JSX.Element {
-  return <main className="studio-shell">{children}</main>;
+function InsightRail({ detail, warningsFirst }: { detail: RunDetail | null; warningsFirst: boolean }): JSX.Element {
+  const { t } = useTranslation();
+  const warnings = collectWarnings(detail);
+  const warningBlock = (
+    <section className="insight-card insight-card--warning">
+      <div className="card-header">
+        <span className="card-label">{t("warnings")}</span>
+        <StatusBadge variant={warnings.length > 0 ? "WARNING" : "PASS"} />
+      </div>
+      <SimpleList emptyLabel="No warnings for the selected run." items={warnings} />
+    </section>
+  );
+  const cards = [
+    <section className="insight-card" key="identity">
+      <span className="card-label">{t("companyIdentity")}</span>
+      <strong>{detail?.company.name ?? detail?.ticker ?? "No run selected"}</strong>
+      <p>{detail?.company.frame ?? "Select a run to inspect company identity."}</p>
+    </section>,
+    <section className="insight-card" key="money">
+      <span className="card-label">{t("moneyFlow")}</span>
+      <p>{detail?.financial_interpretation.where_money_comes_from ?? "Money source mechanism will appear here."}</p>
+      <p>{detail?.financial_interpretation.where_money_goes ?? "Cash-use mechanism will appear here."}</p>
+    </section>,
+    warningBlock,
+    <section className="insight-card" key="blueprint">
+      <span className="card-label">{t("blueprint")}</span>
+      <p>{detail?.blueprint.core_thesis ?? "Research blueprint summary will appear after loading a run."}</p>
+      <SimpleList emptyLabel="No next checks loaded." items={detail?.blueprint.next_checks ?? []} />
+    </section>
+  ];
+
+  return <aside className="insight-rail" aria-label="Run insights">{warningsFirst ? [warningBlock, ...cards.filter((card) => card !== warningBlock)] : cards}</aside>;
+}
+
+function AppShell({
+  children,
+  density,
+  fontScale,
+  glass,
+  motion
+}: {
+  children: ReactNode;
+  density: StudioDensity;
+  fontScale: number;
+  glass: StudioGlass;
+  motion: StudioMotion;
+}): JSX.Element {
+  return (
+    <main
+      className="studio-shell"
+      data-density={density}
+      data-glass={glass}
+      data-motion={motion}
+      style={{ "--studio-font-scale": fontScale } as CSSProperties}
+    >
+      {children}
+    </main>
+  );
 }
 
 export function App(): JSX.Element {
+  const { t } = useTranslation();
   const [ipcMessage, setIpcMessage] = useState<string>("IPC not checked");
   const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
   const [appInfoStatus, setAppInfoStatus] = useState<AppInfoStatus>("loading");
@@ -739,8 +1071,16 @@ export function App(): JSX.Element {
   const [activeRunDetail, setActiveRunDetail] = useState<RunDetail | null>(null);
   const [runDetailStatus, setRunDetailStatus] = useState<RunDetailStatus>("idle");
   const [runDetailError, setRunDetailError] = useState<string | null>(null);
-  const [mode, setMode] = useState<StudioMode>("runs");
-  const [detailTab, setDetailTab] = useState<RunDetailTab>("summary");
+  const [mode, setMode] = useState<StudioMode>("landing");
+  const [detailTab, setDetailTab] = useState<RunDetailTab>("charts");
+  const [language, setLanguage] = useState<StudioLanguage>("en");
+  const [density, setDensity] = useState<StudioDensity>("comfortable");
+  const [motion, setMotion] = useState<StudioMotion>("on");
+  const [glass, setGlass] = useState<StudioGlass>("high");
+  const [fontScale, setFontScale] = useState<number>(1);
+  const [warningsFirst, setWarningsFirst] = useState<boolean>(true);
+  const [defaultLanding, setDefaultLanding] = useState<boolean>(true);
+  const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
   const [trainingRuns, setTrainingRuns] = useState<TrainingRunSummary[]>([]);
   const [trainingRunsStatus, setTrainingRunsStatus] = useState<TrainingRunsStatus>("idle");
   const [trainingRunsError, setTrainingRunsError] = useState<string | null>(null);
@@ -759,6 +1099,24 @@ export function App(): JSX.Element {
   }, [runSearch, runs]);
 
   const selectedRun = runs.find((run) => runKey(run) === selectedRunKey) ?? null;
+
+  function openLatestRun(): void {
+    const latest = runs[0];
+    if (latest) {
+      setSelectedRunKey(runKey(latest));
+    }
+    setMode("runs");
+    setDetailTab("charts");
+  }
+
+  function enterStudio(): void {
+    setMode("runs");
+    setDetailTab("charts");
+  }
+
+  useEffect(() => {
+    void i18n.changeLanguage(language);
+  }, [language]);
 
   useEffect(() => {
     let mounted = true;
@@ -826,7 +1184,7 @@ export function App(): JSX.Element {
     let mounted = true;
     setRunDetailStatus("loading");
     setRunDetailError(null);
-    setDetailTab("summary");
+    setDetailTab("charts");
 
     loadRunDetail(selectedRun.ticker, selectedRun.run_id)
       .then((detail) => {
@@ -916,7 +1274,7 @@ export function App(): JSX.Element {
   const dataGapCount = countDataGaps(activeRunDetail);
 
   return (
-    <AppShell>
+    <AppShell density={density} fontScale={fontScale} glass={glass} motion={motion}>
       <Sidebar
         error={runsError}
         mode={mode}
@@ -929,8 +1287,30 @@ export function App(): JSX.Element {
         onSelectRun={(run) => setSelectedRunKey(runKey(run))}
       />
 
-      <section className="workspace" aria-label={mode === "runs" ? "Report Workspace" : "Regression Matrix Workspace"}>
-        {mode === "runs" ? (
+      <section
+        className={mode === "landing" ? "workspace workspace--landing" : "workspace"}
+        aria-label={mode === "runs" ? "Report Workspace" : mode === "matrix" ? "Regression Matrix Workspace" : "Studio Landing"}
+      >
+        <StudioTopBar
+          density={density}
+          language={language}
+          mode={mode}
+          motion={motion}
+          quickSearch={runSearch}
+          onOpenSettings={() => setSettingsOpen(true)}
+          onQuickSearch={(value) => {
+            setRunSearch(value);
+            if (mode === "landing") {
+              setMode("runs");
+            }
+          }}
+          onSetDensity={setDensity}
+          onSetLanguage={setLanguage}
+        />
+
+        {mode === "landing" ? (
+          <LandingHero onEnter={enterStudio} onOpenLatest={openLatestRun} />
+        ) : mode === "runs" ? (
           <>
             <RunWorkspaceHeader
               detail={activeRunDetail}
@@ -972,14 +1352,40 @@ export function App(): JSX.Element {
           <aside className="matrix-footer-strip">
             <span>Regression Matrix mode</span>
             <span>No run detail cards shown</span>
-            <span>No training or external API calls</span>
+            <span>{t("noExternalApi")}</span>
           </aside>
         ) : null}
       </section>
 
+      <InsightRail detail={activeRunDetail} warningsFirst={warningsFirst} />
+
       <aside className="studio-system-card" aria-label="App information">
         <AppInfoCard appInfo={appInfo} error={appInfoError} status={appInfoStatus} />
       </aside>
+
+      <SettingsCenter
+        defaultLanding={defaultLanding}
+        density={density}
+        fontScale={fontScale}
+        glass={glass}
+        language={language}
+        motion={motion}
+        open={settingsOpen}
+        warningsFirst={warningsFirst}
+        onClose={() => setSettingsOpen(false)}
+        onDefaultLanding={(value) => {
+          setDefaultLanding(value);
+          if (value) {
+            setMode("landing");
+          }
+        }}
+        onDensity={setDensity}
+        onFontScale={setFontScale}
+        onGlass={setGlass}
+        onLanguage={setLanguage}
+        onMotion={setMotion}
+        onWarningsFirst={setWarningsFirst}
+      />
     </AppShell>
   );
 }
