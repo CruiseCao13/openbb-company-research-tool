@@ -11,6 +11,7 @@ This benchmark pass reviewed product and open-source UI references before the v6
 | OpenBB | `/tmp/v6-ui-benchmarks/OpenBB` | AGPL-3.0. No code copied. | Finance workspace framing, artifact-first workflows, separation between data tools and visual workspace. |
 | FinceptTerminal | `/tmp/v6-ui-benchmarks/FinceptTerminal` | AGPL/commercial terms with trade dress restrictions. No code copied. | Dense terminal posture, multi-tool finance workspace organization, status-heavy research flow. |
 | shadcn-admin | `/tmp/v6-ui-benchmarks/shadcn-admin` | MIT. No code copied. | Sidebar organization, settings/command layout patterns, compact controls, dashboard density. |
+| Eigent AI | `/tmp/v6-ui-benchmarks/eigent` | Apache-2.0. No code copied. | AI workspace separation, agent/activity surfaces, side-panel depth, progressive disclosure of long details. |
 | d3-sankey | `/tmp/v6-ui-benchmarks/d3-sankey` | BSD-style license. Existing project dependency/API used; no source copied. | Sankey node/link mental model, graph layout vocabulary. |
 
 ## Patterns Borrowed
@@ -23,6 +24,11 @@ This benchmark pass reviewed product and open-source UI references before the v6
 - Right-side instrument board with gauge-style status summaries instead of plain metric cards.
 - Collapsed diagnostics and advanced path handling to avoid a debug-panel first impression.
 - Liquid-glass zones with soft radius hierarchy, translucent gradients, blur, and subtle shadows.
+- Micro-inspector tooltip behavior instead of browser default title tooltips.
+- Dark crystal skeleton loading to prevent white/black hard flashes during run switching.
+- Subtle scrollbar styling so scroll zones do not look like platform-default admin panes.
+- Desaturated technical badges with small status orbs so warnings/data gaps get attention without traffic-light blocks.
+- Settings/modal depth model: blurred overlay, high-radius glass sheet, smooth transform/opacity transitions.
 
 ## Patterns Rejected
 
@@ -32,10 +38,13 @@ This benchmark pass reviewed product and open-source UI references before the v6
 - Raw file browser metaphors as a primary surface.
 - Fake demo data for loaded-run state.
 - Quantitative Sankey widths without numeric locked money-flow values.
+- Loud traffic-light color blocks and hard neon fills.
+- Default browser tooltips, thick scrollbars, and abrupt blank loading states.
+- Whole-template imports, auth/user-management shells, or SaaS administration pages.
 
 ## Code Copying
 
-No benchmark source code was copied into the repository. The rebuild adapts design patterns and keeps the existing local implementation and existing dependencies.
+No benchmark source code was copied into the repository. The rebuild adapts design patterns and keeps the existing local implementation and existing dependencies. Existing project dependencies such as `d3-sankey`, `i18next`, and `react-i18next` are used; no benchmark template was vendored.
 
 ## Applied Design Decisions
 
@@ -43,3 +52,6 @@ No benchmark source code was copied into the repository. The rebuild adapts desi
 - The loaded-run research state keeps Money Flow as the first visual object, then action dock, chart strip, tabs, and secondary detail.
 - The settings center remains in-session and uses the local i18n/settings state rather than adding a heavy UI framework.
 - Browser preview is treated honestly: it can capture landing/settings/fallback states, but real run and matrix artifact loading require Tauri IPC.
+- Loading states use dark liquid skeleton surfaces so switching runs does not collapse the layout.
+- Hover details use micro-glass inspectors and `data-tooltip` surfaces instead of native browser tooltips.
+- The matrix and research workspaces keep separate IA, with matrix staying a quality board rather than a run-detail widget.

@@ -5,6 +5,7 @@ import { InstrumentBoard } from "./components/InstrumentBoard";
 import { LandingExperience, exampleTickers, type LandingAnalysisMode, type LandingMarket } from "./components/LandingExperience";
 import { LogoMark } from "./components/LogoMark";
 import { MoneyFlowSankey, RunDetailPanel, type RunDetailTab } from "./components/RunDetailPanel";
+import { SkeletonSurface } from "./components/SkeletonSurface";
 import i18n, { type StudioLanguage } from "./i18n";
 import {
   getAppInfo,
@@ -103,6 +104,10 @@ function booleanLabel(value: boolean | null): string {
 }
 
 function EmptyState({ detail, title }: { detail: string; title: string }): JSX.Element {
+  if (title.toLowerCase().includes("loading")) {
+    return <SkeletonSurface detail={detail} title={title} />;
+  }
+
   return (
     <div className="empty-state">
       <strong>{title}</strong>
@@ -1471,10 +1476,16 @@ export function App(): JSX.Element {
             <section className="hero-graph-stage" aria-label="Primary money flow visual">
               {runDetailStatus === "ready" && activeRunDetail ? (
                 <MoneyFlowSankey detail={activeRunDetail} />
+              ) : runDetailStatus === "loading" ? (
+                <SkeletonSurface
+                  detail="Reading structured metadata through Tauri IPC. The previous shell stays stable while the flow map hydrates."
+                  title="Loading cash-flow map"
+                  variant="flow"
+                />
               ) : (
                 <div className="graph-loading-panel">
                   <span className="subsection-title">{t("moneyFlow")}</span>
-                  <strong>{runDetailStatus === "loading" ? "Loading cash-flow map" : "Select a run to view cash flow"}</strong>
+                  <strong>Select a run to view cash flow</strong>
                   <p>{runDetailStatus === "error" ? runDetailError ?? "Run detail failed." : "The studio renders existing structured metadata only. No fake flow data is generated."}</p>
                 </div>
               )}

@@ -3,6 +3,7 @@ import { sankey, sankeyLinkHorizontal, type SankeyGraph } from "d3-sankey";
 import { useTranslation } from "react-i18next";
 import { artifactImageSrc, openArtifact, revealInFolder } from "../lib/tauri";
 import type { RunDetail, RunDetailStatus } from "../types/app";
+import { SkeletonSurface } from "./SkeletonSurface";
 
 export type RunDetailTab = "summary" | "charts" | "audit" | "gaps" | "artifacts";
 
@@ -690,7 +691,7 @@ export function RunDetailPanel({ activeTab, detail, error, status }: RunDetailPa
   }
 
   if (status === "loading") {
-    return <EmptyRunDetailState title="Loading run detail" detail="Reading structured metadata through Tauri IPC." />;
+    return <SkeletonSurface detail="Reading structured metadata through Tauri IPC." title="Loading run detail" variant="gauges" />;
   }
 
   if (status === "browser-preview" || status === "error" || !detail) {
