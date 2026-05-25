@@ -3,6 +3,7 @@ use crate::markdown::{render_report, render_report_zh, render_self_review_md};
 use anyhow::Result;
 use research_core::cache::digest_str;
 use research_core::io::{write_if_changed, write_json};
+use research_core::provider::{resolve_python, resolve_repo_path};
 use research_core::run_folder::RunFolder;
 use research_core::types::*;
 use research_core::validation::visual_lint;
@@ -182,13 +183,10 @@ pub fn render_run(input: RenderRunInput<'_>) -> Result<()> {
 }
 
 fn generate_charts(folder: &RunFolder) -> Result<()> {
-    let python = if std::path::Path::new(".venv/bin/python").exists() {
-        ".venv/bin/python"
-    } else {
-        "python3"
-    };
+    let python = resolve_python()?;
+    let chart_provider = resolve_repo_path("providers/chart_provider.py")?;
     let status = Command::new(python)
-        .arg("providers/chart_provider.py")
+        .arg(chart_provider)
         .arg("--payload")
         .arg(folder.raw.join("provider_payload.json"))
         .arg("--out-dir")
@@ -1344,13 +1342,10 @@ fn write_iteration_log(
 }
 
 fn export_pdf(markdown_path: &std::path::Path, pdf_path: &std::path::Path) -> Result<()> {
-    let python = if std::path::Path::new(".venv/bin/python").exists() {
-        ".venv/bin/python"
-    } else {
-        "python3"
-    };
+    let python = resolve_python()?;
+    let pdf_export = resolve_repo_path("providers/pdf_export.py")?;
     let status = Command::new(python)
-        .arg("providers/pdf_export.py")
+        .arg(pdf_export)
         .arg("--markdown")
         .arg(markdown_path)
         .arg("--out")

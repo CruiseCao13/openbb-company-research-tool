@@ -1,4 +1,5 @@
 use crate::io::ensure_dir;
+use crate::provider::discover_repo_root;
 use crate::types::RunContext;
 use anyhow::Result;
 use std::path::PathBuf;
@@ -19,10 +20,15 @@ pub struct RunFolder {
 
 impl RunFolder {
     pub fn new(ctx: &RunContext) -> Self {
-        let root = PathBuf::from(&ctx.root)
-            .join(&ctx.ticker)
-            .join("runs")
-            .join(&ctx.run_id);
+        let base = PathBuf::from(&ctx.root);
+        let base = if base.is_absolute() {
+            base
+        } else {
+            discover_repo_root()
+                .map(|repo| repo.join(&base))
+                .unwrap_or(base)
+        };
+        let root = base.join(&ctx.ticker).join("runs").join(&ctx.run_id);
         Self {
             report: root.join("report"),
             raw: root.join("raw"),

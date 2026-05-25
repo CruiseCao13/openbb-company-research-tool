@@ -4,8 +4,63 @@ use crate::io::{ensure_dir, read_json, write_if_changed, write_json};
 use crate::types::{ProviderPayload, ProviderStatus, RunContext};
 use anyhow::{anyhow, Result};
 use chrono::Local;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
+
+const PROVIDER_COMMON: &str = "providers/provider_common.py";
+
+pub fn discover_repo_root() -> Result<PathBuf> {
+    let current_dir = std::env::current_dir()?;
+    discover_repo_root_from(&current_dir)
+}
+
+pub fn discover_repo_root_from(start: &Path) -> Result<PathBuf> {
+    if start.join(PROVIDER_COMMON).exists() {
+        return Ok(start.to_path_buf());
+    }
+    for parent in start.ancestors().skip(1) {
+        if parent.join(PROVIDER_COMMON).exists() {
+            return Ok(parent.to_path_buf());
+        }
+    }
+    if let Ok(root) = std::env::var("RESEARCH_ENGINE_ROOT") {
+        let root = PathBuf::from(root);
+        if root.join(PROVIDER_COMMON).exists() {
+            return Ok(root);
+        }
+    }
+    Err(anyhow!(
+        "providers/provider_common.py not found. Set RESEARCH_ENGINE_ROOT=/path/to/openbb-company-research-tool"
+    ))
+}
+
+pub fn resolve_repo_path(relative: &str) -> Result<PathBuf> {
+    let root = discover_repo_root()?;
+    Ok(root.join(relative))
+}
+
+pub fn resolve_provider_script(configured: &str) -> Result<PathBuf> {
+    let root = discover_repo_root()?;
+    let configured_path = Path::new(configured);
+    if configured_path.is_absolute() {
+        return Ok(configured_path.to_path_buf());
+    }
+    let file_name = configured_path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("provider_common.py");
+    Ok(root.join("providers").join(file_name))
+}
+
+pub fn resolve_python() -> Result<PathBuf> {
+    let root = discover_repo_root()?;
+    let venv_python = root.join(".venv/bin/python");
+    if venv_python.exists() {
+        Ok(venv_python)
+    } else {
+        Ok(PathBuf::from("python3"))
+    }
+}
 
 pub fn fetch_provider_payload(
     ctx: &RunContext,
@@ -18,13 +73,10 @@ pub fn fetch_provider_payload(
         return Ok(payload);
     }
 
-    let python = if Path::new(".venv/bin/python").exists() {
-        ".venv/bin/python"
-    } else {
-        "python3"
-    };
+    let python = resolve_python()?;
+    let provider_script = resolve_provider_script(&config.provider_script)?;
     let output = Command::new(python)
-        .arg(&config.provider_script)
+        .arg(&provider_script)
         .arg("--ticker")
         .arg(&ctx.ticker)
         .arg("--market")
