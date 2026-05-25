@@ -208,22 +208,30 @@ export function MoneyFlowSankey({ detail }: { detail: RunDetail }): JSX.Element 
             </filter>
             <linearGradient id="sankey-link-gradient-inflow" x1="0%" x2="100%" y1="0%" y2="0%">
               <stop offset="0%" stopColor="rgba(34, 211, 238, 0.24)" />
-              <stop offset="48%" stopColor="rgba(52, 211, 153, 0.86)" />
+              <stop offset="26%" stopColor="rgba(34, 211, 238, 0.56)" />
+              <stop offset="52%" stopColor="rgba(52, 211, 153, 0.86)" />
+              <stop offset="78%" stopColor="rgba(45, 212, 191, 0.74)" />
               <stop offset="100%" stopColor="rgba(34, 211, 238, 0.66)" />
             </linearGradient>
             <linearGradient id="sankey-link-gradient-reinvestment" x1="0%" x2="100%" y1="0%" y2="0%">
               <stop offset="0%" stopColor="rgba(34, 211, 238, 0.18)" />
-              <stop offset="58%" stopColor="rgba(96, 165, 250, 0.72)" />
+              <stop offset="34%" stopColor="rgba(56, 189, 248, 0.56)" />
+              <stop offset="64%" stopColor="rgba(96, 165, 250, 0.72)" />
+              <stop offset="84%" stopColor="rgba(129, 140, 248, 0.52)" />
               <stop offset="100%" stopColor="rgba(129, 140, 248, 0.42)" />
             </linearGradient>
             <linearGradient id="sankey-link-gradient-risk" x1="0%" x2="100%" y1="0%" y2="0%">
               <stop offset="0%" stopColor="rgba(251, 191, 36, 0.28)" />
-              <stop offset="58%" stopColor="rgba(245, 158, 11, 0.78)" />
+              <stop offset="34%" stopColor="rgba(251, 191, 36, 0.60)" />
+              <stop offset="62%" stopColor="rgba(245, 158, 11, 0.78)" />
+              <stop offset="84%" stopColor="rgba(248, 113, 113, 0.56)" />
               <stop offset="100%" stopColor="rgba(244, 63, 94, 0.48)" />
             </linearGradient>
             <linearGradient id="sankey-link-gradient-gap" x1="0%" x2="100%" y1="0%" y2="0%">
               <stop offset="0%" stopColor="rgba(148, 163, 184, 0.14)" />
-              <stop offset="70%" stopColor="rgba(245, 158, 11, 0.42)" />
+              <stop offset="42%" stopColor="rgba(148, 163, 184, 0.24)" />
+              <stop offset="76%" stopColor="rgba(245, 158, 11, 0.42)" />
+              <stop offset="100%" stopColor="rgba(251, 191, 36, 0.30)" />
             </linearGradient>
           </defs>
           {rendered.links.map((link, index) => {

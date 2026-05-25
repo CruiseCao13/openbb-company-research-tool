@@ -50,14 +50,14 @@ function StatusBadge({ variant }: { variant: BadgeVariant }): JSX.Element {
   return <span className={`status-badge status-badge--${variant.toLowerCase()}`} data-tooltip={variant}>{variant}</span>;
 }
 
-function SimpleList({ emptyLabel, items }: { emptyLabel: string; items: string[] }): JSX.Element {
+function SimpleList({ emptyLabel, items, limit = 8 }: { emptyLabel: string; items: string[]; limit?: number }): JSX.Element {
   if (items.length === 0) {
     return <p className="muted-copy">{emptyLabel}</p>;
   }
   return (
     <ul className="compact-list">
-      {items.slice(0, 8).map((item) => <li key={item}>{item}</li>)}
-      {items.length > 8 ? <li>{items.length - 8} more</li> : null}
+      {items.slice(0, limit).map((item) => <li key={item}>{item}</li>)}
+      {items.length > limit ? <li>{items.length - limit} more</li> : null}
     </ul>
   );
 }
@@ -125,7 +125,7 @@ function GaugeDial({
       data-tooltip={`${label} / ${summary}. ${detail}`}
     >
       <div className="gauge-dial__meter" aria-hidden="true">
-        <span>{variant === "unknown" ? "--" : status}</span>
+        <span className="gauge-value-line"><b>{variant === "unknown" ? "--" : status}</b></span>
       </div>
       <div className="gauge-dial__body">
         <strong className="gauge-label" data-full-label={label}>{shortLabel(label)}</strong>
@@ -136,9 +136,90 @@ function GaugeDial({
   );
 }
 
+function strongestSignal(detail: RunDetail | null, warnings: string[]): BadgeVariant {
+  if (!detail) {
+    return "UNKNOWN";
+  }
+  if (detail.status.human_review_required || detail.self_review.human_review_required) {
+    return "HUMAN_REVIEW";
+  }
+  if (detail.provider.mock) {
+    return "PROVIDER_MOCK";
+  }
+  if ((detail.status.overall_status ?? "").toUpperCase().includes("FAIL")) {
+    return "FAIL";
+  }
+  if (warnings.length > 0) {
+    return "WARNING";
+  }
+  if (detail.provider.missing_fields.length > 0 || detail.blueprint.data_gaps.length > 0) {
+    return "DATA_GAP";
+  }
+  return statusToBadge(detail.status.overall_status);
+}
+
+function insightHeadline(detail: RunDetail | null, warnings: string[]): string {
+  if (!detail) {
+    return "Load a run to turn raw artifacts into a visual research instrument.";
+  }
+  if (detail.status.human_review_required || detail.self_review.human_review_required) {
+    return "Human review is the strongest signal; inspect warnings before relying on the run.";
+  }
+  if (warnings.length > 0) {
+    return "The run is usable as a visual map, but warnings should guide the next check.";
+  }
+  if (detail.financial_interpretation.where_money_comes_from || detail.financial_interpretation.where_money_goes) {
+    return "Money-flow mechanism is available; use the visual flow first, then verify artifacts.";
+  }
+  return "Research metadata is loaded, but money-flow specifics remain data-limited.";
+}
+
+function InsightDisclosure({
+  badge,
+  emptyLabel,
+  items,
+  title
+}: {
+  badge: BadgeVariant;
+  emptyLabel: string;
+  items: string[];
+  title: string;
+}): JSX.Element {
+  return (
+    <details className="insight-disclosure">
+      <summary>
+        <span className="insight-disclosure__title">{title}</span>
+        <span className="insight-disclosure__meta">
+          <StatusBadge variant={badge} />
+          <b>{items.length}</b>
+        </span>
+      </summary>
+      <SimpleList emptyLabel={emptyLabel} items={items} limit={5} />
+    </details>
+  );
+}
+
 export function InstrumentBoard({ detail, warningsFirst }: { detail: RunDetail | null; warningsFirst: boolean }): JSX.Element {
   const { t } = useTranslation();
   const warnings = collectWarnings(detail);
+  const gaps = detail ? [...detail.provider.missing_fields, ...detail.blueprint.data_gaps] : [];
+  const nextChecks = detail?.blueprint.next_checks ?? [];
+  const frameworkChecks = detail
+    ? [
+        detail.self_review.framework_fit_check ? `Framework: ${detail.self_review.framework_fit_check}` : null,
+        detail.self_review.numeric_consistency_check ? `Numbers: ${detail.self_review.numeric_consistency_check}` : null,
+        detail.self_review.money_flow_check ? `Money flow: ${detail.self_review.money_flow_check}` : null,
+        detail.self_review.company_understanding_check ? `Company: ${detail.self_review.company_understanding_check}` : null
+      ].filter((item): item is string => item !== null)
+    : [];
+  const blueprintItems = detail
+    ? [
+        detail.blueprint.core_thesis ? `Core: ${detail.blueprint.core_thesis}` : null,
+        ...detail.blueprint.must_analyze.map((item) => `Analyze: ${item}`),
+        ...detail.blueprint.red_flags.map((item) => `Red flag: ${item}`)
+      ].filter((item): item is string => item !== null)
+    : [];
+  const signal = strongestSignal(detail, warnings);
   const gaugeItems = [
     {
       label: t("dataConfidenceGauge"),
@@ -184,15 +265,6 @@ export function InstrumentBoard({ detail, warningsFirst }: { detail: RunDetail |
     }
   ] satisfies Array<{ detail: string; label: string; status: BadgeVariant; summary: string }>;
 
-  const warningCard = (
-    <section className="insight-card insight-card--warning" key="warnings">
-      <div className="card-header">
-        <span className="card-label">{t("warnings")}</span>
-        <StatusBadge variant={warnings.length > 0 ? "WARNING" : "PASS"} />
-      </div>
-      <SimpleList emptyLabel={t("noWarnings")} items={warnings} />
-    </section>
-  );
   const gaugePanel = (
     <section className="gauge-dashboard" key="gauges" aria-label="Gauge dashboard">
       <div className="gauge-dashboard__header">
@@ -204,16 +276,31 @@ export function InstrumentBoard({ detail, warningsFirst }: { detail: RunDetail |
       </div>
     </section>
   );
-  const questionsCard = (
-    <section className="insight-card" key="questions">
-      <span className="card-label">{t("nextQuestions")}</span>
-      <SimpleList emptyLabel={t("noNextChecks")} items={detail?.blueprint.next_checks ?? []} />
+  const funnelPanel = (
+    <section className="insight-card insight-card--funnel" key="funnel">
+      <div className="insight-verdict">
+        <span className="card-label">{t("strongestSignal")}</span>
+        <StatusBadge variant={signal} />
+        <strong>{insightHeadline(detail, warnings)}</strong>
+      </div>
+      <div className="insight-pill-row" aria-label="Insight summary pills">
+        <span>{warnings.length} {t("warnings")}</span>
+        <span>{gaps.length} {t("dataGaps")}</span>
+        <span>{nextChecks.length} {t("nextQuestions")}</span>
+      </div>
+      <div className="insight-disclosure-stack">
+        <InsightDisclosure badge={warnings.length > 0 ? "WARNING" : "PASS"} emptyLabel={t("noWarnings")} items={warnings} title={t("warnings")} />
+        <InsightDisclosure badge={gaps.length > 0 ? "DATA_GAP" : "PASS"} emptyLabel={t("providerCoverageComplete")} items={gaps} title={t("dataGaps")} />
+        <InsightDisclosure badge={nextChecks.length > 0 ? "UNKNOWN" : "DATA_GAP"} emptyLabel={t("noNextChecks")} items={nextChecks} title={t("nextQuestions")} />
+        <InsightDisclosure badge={frameworkChecks.length > 0 ? "UNKNOWN" : "DATA_GAP"} emptyLabel={t("templateLeakageMissing")} items={frameworkChecks} title={t("frameworkCoverage")} />
+        <InsightDisclosure badge={blueprintItems.length > 0 ? "UNKNOWN" : "DATA_GAP"} emptyLabel={t("noNextChecks")} items={blueprintItems} title={t("blueprint")} />
+      </div>
     </section>
   );
 
   return (
     <aside className="insight-rail" aria-label="Run insights">
-      {warningsFirst ? [warningCard, gaugePanel, questionsCard] : [gaugePanel, warningCard, questionsCard]}
+      {warningsFirst ? [funnelPanel, gaugePanel] : [gaugePanel, funnelPanel]}
     </aside>
   );
 }

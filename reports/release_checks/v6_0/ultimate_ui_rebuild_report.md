@@ -16,6 +16,8 @@ See `reports/release_checks/v6_0/ui_benchmark_mining_ultimate.md`.
 - `studio/src/i18n.ts`
 - `studio/src/components/AudioFeedback.ts`
 - `studio/src/components/CommandMenu.tsx`
+- `studio/src/components/InstrumentBoard.tsx`
+- `studio/src/components/LandingExperience.tsx`
 - `studio/src/components/RunDetailPanel.tsx`
 - `studio/src/components/SkeletonSurface.tsx`
 - `studio/src/styles.css`
@@ -33,6 +35,8 @@ See `reports/release_checks/v6_0/ui_benchmark_mining_ultimate.md`.
 - Added `SkeletonSurface`, `SkeletonLine`, `SkeletonGauge`, and `SkeletonFlow` for dark crystal loading states.
 - Updated `AppShell` with persisted split-pane width variables and invisible resizer gutters.
 - Updated `RunDetailPanel` loading to use gauge skeletons.
+- Updated `InstrumentBoard` into a progressive-disclosure insight rail with a headline signal, compact pills, and foldable warnings/data gaps/framework/blueprint groups.
+- Updated Sankey and landing vascular gradients for smoother multi-stop transitions.
 
 ## Dependencies Added
 
@@ -62,11 +66,29 @@ None. The implementation uses existing React, i18n, Tauri helper, and CSS-first 
 - Current mode is honest qualitative mode when numeric locked money-flow DTO fields are unavailable.
 - Link width is not presented as a financial amount; no revenue, capex, FCF, debt, dividend, or buyback values are fabricated.
 
+## SVG Anti-Aliasing / Gradient Banding Treatment
+
+- Added geometric precision and optimized text rendering for SVG paths, text, circles, and rects.
+- Added multi-stop Sankey and landing vascular gradients to reduce visible banding and avoid harsh color breaks.
+- Kept warning/risk transitions amber-to-rose but softened the interpolation.
+
+## Baseline Alignment
+
+- Added `metric-row`, `metric-value-line`, and `gauge-value-line` baseline classes.
+- Matrix summary numerals now split value/suffix into baseline-aligned mono text.
+- Key-value metric surfaces now use inline baseline alignment so units and suffixes do not float off-center.
+
 ## Gauge Result
 
 - The right-side instrument board remains gauge-first, not plain metric cards.
 - Gauge statuses are qualitative and derived from existing `RunDetail` fields.
 - Loading run detail now uses gauge skeletons to preserve the hardware-instrument feel.
+
+## Right Insight Rail Progressive Disclosure
+
+- Replaced the flat warning/list rail with an intelligence funnel: strongest signal, one-sentence headline, compact warning/data-gap/next-check pills, then foldable detail groups.
+- Warnings, data gaps, next checks, framework/self-review checks, and blueprint items are hidden behind expandable glass disclosures.
+- Missing content is shown honestly as data gap/empty state rather than polished prose.
 
 ## Matrix Result
 
@@ -126,6 +148,12 @@ None. The implementation uses existing React, i18n, Tauri helper, and CSS-first 
 - Resizers are invisible until hover/focus/drag, then reveal a thin cyan/amber luminance line.
 - Widths persist in localStorage with conservative clamps.
 
+## Responsive Collapse Status
+
+- Added sub-1200px protection so the main workspace remains prioritized.
+- The right insight rail collapses into a hover/focus side overlay rather than squeezing the Sankey into a toy view.
+- Sankey sidecar stacks below the graph and action buttons reduce to a tighter grid on compact widths.
+
 ## Command Menu / Keyboard Flow
 
 - Implemented Cmd+K / Ctrl+K command menu with liquid-glass modal depth.
@@ -159,7 +187,7 @@ None. The implementation uses existing React, i18n, Tauri helper, and CSS-first 
 - Captured: `reports/release_checks/v6_0/screenshots/ultimate_ui_command_menu.png`
 - Captured: `reports/release_checks/v6_0/screenshots/ultimate_ui_command_settings_audio.png`
 - Captured: `reports/release_checks/v6_0/screenshots/ultimate_ui_command_matrix.png`
-- Blocked: populated loaded run, real artifact chart tab, and populated quality matrix screenshots require Tauri desktop IPC rather than browser preview.
+- Blocked: the latest post-refinement screenshot attempt hit a browser CDP `Page.captureScreenshot` timeout. Existing command/menu/settings/matrix screenshots remain from the prior successful capture. Populated loaded run, real artifact chart tab, and populated quality matrix screenshots require Tauri desktop IPC rather than browser preview.
 
 ## Validation
 
@@ -181,4 +209,4 @@ None. The implementation uses existing React, i18n, Tauri helper, and CSS-first 
 
 WARNING
 
-Reason: frontend build and Tauri validation pass, the UI remains graph-first, and this pass adds keyboard command flow, optional micro-acoustic feedback, custom selection, and true split-pane resizing without fake data. Status remains WARNING because quantitative Sankey DTO support and populated desktop IPC screenshots are still pending.
+Reason: frontend build and Tauri validation pass, the UI remains graph-first, and this pass adds keyboard command flow, optional micro-acoustic feedback, custom selection, true split-pane resizing, SVG polish, baseline alignment, progressive insight disclosure, and compact responsive protection without fake data. Status remains WARNING because quantitative Sankey DTO support and populated desktop IPC screenshots are still pending.

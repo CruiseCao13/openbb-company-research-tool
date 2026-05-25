@@ -886,10 +886,19 @@ function countProviderFailures(rows: QualityMatrixRow[]): number {
 }
 
 function MatrixSummaryCard({ label, value }: { label: string; value: ReactNode }): JSX.Element {
+  const textValue = typeof value === "number" || typeof value === "string" ? String(value) : null;
+  const match = textValue?.match(/^([^A-Za-z%/]+?)([%/A-Za-z].*)?$/);
   return (
     <div className="matrix-summary-card">
       <span>{label}</span>
-      <strong>{value}</strong>
+      {match ? (
+        <strong className="metric-value-line">
+          <b>{match[1]}</b>
+          {match[2] ? <small>{match[2]}</small> : null}
+        </strong>
+      ) : (
+        <strong className="metric-value-line"><b>{value}</b></strong>
+      )}
     </div>
   );
 }

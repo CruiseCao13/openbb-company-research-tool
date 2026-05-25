@@ -64,3 +64,7 @@ No benchmark source code was copied into the repository. The rebuild adapts desi
 - The command menu is intentionally minimal and keyboard-first: it operates existing IPC-backed actions and does not invent new run execution.
 - Pane resizing uses CSS variables persisted in localStorage and keeps the visual divider nearly invisible until hover/drag.
 - Micro-click feedback is optional, off by default, low volume, generated locally, and fails silently if the runtime blocks audio.
+- SVG flow rendering follows D3/SVG polish patterns: geometric precision, smoother multi-stop gradients, and no hard color banding.
+- The right rail now follows progressive disclosure patterns from AI workspaces: one headline signal plus foldable warnings, data gaps, framework checks, and blueprint details.
+- Metric rows use baseline-aligned value/unit styling to avoid optically loose financial numerals.
+- Sub-1200px handling keeps the main graph prioritized by collapsing the insight rail into a hover/focus side overlay.

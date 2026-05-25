@@ -112,17 +112,23 @@ function ExampleVascularPreview(): JSX.Element {
           </filter>
           <linearGradient id="vascular-green" x1="0%" x2="100%" y1="0%" y2="0%">
             <stop offset="0%" stopColor="rgba(52, 211, 153, 0.1)" />
-            <stop offset="48%" stopColor="rgba(52, 211, 153, 0.88)" />
+            <stop offset="26%" stopColor="rgba(34, 211, 238, 0.44)" />
+            <stop offset="54%" stopColor="rgba(52, 211, 153, 0.88)" />
+            <stop offset="78%" stopColor="rgba(45, 212, 191, 0.76)" />
             <stop offset="100%" stopColor="rgba(143, 211, 255, 0.78)" />
           </linearGradient>
           <linearGradient id="vascular-blue" x1="0%" x2="100%" y1="0%" y2="0%">
             <stop offset="0%" stopColor="rgba(143, 211, 255, 0.14)" />
-            <stop offset="55%" stopColor="rgba(143, 211, 255, 0.82)" />
+            <stop offset="32%" stopColor="rgba(34, 211, 238, 0.50)" />
+            <stop offset="62%" stopColor="rgba(143, 211, 255, 0.82)" />
+            <stop offset="82%" stopColor="rgba(99, 102, 241, 0.42)" />
             <stop offset="100%" stopColor="rgba(96, 165, 250, 0.36)" />
           </linearGradient>
           <linearGradient id="vascular-risk" x1="0%" x2="100%" y1="0%" y2="0%">
             <stop offset="0%" stopColor="rgba(251, 146, 60, 0.18)" />
-            <stop offset="62%" stopColor="rgba(251, 146, 60, 0.72)" />
+            <stop offset="34%" stopColor="rgba(251, 191, 36, 0.56)" />
+            <stop offset="66%" stopColor="rgba(251, 146, 60, 0.72)" />
+            <stop offset="86%" stopColor="rgba(248, 113, 113, 0.56)" />
             <stop offset="100%" stopColor="rgba(244, 63, 94, 0.5)" />
           </linearGradient>
         </defs>
