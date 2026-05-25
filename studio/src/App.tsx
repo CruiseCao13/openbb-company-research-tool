@@ -1,8 +1,8 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { AppInfoCard } from "./components/AppInfoCard";
-import { getAppInfo, listRuns } from "./lib/tauri";
-import type { AppInfo, AppInfoStatus, RunsStatus, RunSummary } from "./types/app";
+import { getAppInfo, listRuns, loadRunDetail } from "./lib/tauri";
+import type { AppInfo, AppInfoStatus, RunDetail, RunDetailStatus, RunsStatus, RunSummary } from "./types/app";
 
 type StudioPing = {
   status: "ok";
@@ -235,51 +235,181 @@ function BottomProvenanceBar(): JSX.Element {
   );
 }
 
-function SelectedRunSummary({ run }: { run: RunSummary | null }): JSX.Element {
-  if (!run) {
+function ValueList({ emptyLabel, items }: { emptyLabel: string; items: string[] }): JSX.Element {
+  if (items.length === 0) {
+    return <p>{emptyLabel}</p>;
+  }
+
+  return (
+    <ul className="compact-list">
+      {items.slice(0, 5).map((item) => (
+        <li key={item}>{item}</li>
+      ))}
+    </ul>
+  );
+}
+
+function DetailField({ label, value }: { label: string; value: ReactNode }): JSX.Element {
+  return (
+    <div>
+      <dt>{label}</dt>
+      <dd>{value}</dd>
+    </div>
+  );
+}
+
+function formatBoolean(value: boolean | null): string {
+  if (value === null) {
+    return "unknown";
+  }
+  return value ? "yes" : "no";
+}
+
+function RunDetailCards({
+  detail,
+  error,
+  status
+}: {
+  detail: RunDetail | null;
+  error: string | null;
+  status: RunDetailStatus;
+}): JSX.Element {
+  if (status === "idle") {
     return (
       <section className="selected-run-summary" aria-label="Selected run summary">
-        <EmptyState title="No run selected" detail="Select a run from the sidebar to inspect its summary." />
+        <EmptyState title="No run selected" detail="Select a run from the sidebar to load structured run metadata." />
+      </section>
+    );
+  }
+
+  if (status === "loading") {
+    return (
+      <section className="selected-run-summary" aria-label="Selected run summary">
+        <EmptyState title="Loading run detail..." detail="Reading structured metadata through Tauri IPC." />
+      </section>
+    );
+  }
+
+  if (status === "browser-preview" || status === "error" || !detail) {
+    return (
+      <section className="selected-run-summary" aria-label="Selected run summary">
+        <EmptyState
+          title={status === "browser-preview" ? "Detail loading needs Tauri" : "Run detail failed"}
+          detail={error ?? "The load_run_detail command returned an error."}
+        />
       </section>
     );
   }
 
   return (
-    <section className="selected-run-summary" aria-label="Selected run summary">
+    <>
+      <section className="selected-run-summary" aria-label="Run header card">
       <div className="card-header">
-        <span className="card-label">Selected Run Summary</span>
-        <StatusBadge variant={statusToBadge(run.status)} />
+        <span className="card-label">Header</span>
+        <StatusBadge variant={statusToBadge(detail.status.overall_status)} />
       </div>
       <dl className="selected-run-grid">
-        <div>
-          <dt>Ticker</dt>
-          <dd>{run.ticker}</dd>
-        </div>
-        <div>
-          <dt>Run ID</dt>
-          <dd>{run.run_id}</dd>
-        </div>
-        <div>
-          <dt>AI source</dt>
-          <dd>{run.ai_source ?? "unknown"}</dd>
-        </div>
-        <div>
-          <dt>External calls</dt>
-          <dd>{run.new_external_ai_calls ?? "unknown"}</dd>
-        </div>
-        <div>
-          <dt>Human review</dt>
-          <dd>{run.human_review_required === null ? "unknown" : run.human_review_required ? "required" : "not flagged"}</dd>
-        </div>
+        <DetailField label="Ticker" value={detail.ticker} />
+        <DetailField label="Run ID" value={detail.run_id} />
+        <DetailField label="Overall status" value={detail.status.overall_status ?? "unknown"} />
+        <DetailField
+          label="Human review"
+          value={detail.status.human_review_required === null ? "unknown" : detail.status.human_review_required ? "required" : "not flagged"}
+        />
+        <DetailField label="Charts" value={detail.charts.length} />
         <div>
           <dt>Artifacts</dt>
           <dd>
-            report {run.report_path_exists ? "yes" : "no"} / dashboard {run.dashboard_path_exists ? "yes" : "no"} /
-            pdf {run.pdf_path_exists ? "yes" : "no"}
+            report {detail.artifacts.markdown_report_path ? "yes" : "no"} / dashboard{" "}
+            {detail.artifacts.dashboard_path ? "yes" : "no"} / pdf {detail.artifacts.pdf_report_path ? "yes" : "no"}
           </dd>
         </div>
       </dl>
     </section>
+
+      <section className="selected-run-summary" aria-label="AI source card">
+        <div className="card-header">
+          <span className="card-label">AI Source</span>
+          <StatusBadge variant={detail.ai_usage.external_ai_used ? "EXTERNAL_AI" : detail.ai_usage.local_mock_used ? "LOCAL_MOCK" : "UNKNOWN"} />
+        </div>
+        <dl className="selected-run-grid">
+          <DetailField label="Source" value={detail.ai_usage.source ?? "unknown"} />
+          <DetailField label="External AI" value={formatBoolean(detail.ai_usage.external_ai_used)} />
+          <DetailField label="Local mock" value={formatBoolean(detail.ai_usage.local_mock_used)} />
+          <DetailField label="New external calls" value={detail.ai_usage.new_external_ai_calls ?? "unknown"} />
+          <DetailField label="Cache hits" value={detail.ai_usage.cache_hits ?? "unknown"} />
+          <DetailField label="Model" value={detail.ai_usage.model ?? "unknown"} />
+        </dl>
+      </section>
+
+      <section className="selected-run-summary" aria-label="Provider card">
+        <div className="card-header">
+          <span className="card-label">Provider</span>
+          <StatusBadge variant={detail.provider.mock ? "WARNING" : "UNKNOWN"} />
+        </div>
+        <dl className="selected-run-grid">
+          <DetailField label="Provider" value={detail.provider.provider ?? "unknown"} />
+          <DetailField label="Source" value={detail.provider.source ?? "unknown"} />
+          <DetailField label="Adapter" value={detail.provider.provider_adapter ?? "unknown"} />
+          <DetailField label="Package used" value={formatBoolean(detail.provider.package_used)} />
+          <DetailField label="Mock" value={formatBoolean(detail.provider.mock)} />
+          <DetailField label="Market/Currency" value={`${detail.provider.market ?? "unknown"} / ${detail.provider.currency ?? "unknown"}`} />
+        </dl>
+        <ValueList emptyLabel="No provider limitations reported." items={detail.provider.limitations} />
+      </section>
+
+      <section className="selected-run-summary" aria-label="Company identity card">
+        <div className="card-header">
+          <span className="card-label">Company Identity</span>
+          <StatusBadge variant="UNKNOWN" />
+        </div>
+        <dl className="selected-run-grid">
+          <DetailField label="Name" value={detail.company.name ?? "unknown"} />
+          <DetailField label="Frame" value={detail.company.frame ?? "unknown"} />
+          <DetailField label="Confidence" value={detail.company.confidence ?? "unknown"} />
+        </dl>
+        <p>{detail.company.identity ?? "No company identity loaded."}</p>
+        <ValueList emptyLabel="No not-this boundaries loaded." items={detail.company.not_this} />
+      </section>
+
+      <section className="selected-run-summary" aria-label="Money flow card">
+        <div className="card-header">
+          <span className="card-label">Money Flow</span>
+          <StatusBadge variant="DATA_GAP" />
+        </div>
+        <dl className="selected-run-grid">
+          <DetailField label="Comes from" value={detail.financial_interpretation.where_money_comes_from ?? "unknown"} />
+          <DetailField label="Goes to" value={detail.financial_interpretation.where_money_goes ?? "unknown"} />
+          <DetailField label="Debt / financing" value={detail.financial_interpretation.debt_and_financing ?? "unknown"} />
+        </dl>
+        <p>{detail.financial_interpretation.cash_flow_explanation ?? "No cash-flow explanation loaded."}</p>
+      </section>
+
+      <section className="selected-run-summary" aria-label="Blueprint card">
+        <div className="card-header">
+          <span className="card-label">Blueprint</span>
+          <StatusBadge variant="UNKNOWN" />
+        </div>
+        <p>{detail.blueprint.core_thesis ?? "No core thesis loaded."}</p>
+        <div className="split-lists">
+          <ValueList emptyLabel="No must-analyze items loaded." items={detail.blueprint.must_analyze} />
+          <ValueList emptyLabel="No must-not-analyze items loaded." items={detail.blueprint.must_not_analyze_as_core} />
+          <ValueList emptyLabel="No next checks loaded." items={detail.blueprint.next_checks} />
+        </div>
+      </section>
+
+      <section className="selected-run-summary" aria-label="Data gaps and warnings card">
+        <div className="card-header">
+          <span className="card-label">Data Gaps / Warnings</span>
+          <StatusBadge variant={detail.warnings.length > 0 ? "WARNING" : "PASS"} />
+        </div>
+        <div className="split-lists">
+          <ValueList emptyLabel="No data gaps loaded." items={detail.blueprint.data_gaps} />
+          <ValueList emptyLabel="No missing provider fields reported." items={detail.provider.missing_fields} />
+          <ValueList emptyLabel="No loader warnings." items={detail.warnings} />
+        </div>
+      </section>
+    </>
   );
 }
 
@@ -296,6 +426,9 @@ export function App(): JSX.Element {
   const [runsStatus, setRunsStatus] = useState<RunsStatus>("loading");
   const [runsError, setRunsError] = useState<string | null>(null);
   const [selectedRunKey, setSelectedRunKey] = useState<string | null>(null);
+  const [activeRunDetail, setActiveRunDetail] = useState<RunDetail | null>(null);
+  const [runDetailStatus, setRunDetailStatus] = useState<RunDetailStatus>("idle");
+  const [runDetailError, setRunDetailError] = useState<string | null>(null);
 
   const selectedRun = runs.find((run) => runKey(run) === selectedRunKey) ?? null;
 
@@ -362,6 +495,43 @@ export function App(): JSX.Element {
     };
   }, []);
 
+  useEffect(() => {
+    if (!selectedRun) {
+      setActiveRunDetail(null);
+      setRunDetailStatus("idle");
+      setRunDetailError(null);
+      return;
+    }
+
+    let mounted = true;
+    setRunDetailStatus("loading");
+    setRunDetailError(null);
+
+    loadRunDetail(selectedRun.ticker, selectedRun.run_id)
+      .then((detail) => {
+        if (mounted) {
+          setActiveRunDetail(detail);
+          setRunDetailStatus("ready");
+        }
+      })
+      .catch((error: unknown) => {
+        if (mounted) {
+          const message = error instanceof Error ? error.message : String(error);
+          setActiveRunDetail(null);
+          setRunDetailStatus(message.includes("__TAURI__") ? "browser-preview" : "error");
+          setRunDetailError(
+            message.includes("__TAURI__")
+              ? "Tauri IPC is unavailable in browser preview. Real detail loading requires the desktop runtime."
+              : message
+          );
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [selectedRun]);
+
   return (
     <AppShell>
       <Sidebar
@@ -385,7 +555,7 @@ export function App(): JSX.Element {
 
         <section className="card-grid" aria-label="Placeholder detail cards">
           <AppInfoCard appInfo={appInfo} error={appInfoError} status={appInfoStatus} />
-          <SelectedRunSummary run={selectedRun} />
+          <RunDetailCards detail={activeRunDetail} error={runDetailError} status={runDetailStatus} />
           {placeholderCards.map((card, index) => (
             <ResearchCard card={card} key={card.title} wide={index >= 3} />
           ))}
