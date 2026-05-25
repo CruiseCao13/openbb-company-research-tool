@@ -577,7 +577,7 @@ function RunList({
             </span>
             <span className="run-list-item__run-id">{shortRunId(run.run_id)}</span>
             <span className="run-list-item__meta">
-              {run.market ?? "market unknown"} / {run.provider ?? "provider unknown"}
+              {run.market ?? t("marketUnknown")} / {run.provider ?? t("providerUnknown")}
             </span>
             <span className="run-list-item__badges">
               <StatusBadge variant={aiSourceBadge(run)} />
@@ -613,17 +613,17 @@ function PrimaryActionBar({ detail, microClickSound, onOpenCharts }: { detail: R
     playMicroClick(microClickSound);
     if (action === "tab") {
       onOpenCharts();
-      setMessage(`${label} selected.`);
+      setMessage(`${label} ${t("artifactSelected")}.`);
       return;
     }
     setBusyLabel(label);
-    setMessage(`${action === "open" ? "Opening" : "Revealing"} ${label}...`);
+    setMessage(`${action === "open" ? t("openingArtifact") : t("revealingArtifact")} ${label}...`);
     try {
       const result = action === "open" ? await openArtifact(path) : await revealInFolder(path);
-      setMessage(result.ok ? `${label} ready.` : `${label} action returned a warning.`);
+      setMessage(result.ok ? `${label} ${t("artifactReady")}.` : `${label} ${t("artifactWarning")}`);
     } catch (error: unknown) {
       const text = error instanceof Error ? error.message : String(error);
-      setMessage(text.includes("__TAURI__") ? "Desktop runtime required for artifact actions." : text);
+      setMessage(text.includes("__TAURI__") ? t("desktopArtifactRequired") : text);
     } finally {
       setBusyLabel(null);
     }
@@ -635,7 +635,7 @@ function PrimaryActionBar({ detail, microClickSound, onOpenCharts }: { detail: R
         {actions.map((action) => (
           <button
             className="primary-action"
-            data-tooltip={action.path ? `${action.label} is available` : `${action.label} is unavailable for this run`}
+            data-tooltip={action.path ? `${action.label} ${t("artifactAvailable")}` : `${action.label} ${t("artifactUnavailable")}`}
             disabled={!action.path || busyLabel !== null}
             key={action.label}
             onClick={() => void handleAction(action.label, action.path, action.action)}
@@ -643,7 +643,7 @@ function PrimaryActionBar({ detail, microClickSound, onOpenCharts }: { detail: R
           >
             <b>{action.icon}</b>
             <span>{action.label}</span>
-            <small>{action.path ? action.action : "missing"}</small>
+            <small>{action.path ? t(action.action === "reveal" ? "actionReveal" : "actionOpen") : t("missing")}</small>
           </button>
         ))}
       </div>
@@ -688,11 +688,11 @@ function RunWorkspaceHeader({
         ) : null}
         <StatusBadge variant={detail?.ai_usage.external_ai_used ? "EXTERNAL_AI" : detail?.ai_usage.local_mock_used ? "LOCAL_MOCK" : "UNKNOWN"} />
         {detail?.provider.mock ? <StatusBadge variant="PROVIDER_MOCK" /> : null}
-        <span className="signal-pill">{detail?.provider.provider ?? selectedRun?.provider ?? "provider unknown"}</span>
-        <span className="signal-pill">{detail?.provider.market ?? selectedRun?.market ?? "market unknown"}</span>
-        <span className="signal-pill">charts {chartCount}</span>
-        <span className="signal-pill">artifacts {artifacts.available}/{artifacts.total}</span>
-        <span className="signal-pill signal-pill--warning">warnings {warnings.length}</span>
+        <span className="signal-pill">{detail?.provider.provider ?? selectedRun?.provider ?? t("providerUnknown")}</span>
+        <span className="signal-pill">{detail?.provider.market ?? selectedRun?.market ?? t("marketUnknown")}</span>
+        <span className="signal-pill">{t("charts")} {chartCount}</span>
+        <span className="signal-pill">{t("artifactsCount")} {artifacts.available}/{artifacts.total}</span>
+        <span className="signal-pill signal-pill--warning">{t("warningsCount")} {warnings.length}</span>
       </div>
     </header>
   );
@@ -722,7 +722,7 @@ function ChartPreviewStrip({
       {detail === null ? (
         <div className="chart-strip-empty">{t("selectRun")}</div>
       ) : previewCharts.length === 0 ? (
-        <div className="chart-strip-empty">No chart manifest found for this run.</div>
+        <div className="chart-strip-empty">{t("noChartManifest")}</div>
       ) : (
         <div className="chart-preview-strip__grid">
           {previewCharts.map((chart) => (
@@ -730,11 +730,11 @@ function ChartPreviewStrip({
               {chart.image_exists && chart.image_path ? (
                 <img alt={`${chart.title} preview`} src={artifactImageSrc(chart.image_path)} />
               ) : (
-                <div className="chart-strip-card__missing">Missing image</div>
+                <div className="chart-strip-card__missing">{t("missingImage")}</div>
               )}
               <div>
                 <strong>{chart.title}</strong>
-                <span>{chart.source ?? "source unknown"}</span>
+                <span>{chart.source ?? t("sourceUnknown")}</span>
               </div>
             </article>
           ))}
@@ -1725,15 +1725,15 @@ export function App(): JSX.Element {
                 <MoneyFlowSankey detail={activeRunDetail} />
               ) : runDetailStatus === "loading" ? (
                 <SkeletonSurface
-                  detail="Reading structured metadata through Tauri IPC. The previous shell stays stable while the flow map hydrates."
-                  title="Loading cash-flow map"
+                  detail={t("cashFlowMapHydrating")}
+                  title={t("cashFlowMapLoading")}
                   variant="flow"
                 />
               ) : (
                 <div className="graph-loading-panel">
                   <span className="subsection-title">{t("moneyFlow")}</span>
-                  <strong>Select a run to view cash flow</strong>
-                  <p>{runDetailStatus === "error" ? runDetailError ?? "Run detail failed." : "The studio renders existing structured metadata only. No fake flow data is generated."}</p>
+                  <strong>{t("selectRunCashFlow")}</strong>
+                  <p>{runDetailStatus === "error" ? runDetailError ?? t("runDetailFailed") : t("existingMetadataOnly")}</p>
                 </div>
               )}
             </section>

@@ -205,7 +205,19 @@ export const resources = {
       artifactOpened: "opened",
       artifactRevealed: "revealed",
       artifactWarning: "artifact action returned a warning.",
-      desktopArtifactRequired: "Desktop runtime required for artifact actions."
+      desktopArtifactRequired: "Desktop runtime required for artifact actions.",
+      artifactSelected: "selected",
+      artifactReady: "ready",
+      artifactUnavailable: "is unavailable for this run",
+      marketUnknown: "market unknown",
+      artifactsCount: "artifacts",
+      cashFlowMapLoading: "Loading cash-flow map",
+      cashFlowMapHydrating: "Reading structured metadata through Tauri IPC. The previous shell stays stable while the flow map hydrates.",
+      selectRunCashFlow: "Select a run to view cash flow",
+      existingMetadataOnly: "The studio renders existing structured metadata only. No fake flow data is generated.",
+      noChartManifest: "No chart manifest found for this run.",
+      missingImage: "Missing image",
+      sourceUnknown: "source unknown"
     }
   },
   zh: {
@@ -409,7 +421,19 @@ export const resources = {
       artifactOpened: "已打开",
       artifactRevealed: "已显示",
       artifactWarning: "文件操作返回警告。",
-      desktopArtifactRequired: "文件操作需要桌面运行时。"
+      desktopArtifactRequired: "文件操作需要桌面运行时。",
+      artifactSelected: "已选择",
+      artifactReady: "已就绪",
+      artifactUnavailable: "此运行不可用",
+      marketUnknown: "市场未知",
+      artifactsCount: "文件",
+      cashFlowMapLoading: "正在加载现金流图",
+      cashFlowMapHydrating: "正在通过 Tauri IPC 读取结构化元数据。旧界面保持稳定，现金流图渐进加载。",
+      selectRunCashFlow: "选择一个运行以查看现金流",
+      existingMetadataOnly: "工作台只渲染已有结构化元数据，不生成伪造现金流数据。",
+      noChartManifest: "此运行没有图表清单。",
+      missingImage: "缺少图片",
+      sourceUnknown: "来源未知"
     }
   }
 } as const;
