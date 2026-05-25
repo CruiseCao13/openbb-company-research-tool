@@ -114,3 +114,10 @@ export type RunDetail = {
 };
 
 export type RunDetailStatus = "idle" | "loading" | "ready" | "error" | "browser-preview";
+
+export type ArtifactActionResult = {
+  ok: boolean;
+  action: "open" | "reveal";
+  path: string;
+  message: string;
+};

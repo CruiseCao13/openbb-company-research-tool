@@ -448,6 +448,59 @@ textarea {
   text-transform: uppercase;
 }
 
+.artifact-button-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.artifact-button {
+  display: grid;
+  gap: 6px;
+  border: 1px solid rgba(143, 211, 255, 0.22);
+  background: rgba(2, 6, 23, 0.42);
+  color: var(--text-main);
+  cursor: pointer;
+  padding: 10px;
+  text-align: left;
+}
+
+.artifact-button:hover:not(:disabled) {
+  border-color: rgba(143, 211, 255, 0.5);
+  background: rgba(15, 23, 42, 0.76);
+}
+
+.artifact-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.artifact-button span,
+.artifact-button small,
+.artifact-message {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.artifact-button span {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+}
+
+.artifact-button small {
+  color: var(--text-muted);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+}
+
+.artifact-message {
+  border-left: 2px solid var(--info);
+  background: rgba(143, 211, 255, 0.06);
+  padding: 9px 10px;
+  color: var(--text-muted);
+}
+
 .compact-list {
   display: grid;
   gap: 6px;
@@ -466,7 +519,8 @@ textarea {
 @media (max-width: 1180px) {
   .selected-run-grid,
   .detail-kv-grid,
-  .split-lists {
+  .split-lists,
+  .artifact-button-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

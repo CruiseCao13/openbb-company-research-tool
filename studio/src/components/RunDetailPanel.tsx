@@ -1,4 +1,5 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
+import { openArtifact, revealInFolder } from "../lib/tauri";
 import type { RunDetail, RunDetailStatus } from "../types/app";
 
 type DetailBadgeVariant = "PASS" | "WARNING" | "FAIL" | "DATA_GAP" | "EXTERNAL_AI" | "LOCAL_MOCK" | "UNKNOWN";
@@ -260,6 +261,71 @@ function DataGapsCard({ detail }: { detail: RunDetail }): JSX.Element {
   );
 }
 
+type ArtifactButtonConfig = {
+  label: string;
+  path: string | null;
+  action: "open" | "reveal";
+};
+
+function ArtifactLinksCard({ detail }: { detail: RunDetail }): JSX.Element {
+  const [message, setMessage] = useState<string>("No artifact action yet.");
+  const [isBusy, setIsBusy] = useState<string | null>(null);
+
+  const artifactButtons: ArtifactButtonConfig[] = [
+    { label: "Open Markdown Report", path: detail.artifacts.markdown_report_path, action: "open" },
+    { label: "Open Dashboard", path: detail.artifacts.dashboard_path, action: "open" },
+    { label: "Open PDF", path: detail.artifacts.pdf_report_path, action: "open" },
+    { label: "Open AI Usage", path: detail.artifacts.ai_usage_path, action: "open" },
+    { label: "Open Research Blueprint", path: detail.artifacts.blueprint_path, action: "open" },
+    { label: "Open Validator Report", path: detail.artifacts.validator_report_path, action: "open" },
+    { label: "Open Provider Payload", path: detail.artifacts.provider_payload_path, action: "open" },
+    { label: "Reveal Run Folder", path: detail.run_folder, action: "reveal" }
+  ];
+
+  async function handleArtifactAction(config: ArtifactButtonConfig): Promise<void> {
+    if (!config.path) {
+      return;
+    }
+
+    setIsBusy(config.label);
+    setMessage(`${config.action === "open" ? "Opening" : "Revealing"} ${config.label}...`);
+
+    try {
+      const result =
+        config.action === "open" ? await openArtifact(config.path) : await revealInFolder(config.path);
+      setMessage(`${result.message}: ${result.path}`);
+    } catch (error: unknown) {
+      const text = error instanceof Error ? error.message : String(error);
+      const browserPreview = text.includes("__TAURI__")
+        ? "Tauri IPC is unavailable in browser preview. Artifact opening requires the desktop runtime."
+        : text;
+      setMessage(`Artifact action failed: ${browserPreview}`);
+    } finally {
+      setIsBusy(null);
+    }
+  }
+
+  return (
+    <DetailSection badge="UNKNOWN" title="Artifacts">
+      <div className="artifact-button-grid">
+        {artifactButtons.map((config) => (
+          <button
+            className="artifact-button"
+            disabled={!config.path || isBusy !== null}
+            key={config.label}
+            onClick={() => void handleArtifactAction(config)}
+            type="button"
+          >
+            <span>{config.label}</span>
+            <small>{config.path ? config.action : "missing"}</small>
+          </button>
+        ))}
+      </div>
+      <p className="artifact-message">{message}</p>
+    </DetailSection>
+  );
+}
+
 export function RunDetailPanel({ detail, error, status }: RunDetailPanelProps): JSX.Element {
   if (status === "idle") {
     return <EmptyRunDetailState title="No run selected" detail="Select a run from the sidebar to load structured run metadata." />;
@@ -287,6 +353,7 @@ export function RunDetailPanel({ detail, error, status }: RunDetailPanelProps): 
       <MoneyFlowCard detail={detail} />
       <BlueprintCard detail={detail} />
       <DataGapsCard detail={detail} />
+      <ArtifactLinksCard detail={detail} />
     </>
   );
 }

@@ -2,6 +2,7 @@ use serde::Serialize;
 use serde_json::Value;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 #[derive(Debug, Serialize)]
 pub struct StudioPing {
@@ -150,6 +151,25 @@ pub struct DetailArtifacts {
     provider_payload_path: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct ArtifactActionResult {
+    ok: bool,
+    action: &'static str,
+    path: String,
+    message: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ArtifactAction {
+    Open,
+    Reveal,
+}
+
+#[derive(Debug)]
+struct ValidatedArtifactPath {
+    canonical_path: PathBuf,
+}
+
 #[tauri::command]
 fn ping_studio() -> StudioPing {
     StudioPing {
@@ -177,6 +197,36 @@ fn load_run_detail(ticker: String, run_id: String) -> Result<RunDetail, String> 
     let reports_root = repo_root.join("reports");
     validate_reports_root(&repo_root, &reports_root)?;
     load_run_detail_from_reports_root(&reports_root, &ticker, &run_id)
+}
+
+#[tauri::command]
+fn open_artifact(path: String) -> Result<ArtifactActionResult, String> {
+    let repo_root = discover_repo_root()?;
+    let reports_root = repo_root.join("reports");
+    let artifact = validate_artifact_path(&reports_root, &path, ArtifactAction::Open)?;
+    open_path_with_os(&artifact.canonical_path)?;
+
+    Ok(ArtifactActionResult {
+        ok: true,
+        action: "open",
+        path: path_to_string(&artifact.canonical_path),
+        message: "artifact open request sent".to_string(),
+    })
+}
+
+#[tauri::command]
+fn reveal_in_folder(path: String) -> Result<ArtifactActionResult, String> {
+    let repo_root = discover_repo_root()?;
+    let reports_root = repo_root.join("reports");
+    let artifact = validate_artifact_path(&reports_root, &path, ArtifactAction::Reveal)?;
+    reveal_path_with_os(&artifact.canonical_path)?;
+
+    Ok(ArtifactActionResult {
+        ok: true,
+        action: "reveal",
+        path: path_to_string(&artifact.canonical_path),
+        message: "artifact reveal request sent".to_string(),
+    })
 }
 
 fn build_app_info() -> Result<AppInfo, String> {
@@ -210,6 +260,163 @@ fn load_run_detail_from_reports_root(
     }
 
     Ok(build_run_detail(ticker, run_id, &run_path))
+}
+
+fn validate_artifact_path(
+    reports_root: &Path,
+    path: &str,
+    action: ArtifactAction,
+) -> Result<ValidatedArtifactPath, String> {
+    if path.trim().is_empty() {
+        return Err("artifact path cannot be empty".to_string());
+    }
+
+    let raw_path = PathBuf::from(path);
+    if path.contains('\0')
+        || raw_path
+            .components()
+            .any(|component| matches!(component, std::path::Component::ParentDir))
+    {
+        return Err("artifact path contains unsafe traversal".to_string());
+    }
+
+    let reports_root = reports_root
+        .canonicalize()
+        .map_err(|err| format!("reports root cannot be resolved: {err}"))?;
+
+    let candidate = if raw_path.is_absolute() {
+        raw_path
+    } else {
+        reports_root.join(raw_path)
+    };
+
+    if !candidate.exists() {
+        return Err(format!(
+            "artifact path does not exist: {}",
+            path_to_string(&candidate)
+        ));
+    }
+
+    let canonical_path = candidate
+        .canonicalize()
+        .map_err(|err| format!("artifact path cannot be resolved: {err}"))?;
+
+    if !canonical_path.starts_with(&reports_root) {
+        return Err("artifact path is outside reports root".to_string());
+    }
+
+    match action {
+        ArtifactAction::Open => {
+            if !canonical_path.is_file() {
+                return Err("open_artifact requires a file path".to_string());
+            }
+            if !is_allowed_artifact_file(&canonical_path, &reports_root) {
+                return Err("artifact file type or location is not allowed".to_string());
+            }
+        }
+        ArtifactAction::Reveal => {
+            if !(canonical_path.is_file() || canonical_path.is_dir()) {
+                return Err("reveal_in_folder requires an existing file or directory".to_string());
+            }
+        }
+    }
+
+    Ok(ValidatedArtifactPath { canonical_path })
+}
+
+fn is_allowed_artifact_file(path: &Path, reports_root: &Path) -> bool {
+    let Ok(relative) = path.strip_prefix(reports_root) else {
+        return false;
+    };
+
+    let components = relative
+        .components()
+        .filter_map(|component| match component {
+            std::path::Component::Normal(value) => value.to_str(),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+
+    if components.len() < 4 {
+        return false;
+    }
+
+    let Some(parent) = components.get(3).copied() else {
+        return false;
+    };
+    let extension = path
+        .extension()
+        .and_then(|value| value.to_str())
+        .unwrap_or_default();
+    let file_name = path
+        .file_name()
+        .and_then(|value| value.to_str())
+        .unwrap_or_default();
+
+    if components.len() == 4 && file_name == "dashboard.html" {
+        return true;
+    }
+
+    match parent {
+        "report" => matches!(extension, "md" | "pdf"),
+        "metadata" => extension == "json",
+        "raw" => file_name == "provider_payload.json",
+        "audit" => extension == "md",
+        "self_review" => extension == "md",
+        "charts" => extension == "png",
+        "pack" => extension == "zip",
+        _ => false,
+    }
+}
+
+fn open_path_with_os(path: &Path) -> Result<(), String> {
+    let status = if cfg!(target_os = "macos") {
+        Command::new("open").arg(path).status()
+    } else if cfg!(target_os = "windows") {
+        Command::new("explorer").arg(path).status()
+    } else if cfg!(target_os = "linux") {
+        Command::new("xdg-open").arg(path).status()
+    } else {
+        return Err("opening artifacts is unsupported on this platform".to_string());
+    }
+    .map_err(|err| format!("failed to launch OS open command: {err}"))?;
+
+    if status.success() {
+        Ok(())
+    } else {
+        Err(format!("OS open command failed with status: {status}"))
+    }
+}
+
+fn reveal_path_with_os(path: &Path) -> Result<(), String> {
+    let status = if cfg!(target_os = "macos") {
+        Command::new("open")
+            .args(["-R", &path_to_string(path)])
+            .status()
+    } else if cfg!(target_os = "windows") {
+        Command::new("explorer")
+            .arg(format!(
+                "/select,{}",
+                path_to_string(path).replace('/', "\\")
+            ))
+            .status()
+    } else if cfg!(target_os = "linux") {
+        let target = if path.is_dir() {
+            path.to_path_buf()
+        } else {
+            path.parent().unwrap_or(path).to_path_buf()
+        };
+        Command::new("xdg-open").arg(target).status()
+    } else {
+        return Err("revealing artifacts is unsupported on this platform".to_string());
+    }
+    .map_err(|err| format!("failed to launch OS reveal command: {err}"))?;
+
+    if status.success() {
+        Ok(())
+    } else {
+        Err(format!("OS reveal command failed with status: {status}"))
+    }
 }
 
 fn build_run_detail(ticker: &str, run_id: &str, run_path: &Path) -> RunDetail {
@@ -990,7 +1197,9 @@ pub fn run() {
             ping_studio,
             get_app_info,
             list_runs,
-            load_run_detail
+            load_run_detail,
+            open_artifact,
+            reveal_in_folder
         ])
         .run(tauri::generate_context!())
         .expect("failed to run v6 Tauri Research Studio");
@@ -1359,6 +1568,155 @@ mod tests {
             .ai_usage
             .prompt_versions
             .contains(&"research_blueprint_v1".to_string()));
+    }
+
+    #[test]
+    fn open_artifact_rejects_path_traversal() {
+        let temp_dir = TempDir::new().expect("temp dir");
+        let reports_root = temp_dir.path().join("reports");
+        create_dir_all(&reports_root).expect("reports");
+
+        let error = validate_artifact_path(&reports_root, "../../etc/passwd", ArtifactAction::Open)
+            .expect_err("traversal should fail");
+
+        assert!(error.contains("unsafe traversal"));
+    }
+
+    #[test]
+    fn open_artifact_rejects_outside_reports() {
+        let temp_dir = TempDir::new().expect("temp dir");
+        let reports_root = temp_dir.path().join("reports");
+        create_dir_all(&reports_root).expect("reports");
+        let outside = temp_dir.path().join("outside.md");
+        write(&outside, "outside").expect("outside");
+
+        let error = validate_artifact_path(
+            &reports_root,
+            &path_to_string(&outside),
+            ArtifactAction::Open,
+        )
+        .expect_err("outside reports should fail");
+
+        assert!(error.contains("outside reports root"));
+    }
+
+    #[test]
+    fn open_artifact_rejects_missing_file() {
+        let temp_dir = TempDir::new().expect("temp dir");
+        let reports_root = temp_dir.path().join("reports");
+        create_dir_all(&reports_root).expect("reports");
+
+        let error = validate_artifact_path(
+            &reports_root,
+            &path_to_string(
+                &reports_root
+                    .join("AAPL")
+                    .join("runs")
+                    .join("missing")
+                    .join("report")
+                    .join("x.md"),
+            ),
+            ArtifactAction::Open,
+        )
+        .expect_err("missing file should fail");
+
+        assert!(error.contains("does not exist"));
+    }
+
+    #[test]
+    fn open_artifact_accepts_report_markdown_under_reports() {
+        let temp_dir = TempDir::new().expect("temp dir");
+        let reports_root = temp_dir.path().join("reports");
+        let report_path = reports_root
+            .join("AAPL")
+            .join("runs")
+            .join("demo")
+            .join("report")
+            .join("AAPL_research_report.md");
+        create_dir_all(report_path.parent().expect("parent")).expect("report dir");
+        write(&report_path, "# AAPL").expect("report");
+
+        let validated = validate_artifact_path(
+            &reports_root,
+            &path_to_string(&report_path),
+            ArtifactAction::Open,
+        )
+        .expect("valid report");
+
+        assert_eq!(
+            validated.canonical_path,
+            report_path.canonicalize().expect("canonical")
+        );
+    }
+
+    #[test]
+    fn reveal_in_folder_accepts_run_folder_under_reports() {
+        let temp_dir = TempDir::new().expect("temp dir");
+        let reports_root = temp_dir.path().join("reports");
+        let run_path = reports_root.join("AAPL").join("runs").join("demo");
+        create_dir_all(&run_path).expect("run dir");
+
+        let validated = validate_artifact_path(
+            &reports_root,
+            &path_to_string(&run_path),
+            ArtifactAction::Reveal,
+        )
+        .expect("valid reveal");
+
+        assert_eq!(
+            validated.canonical_path,
+            run_path.canonicalize().expect("canonical")
+        );
+    }
+
+    #[test]
+    fn reveal_in_folder_rejects_outside_reports() {
+        let temp_dir = TempDir::new().expect("temp dir");
+        let reports_root = temp_dir.path().join("reports");
+        create_dir_all(&reports_root).expect("reports");
+        let outside = temp_dir.path().join("outside");
+        create_dir_all(&outside).expect("outside");
+
+        let error = validate_artifact_path(
+            &reports_root,
+            &path_to_string(&outside),
+            ArtifactAction::Reveal,
+        )
+        .expect_err("outside reveal should fail");
+
+        assert!(error.contains("outside reports root"));
+    }
+
+    #[test]
+    fn artifact_commands_do_not_read_file_contents() {
+        let temp_dir = TempDir::new().expect("temp dir");
+        let reports_root = temp_dir.path().join("reports");
+        let provider_path = reports_root
+            .join("AAPL")
+            .join("runs")
+            .join("demo")
+            .join("raw")
+            .join("provider_payload.json");
+        create_dir_all(provider_path.parent().expect("parent")).expect("raw dir");
+        write(&provider_path, "SHOULD_NOT_BE_READ").expect("provider");
+
+        let validated = validate_artifact_path(
+            &reports_root,
+            &path_to_string(&provider_path),
+            ArtifactAction::Open,
+        )
+        .expect("valid provider payload");
+
+        let serialized = serde_json::to_string(&ArtifactActionResult {
+            ok: true,
+            action: "open",
+            path: path_to_string(&validated.canonical_path),
+            message: "artifact open request sent".to_string(),
+        })
+        .expect("serialize");
+
+        assert!(!serialized.contains("SHOULD_NOT_BE_READ"));
+        assert!(serialized.contains("provider_payload.json"));
     }
 
     fn create_run_with_generated_at(
