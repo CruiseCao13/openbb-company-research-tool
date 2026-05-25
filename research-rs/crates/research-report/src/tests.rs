@@ -167,9 +167,17 @@ fn cannot_claim_external_ai_without_ai_usage_proof() {
 }
 
 #[test]
-fn readme_is_bilingual() {
+fn readme_has_v5_title() {
     let readme = include_str!("../../../../README.md");
     assert!(readme.contains("OpenBB Company Research Tool v5.0"));
+    assert!(readme.contains("Rust-Powered AI-Led Company Research Engine"));
+}
+
+#[test]
+fn readme_has_bilingual_sections() {
+    let readme = include_str!("../../../../README.md");
+    assert!(readme.contains("## English Product Overview"));
+    assert!(readme.contains("## 中文产品说明"));
     assert!(readme.contains("Rust 驱动、AI 主导"));
     assert!(readme.contains("免责声明"));
 }
@@ -179,61 +187,110 @@ fn readme_has_mermaid_pipeline() {
     let readme = include_str!("../../../../README.md");
     assert!(readme.contains("```mermaid"));
     assert!(readme.contains("Provider Data"));
-    assert!(readme.contains("Responsibility map"));
+    assert!(readme.contains("Responsibility Split"));
     assert!(readme.contains("reports/samples/AAPL/dashboard.html"));
 }
 
 #[test]
-fn readme_mentions_v5() {
+fn readme_primary_quickstart_uses_research_rs() {
     let readme = include_str!("../../../../README.md");
-    assert!(readme.contains("Rust-Powered AI-Led Company Research Engine"));
-    assert!(readme.contains("v5.0: Data -> Locked numbers -> AI company understanding"));
-    assert!(readme.contains("v4.x: Data -> Rule-based profile -> Template report -> AI patch"));
+    assert!(readme.contains("Primary entry point: `research-rs`."));
+    assert!(readme.contains("source \"$HOME/.cargo/env\""));
+    assert!(readme.contains("cd research-rs"));
+    assert!(readme.contains("cargo run -p research-rs -- --help"));
+    assert!(
+        readme.contains("cargo run -p research-rs -- run AAPL --ai local --run-id demo_aapl_local")
+    );
+    assert!(readme.contains("--require-external-ai"));
+    assert!(readme.contains("--no-ai-cache"));
+    assert!(readme.contains("cargo run -p research-rs -- run 600519.SH"));
 }
 
 #[test]
-fn readme_not_stuck_on_v43_current_status() {
+fn readme_legacy_commands_not_in_primary_quickstart() {
     let readme = include_str!("../../../../README.md");
-    assert!(!readme.contains("Current Status"));
-    assert!(!readme.contains("v4.3 Status Note"));
-    assert!(!readme.contains("asset-aware report routing"));
+    let quick_start = readme
+        .split("## How to Verify Real OpenAI API Usage")
+        .next()
+        .unwrap();
+    assert!(!quick_start.contains("openbb-research"));
+    assert!(!quick_start.contains("cresearch"));
+    assert!(!quick_start.contains("python scripts/company_research_tool.py"));
+    let legacy = readme
+        .split("## Legacy Python Workflow")
+        .nth(1)
+        .expect("legacy section should exist");
+    assert!(legacy.contains("openbb-research"));
+    assert!(legacy.contains("cresearch"));
+    assert!(legacy.contains("python scripts/company_research_tool.py"));
 }
 
 #[test]
-fn readme_links_us_and_cn_samples() {
+fn readme_no_v43_current_product_sections() {
+    let readme = include_str!("../../../../README.md");
+    for banned in [
+        "30-Second Demo",
+        "v4.3 Asset-Aware Workflow",
+        "v4.4 Batch Evaluation Foundation",
+        "Batch Evaluation Output",
+        "v4 Workflow Gates",
+        "What v4.0 Improves",
+        "What v3.0 Improved",
+        "What v2.1 Improved",
+        "What v2.0 Improved",
+        "Core Features",
+        "Current Status",
+        "v4.3 Status Note",
+        "asset-aware report routing",
+    ] {
+        assert!(!readme.contains(banned), "README still contains {banned}");
+    }
+}
+
+#[test]
+fn readme_has_us_and_cn_sample_gallery() {
     let readme = include_str!("../../../../README.md");
     for needle in [
+        "## v5 Sample Gallery",
         "reports/samples/AAPL/report/AAPL_research_report.md",
         "reports/samples/GOOGL/dashboard.html",
         "reports/samples/CAT/metadata/research_blueprint.json",
         "reports/samples/AMD/metadata/ai_usage.json",
         "reports/samples/600519.SH/report/600519.SH_research_report.md",
         "reports/samples/000001.SZ/dashboard.html",
+        "local fallback sample",
     ] {
         assert!(readme.contains(needle), "README missing {needle}");
     }
 }
 
 #[test]
-fn readme_explains_external_ai_usage() {
+fn readme_has_external_ai_usage_proof() {
     let readme = include_str!("../../../../README.md");
+    assert!(readme.contains("## How to Verify Real OpenAI API Usage"));
     assert!(readme.contains("metadata/ai_usage.json"));
     assert!(readme.contains("\"external_ai_used\": true"));
     assert!(readme.contains("\"local_mock_used\": false"));
+    assert!(readme.contains("\"new_external_ai_calls\": 4"));
+    assert!(readme.contains("\"model\": \"gpt-4.1-mini\""));
     assert!(readme.contains("--require-external-ai"));
     assert!(readme.contains("--no-ai-cache"));
 }
 
 #[test]
-fn readme_explains_not_investment_advice() {
+fn readme_has_limitations_and_disclaimer() {
     let readme = include_str!("../../../../README.md");
-    assert!(readme.contains("not investment advice"));
+    assert!(readme.contains("## Limitations"));
+    assert!(readme.contains("## Disclaimer"));
+    assert!(readme.contains("## 免责声明"));
     assert!(readme.contains("No buy/sell/hold recommendation"));
-    assert!(readme.contains("不给买卖持有建议"));
+    assert!(readme.contains("Provider coverage may be incomplete"));
+    assert!(readme.contains("AI may be wrong"));
+    assert!(readme.contains("local/mock fallback is not full external AI analysis"));
 }
 
 #[test]
-fn readme_sample_links_exist() {
+fn readme_links_existing_v5_samples() {
     let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../");
     for path in [
         "reports/samples/AAPL/report/AAPL_research_report.md",
@@ -281,26 +338,6 @@ fn readme_sample_links_exist() {
     ] {
         assert!(repo.join(path).exists(), "sample link missing: {path}");
     }
-}
-
-#[test]
-fn readme_has_quick_start() {
-    let readme = include_str!("../../../../README.md");
-    assert!(readme
-        .contains("cargo run -p research-rs --manifest-path research-rs/Cargo.toml -- --help"));
-    assert!(
-        readme.contains("cargo run -p research-rs -- run AAPL --ai local --run-id demo_aapl_local")
-    );
-    assert!(readme.contains("cargo run -p research-rs -- run 600519.SH"));
-}
-
-#[test]
-fn readme_has_limitations() {
-    let readme = include_str!("../../../../README.md");
-    assert!(readme.contains("## Limitations / 限制"));
-    assert!(readme.contains("Provider coverage may be incomplete"));
-    assert!(readme.contains("AI may be wrong"));
-    assert!(readme.contains("local/mock fallback is not full external AI analysis"));
 }
 
 #[test]
