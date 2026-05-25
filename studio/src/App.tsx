@@ -1,7 +1,9 @@
 import { type CSSProperties, type PointerEvent, type ReactNode, useEffect, useMemo, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { AppInfoCard } from "./components/AppInfoCard";
+import { InstrumentBoard } from "./components/InstrumentBoard";
+import { LandingExperience, exampleTickers, type LandingAnalysisMode, type LandingMarket } from "./components/LandingExperience";
+import { LogoMark } from "./components/LogoMark";
 import { MoneyFlowSankey, RunDetailPanel, type RunDetailTab } from "./components/RunDetailPanel";
 import i18n, { type StudioLanguage } from "./i18n";
 import {
@@ -26,11 +28,6 @@ import type {
   TrainingRunSummary
 } from "./types/app";
 
-type StudioPing = {
-  status: "ok";
-  message: string;
-};
-
 type BadgeVariant =
   | "PASS"
   | "WARNING"
@@ -48,8 +45,6 @@ type StudioDensity = "compact" | "comfortable";
 type StudioMotion = "on" | "off";
 type StudioGlass = "low" | "medium" | "high";
 type MatrixFilter = "ALL" | "PASS" | "WARNING" | "FAIL" | "DATA_GAP" | "LOCAL" | "EXTERNAL";
-type LandingMarket = "auto" | "us" | "cn";
-type LandingAnalysisMode = "load_existing" | "run_local" | "external_disabled";
 type TrainingRunsStatus = "idle" | "loading" | "ready" | "empty" | "failed" | "browser-preview";
 type MatrixStatus = "idle" | "loading" | "ready" | "empty" | "failed" | "browser-preview";
 
@@ -60,8 +55,6 @@ const detailTabs: Array<{ id: RunDetailTab; labelKey: string }> = [
   { id: "audit", labelKey: "auditTrail" },
   { id: "artifacts", labelKey: "files" }
 ];
-
-const exampleTickers = ["AAPL", "GOOGL", "RKLB", "600519.SH", "JPM"];
 
 function StatusBadge({ variant }: { variant: BadgeVariant }): JSX.Element {
   return <span className={`status-badge status-badge--${variant.toLowerCase()}`}>{variant}</span>;
@@ -100,36 +93,6 @@ function runKey(run: RunSummary): string {
 
 function shortRunId(runId: string): string {
   return runId.length > 28 ? `${runId.slice(0, 25)}...` : runId;
-}
-
-function tickerMonogram(ticker: string | null | undefined): string {
-  if (!ticker) {
-    return "RS";
-  }
-  return ticker
-    .replace(/\.(SH|SZ)$/u, "")
-    .split(/[^A-Z0-9]+/u)
-    .filter(Boolean)
-    .join("")
-    .slice(0, 3)
-    .toUpperCase();
-}
-
-function CompanyMonogram({
-  market,
-  status,
-  ticker
-}: {
-  market: string | null | undefined;
-  status: string | null | undefined;
-  ticker: string | null | undefined;
-}): JSX.Element {
-  return (
-    <div className={`company-monogram company-monogram--${statusToBadge(status ?? null).toLowerCase()}`} aria-hidden="true">
-      <strong>{tickerMonogram(ticker)}</strong>
-      <span>{market ?? "MKT"}</span>
-    </div>
-  );
 }
 
 function booleanLabel(value: boolean | null): string {
@@ -264,152 +227,6 @@ function StudioTopBar({
         </button>
       </div>
     </header>
-  );
-}
-
-function LandingHero({
-  onEnter,
-  onLandingSearch,
-  onOpenLatest,
-  onOpenMatrix,
-  onSetAnalysisMode,
-  onSetMarket,
-  landingAnalysisMode,
-  landingMarket,
-  landingSearch,
-  matchingRunsCount
-}: {
-  onEnter: () => void;
-  onLandingSearch: (value: string) => void;
-  onOpenLatest: () => void;
-  onOpenMatrix: () => void;
-  onSetAnalysisMode: (value: LandingAnalysisMode) => void;
-  onSetMarket: (value: LandingMarket) => void;
-  landingAnalysisMode: LandingAnalysisMode;
-  landingMarket: LandingMarket;
-  landingSearch: string;
-  matchingRunsCount: number;
-}): JSX.Element {
-  const { t } = useTranslation();
-
-  return (
-    <section className="landing-hero" aria-label="Studio landing">
-      <div className="hero-orbit" aria-hidden="true"><span /><span /><span /></div>
-      <div className="landing-hero__canvas" aria-label="Example Preview vascular money flow">
-        <ExampleVascularPreview />
-      </div>
-      <div className="landing-hero__content">
-        <p className="eyebrow">{t("examplePreview")}</p>
-        <h2>{t("heroTitle")}</h2>
-        <p>{t("heroSubtitle")}</p>
-        <div className="example-ticker-strip" aria-label="Example companies">
-          {exampleTickers.map((ticker) => (
-            <button key={ticker} onClick={() => onLandingSearch(ticker)} type="button">
-              {ticker}
-            </button>
-          ))}
-        </div>
-      </div>
-      <form
-        className="landing-search-console"
-        onSubmit={(event) => {
-          event.preventDefault();
-          onEnter();
-        }}
-      >
-        <label>
-          <span>{t("searchTicker")}</span>
-          <input
-            autoComplete="off"
-            onChange={(event) => onLandingSearch(event.target.value)}
-            placeholder={t("searchTickerPlaceholder")}
-            value={landingSearch}
-          />
-        </label>
-        <div className="landing-search-console__controls">
-          <select aria-label={t("market")} onChange={(event) => onSetMarket(event.target.value as LandingMarket)} value={landingMarket}>
-            <option value="auto">{t("auto")}</option>
-            <option value="us">US</option>
-            <option value="cn">CN_A</option>
-          </select>
-          <select
-            aria-label={t("analysisMode")}
-            onChange={(event) => onSetAnalysisMode(event.target.value as LandingAnalysisMode)}
-            value={landingAnalysisMode}
-          >
-            <option value="load_existing">{t("loadExistingRun")}</option>
-            <option value="run_local" disabled>{t("runLocalComingNext")}</option>
-            <option value="external_disabled" disabled>{t("externalDisabled")}</option>
-          </select>
-        </div>
-        <div className="landing-search-console__actions">
-          <button className="hero-cta hero-cta--primary" type="submit">{t("analyze")}</button>
-          <button className="hero-cta" onClick={onOpenLatest} type="button">{t("loadLatest")}</button>
-          <button className="hero-cta" onClick={onOpenMatrix} type="button">{t("viewMatrix")}</button>
-        </div>
-        {landingSearch.trim().length > 0 && matchingRunsCount === 0 ? (
-          <div className="landing-no-result">
-            <strong>{t("noExistingRunFound")}</strong>
-            <span>{t("runLocalComingNext")}</span>
-          </div>
-        ) : null}
-        <p>{t("localOnlyNotice")}</p>
-      </form>
-    </section>
-  );
-}
-
-function ExampleVascularPreview(): JSX.Element {
-  const { t } = useTranslation();
-  return (
-    <div className="vascular-demo" aria-label={t("examplePreview")}>
-      <svg viewBox="0 0 900 520" role="img" aria-label="Example qualitative vascular money flow preview">
-        <defs>
-          <filter id="vascular-glow" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation="7" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-          <linearGradient id="vascular-green" x1="0%" x2="100%" y1="0%" y2="0%">
-            <stop offset="0%" stopColor="rgba(52, 211, 153, 0.1)" />
-            <stop offset="48%" stopColor="rgba(52, 211, 153, 0.88)" />
-            <stop offset="100%" stopColor="rgba(143, 211, 255, 0.78)" />
-          </linearGradient>
-          <linearGradient id="vascular-blue" x1="0%" x2="100%" y1="0%" y2="0%">
-            <stop offset="0%" stopColor="rgba(143, 211, 255, 0.14)" />
-            <stop offset="55%" stopColor="rgba(143, 211, 255, 0.82)" />
-            <stop offset="100%" stopColor="rgba(96, 165, 250, 0.36)" />
-          </linearGradient>
-          <linearGradient id="vascular-risk" x1="0%" x2="100%" y1="0%" y2="0%">
-            <stop offset="0%" stopColor="rgba(251, 146, 60, 0.18)" />
-            <stop offset="62%" stopColor="rgba(251, 146, 60, 0.72)" />
-            <stop offset="100%" stopColor="rgba(244, 63, 94, 0.5)" />
-          </linearGradient>
-        </defs>
-        <path className="vascular-path vascular-path--main" d="M90 250 C190 120 300 170 400 235 C500 300 620 270 790 120" />
-        <path className="vascular-path vascular-path--blue" d="M400 235 C470 160 570 120 710 210" />
-        <path className="vascular-path vascular-path--risk" d="M405 250 C485 330 610 360 780 405" />
-        <path className="vascular-path vascular-path--thin" d="M190 260 C275 330 350 348 485 385" />
-        {[
-          ["Revenue", 90, 250],
-          ["Cash Engine", 400, 235],
-          ["Reinvestment", 710, 210],
-          ["Free Cash", 790, 120],
-          ["Risk / Gaps", 780, 405]
-        ].map(([label, x, y]) => (
-          <g className="vascular-node" key={label as string}>
-            <circle cx={x as number} cy={y as number} r="16" />
-            <text x={(x as number) + 26} y={(y as number) + 4}>{label}</text>
-          </g>
-        ))}
-      </svg>
-      <div className="vascular-demo__badge">
-        <span>{t("examplePreview")}</span>
-        <strong>{t("qualitativeFlow")}</strong>
-      </div>
-    </div>
   );
 }
 
@@ -683,7 +500,7 @@ function Sidebar({
           <div className="example-run-list">
             {exampleTickers.map((ticker) => (
               <button key={ticker} onClick={() => onSearch(ticker)} type="button">
-                <CompanyMonogram market={ticker.includes(".") ? "CN_A" : "US"} status="UNKNOWN" ticker={ticker} />
+                <LogoMark market={ticker.includes(".") ? "CN_A" : "US"} status="UNKNOWN" ticker={ticker} />
                 <span>{ticker}</span>
               </button>
             ))}
@@ -734,7 +551,7 @@ function RunList({
           >
             <span className="run-list-item__topline">
               <span className="run-list-item__identity">
-                <CompanyMonogram market={run.market} status={run.status} ticker={run.ticker} />
+                <LogoMark market={run.market} status={run.status} ticker={run.ticker} />
                 <strong>{run.ticker}</strong>
               </span>
               <StatusBadge variant={statusToBadge(run.status)} />
@@ -818,12 +635,10 @@ function PrimaryActionBar({ detail, onOpenCharts }: { detail: RunDetail | null; 
 function RunWorkspaceHeader({
   detail,
   detailStatus,
-  ipcMessage,
   selectedRun
 }: {
   detail: RunDetail | null;
   detailStatus: RunDetailStatus;
-  ipcMessage: string;
   selectedRun: RunSummary | null;
 }): JSX.Element {
   const { t } = useTranslation();
@@ -836,7 +651,7 @@ function RunWorkspaceHeader({
       <div className="workspace-hero__identity">
         <p className="eyebrow">{t("reportWorkspace")}</p>
         <div className="workspace-hero__title-row">
-          <CompanyMonogram
+          <LogoMark
             market={detail?.provider.market ?? selectedRun?.market}
             status={detail?.status.overall_status ?? selectedRun?.status}
             ticker={selectedRun?.ticker}
@@ -858,7 +673,6 @@ function RunWorkspaceHeader({
         <span className="signal-pill">charts {chartCount}</span>
         <span className="signal-pill">artifacts {artifacts.available}/{artifacts.total}</span>
         <span className="signal-pill signal-pill--warning">warnings {warnings.length}</span>
-        <span className="ipc-readout">{ipcMessage}</span>
       </div>
     </header>
   );
@@ -1280,114 +1094,6 @@ function SimpleList({ emptyLabel, items }: { emptyLabel: string; items: string[]
   );
 }
 
-function gaugeVariant(status: BadgeVariant): "good" | "warning" | "risk" | "unknown" {
-  if (status === "PASS" || status === "EXTERNAL_AI" || status === "CACHE") {
-    return "good";
-  }
-  if (status === "WARNING" || status === "DATA_GAP" || status === "HUMAN_REVIEW" || status === "LOCAL_MOCK") {
-    return "warning";
-  }
-  if (status === "FAIL" || status === "PROVIDER_MOCK") {
-    return "risk";
-  }
-  return "unknown";
-}
-
-function GaugeDial({
-  detail,
-  label,
-  status,
-  summary
-}: {
-  detail: string;
-  label: string;
-  status: BadgeVariant;
-  summary: string;
-}): JSX.Element {
-  const variant = gaugeVariant(status);
-  return (
-    <article className={`gauge-dial gauge-dial--${variant}`}>
-      <div className="gauge-dial__meter" aria-hidden="true">
-        <span>{variant === "unknown" ? "--" : status}</span>
-      </div>
-      <div className="gauge-dial__body">
-        <strong>{label}</strong>
-        <span>{summary}</span>
-        <p>{detail}</p>
-      </div>
-    </article>
-  );
-}
-
-function InsightRail({ detail, warningsFirst }: { detail: RunDetail | null; warningsFirst: boolean }): JSX.Element {
-  const { t } = useTranslation();
-  const warnings = collectWarnings(detail);
-  const gaugeItems = [
-    {
-      label: t("dataConfidenceGauge"),
-      status: detail ? statusToBadge(detail.status.overall_status) : "UNKNOWN",
-      summary: detail?.status.overall_status ?? t("unknown"),
-      detail: detail ? "Status is read from report_status metadata." : t("selectRun")
-    },
-    {
-      label: t("cashFlowQualityGauge"),
-      status: detail?.financial_interpretation.cash_flow_explanation ? "PASS" : "DATA_GAP",
-      summary: detail?.financial_interpretation.cash_flow_explanation ? t("available") : t("dataGap"),
-      detail: detail?.financial_interpretation.cash_flow_explanation ?? "No cash-flow explanation loaded."
-    },
-    {
-      label: t("moneyFlowSpecificityGauge"),
-      status: detail?.financial_interpretation.where_money_comes_from && detail.financial_interpretation.where_money_goes ? "PASS" : "DATA_GAP",
-      summary: detail?.financial_interpretation.where_money_comes_from ? t("available") : t("dataGap"),
-      detail: detail?.financial_interpretation.where_money_comes_from ?? "Money source mechanism is missing."
-    },
-    {
-      label: t("humanReviewGauge"),
-      status: detail?.status.human_review_required || detail?.self_review.human_review_required ? "HUMAN_REVIEW" : detail ? "PASS" : "UNKNOWN",
-      summary: detail?.status.human_review_required || detail?.self_review.human_review_required ? t("required") : detail ? "OK" : t("unknown"),
-      detail: detail ? "Human-review flag comes from status and self-review metadata." : t("selectRun")
-    },
-    {
-      label: t("providerCoverageGauge"),
-      status: detail?.provider.mock ? "PROVIDER_MOCK" : detail?.provider.missing_fields.length ? "WARNING" : detail ? "PASS" : "UNKNOWN",
-      summary: detail?.provider.provider ?? t("unknown"),
-      detail: detail?.provider.missing_fields.join("; ") || "Provider coverage has no missing fields listed."
-    }
-  ] satisfies Array<{ detail: string; label: string; status: BadgeVariant; summary: string }>;
-  const warningCard = (
-    <section className="insight-card insight-card--warning" key="warnings">
-      <div className="card-header">
-        <span className="card-label">{t("warnings")}</span>
-        <StatusBadge variant={warnings.length > 0 ? "WARNING" : "PASS"} />
-      </div>
-      <SimpleList emptyLabel="No warnings for the selected run." items={warnings} />
-    </section>
-  );
-  const gaugePanel = (
-    <section className="gauge-dashboard" key="gauges" aria-label="Gauge dashboard">
-      <div className="gauge-dashboard__header">
-        <span className="card-label">{t("gaugeDashboard")}</span>
-        <small>{t("hoverForMeaning")}</small>
-      </div>
-      <div className="gauge-dashboard__grid">
-        {gaugeItems.map((item) => <GaugeDial key={item.label} {...item} />)}
-      </div>
-    </section>
-  );
-  const questionsCard = (
-    <section className="insight-card" key="questions">
-      <span className="card-label">{t("nextQuestions")}</span>
-      <SimpleList emptyLabel="No next checks loaded." items={detail?.blueprint.next_checks ?? []} />
-    </section>
-  );
-
-  return (
-    <aside className="insight-rail" aria-label="Run insights">
-      {warningsFirst ? [warningCard, gaugePanel, questionsCard] : [gaugePanel, warningCard, questionsCard]}
-    </aside>
-  );
-}
-
 function AppShell({
   children,
   density,
@@ -1427,7 +1133,6 @@ function AppShell({
 
 export function App(): JSX.Element {
   const { t } = useTranslation();
-  const [ipcMessage, setIpcMessage] = useState<string>("IPC not checked");
   const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
   const [appInfoStatus, setAppInfoStatus] = useState<AppInfoStatus>("loading");
   const [appInfoError, setAppInfoError] = useState<string | null>(null);
@@ -1553,18 +1258,6 @@ export function App(): JSX.Element {
 
   useEffect(() => {
     let mounted = true;
-
-    invoke<StudioPing>("ping_studio")
-      .then((response) => {
-        if (mounted) {
-          setIpcMessage(`${response.status}: ${response.message}`);
-        }
-      })
-      .catch(() => {
-        if (mounted) {
-          setIpcMessage("IPC unavailable in browser preview");
-        }
-      });
 
     getAppInfo()
       .then((info) => {
@@ -1753,7 +1446,7 @@ export function App(): JSX.Element {
         />
 
         {mode === "landing" ? (
-          <LandingHero
+          <LandingExperience
             landingAnalysisMode={landingAnalysisMode}
             landingMarket={landingMarket}
             landingSearch={runSearch}
@@ -1770,7 +1463,6 @@ export function App(): JSX.Element {
             <RunWorkspaceHeader
               detail={activeRunDetail}
               detailStatus={runDetailStatus}
-              ipcMessage={ipcMessage}
               selectedRun={selectedRun}
             />
             <PrimaryActionBar detail={activeRunDetail} onOpenCharts={() => setDetailTab("charts")} />
@@ -1824,7 +1516,7 @@ export function App(): JSX.Element {
         ) : null}
       </section>
 
-      {mode === "research" ? <InsightRail detail={activeRunDetail} warningsFirst={warningsFirst} /> : null}
+      {mode === "research" ? <InstrumentBoard detail={activeRunDetail} warningsFirst={warningsFirst} /> : null}
 
       {mode === "research" ? (
         <aside className="studio-system-card" aria-label="App information">
