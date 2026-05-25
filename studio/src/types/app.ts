@@ -134,3 +134,36 @@ export type ArtifactActionResult = {
   path: string;
   message: string;
 };
+
+export type TrainingRunSummary = {
+  run_id: string;
+  path: string;
+  has_quality_matrix: boolean;
+  has_issue_distribution: boolean;
+  has_training_cases: boolean;
+  generated_at: string | null;
+  summary_status: string | null;
+};
+
+export type QualityMatrixRow = {
+  ticker: string;
+  market: string | null;
+  company_name: string | null;
+  status: string | null;
+  quality_score: number | null;
+  grade: string | null;
+  issue_types: string[];
+  hard_failures: string[];
+  ai_source: string | null;
+  provider_status: string | null;
+};
+
+export type QualityMatrix = {
+  run_id: string;
+  rows: QualityMatrixRow[];
+  issue_distribution: Array<{
+    issue_type: string;
+    count: number;
+  }>;
+  warnings: string[];
+};

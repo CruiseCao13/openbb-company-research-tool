@@ -2,8 +2,25 @@ import { type ReactNode, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { AppInfoCard } from "./components/AppInfoCard";
 import { RunDetailPanel } from "./components/RunDetailPanel";
-import { getAppInfo, listRuns, loadRunDetail, openArtifact } from "./lib/tauri";
-import type { AppInfo, AppInfoStatus, RunDetail, RunDetailStatus, RunsStatus, RunSummary } from "./types/app";
+import {
+  getAppInfo,
+  listRuns,
+  listTrainingRuns,
+  loadQualityMatrix,
+  loadRunDetail,
+  openArtifact
+} from "./lib/tauri";
+import type {
+  AppInfo,
+  AppInfoStatus,
+  QualityMatrix,
+  QualityMatrixRow,
+  RunDetail,
+  RunDetailStatus,
+  RunsStatus,
+  RunSummary,
+  TrainingRunSummary
+} from "./types/app";
 
 type StudioPing = {
   status: "ok";
@@ -27,6 +44,10 @@ type ResearchCardConfig = {
   badge: BadgeVariant;
   body: string;
 };
+
+type StudioView = "runs" | "regression";
+type TrainingRunsStatus = "idle" | "loading" | "ready" | "empty" | "failed" | "browser-preview";
+type MatrixStatus = "idle" | "loading" | "ready" | "empty" | "failed" | "browser-preview";
 
 const placeholderCards: ResearchCardConfig[] = [
   {
@@ -196,6 +217,23 @@ function Sidebar({
         />
       </section>
     </aside>
+  );
+}
+
+function ViewTabs({ activeView, onChange }: { activeView: StudioView; onChange: (view: StudioView) => void }): JSX.Element {
+  return (
+    <nav className="view-tabs" aria-label="Studio view">
+      <button className={activeView === "runs" ? "view-tab view-tab--active" : "view-tab"} onClick={() => onChange("runs")} type="button">
+        Research Runs
+      </button>
+      <button
+        className={activeView === "regression" ? "view-tab view-tab--active" : "view-tab"}
+        onClick={() => onChange("regression")}
+        type="button"
+      >
+        Regression Matrix
+      </button>
+    </nav>
   );
 }
 
@@ -447,6 +485,213 @@ function BottomProvenanceBar({
   );
 }
 
+function scoreClass(row: QualityMatrixRow): string {
+  const score = row.quality_score;
+  if (score === null) {
+    return "matrix-cell--unknown";
+  }
+  if (score >= 85) {
+    return "matrix-cell--good";
+  }
+  if (score >= 70) {
+    return "matrix-cell--ok";
+  }
+  if (score >= 60) {
+    return "matrix-cell--weak";
+  }
+  return "matrix-cell--fail";
+}
+
+function averageQuality(rows: QualityMatrixRow[]): string {
+  const scores = rows.map((row) => row.quality_score).filter((score): score is number => score !== null);
+  if (scores.length === 0) {
+    return "unknown";
+  }
+  const average = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+  return average.toFixed(1);
+}
+
+function countProviderFailures(rows: QualityMatrixRow[]): number {
+  return rows.filter((row) => (row.provider_status ?? "").toLowerCase().includes("fail")).length;
+}
+
+function MatrixSummaryCard({ label, value }: { label: string; value: ReactNode }): JSX.Element {
+  return (
+    <div className="matrix-summary-card">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function RegressionMatrixHub({
+  error,
+  matrix,
+  matrixError,
+  matrixStatus,
+  onSelectRun,
+  onSelectRow,
+  runs,
+  selectedRow,
+  selectedTrainingRunId,
+  trainingStatus
+}: {
+  error: string | null;
+  matrix: QualityMatrix | null;
+  matrixError: string | null;
+  matrixStatus: MatrixStatus;
+  onSelectRun: (runId: string) => void;
+  onSelectRow: (row: QualityMatrixRow) => void;
+  runs: TrainingRunSummary[];
+  selectedRow: QualityMatrixRow | null;
+  selectedTrainingRunId: string | null;
+  trainingStatus: TrainingRunsStatus;
+}): JSX.Element {
+  if (trainingStatus === "loading") {
+    return <EmptyState title="Loading training runs..." detail="Scanning reports/training_runs through Tauri IPC." />;
+  }
+
+  if (trainingStatus === "browser-preview") {
+    return <EmptyState title="Regression Matrix needs Tauri" detail="Browser preview cannot access training run artifacts." />;
+  }
+
+  if (trainingStatus === "failed") {
+    return <EmptyState title="Training run discovery failed" detail={error ?? "The list_training_runs command returned an error."} />;
+  }
+
+  if (runs.length === 0) {
+    return <EmptyState title="No training runs found" detail="No reports/training_runs folders were discovered." />;
+  }
+
+  const rows = matrix?.rows ?? [];
+  const hardFailures = rows.reduce((count, row) => count + row.hard_failures.length, 0);
+  const providerFailures = countProviderFailures(rows);
+  const warningsCount = (matrix?.warnings.length ?? 0) + rows.filter((row) => row.issue_types.length > 0).length;
+
+  return (
+    <section className="matrix-hub" aria-label="Regression Matrix Hub">
+      <div className="matrix-toolbar">
+        <div>
+          <p className="eyebrow">Quality control board</p>
+          <h3>Regression Matrix</h3>
+        </div>
+        <select
+          aria-label="Training run selector"
+          onChange={(event) => onSelectRun(event.target.value)}
+          value={selectedTrainingRunId ?? ""}
+        >
+          {runs.map((run) => (
+            <option key={run.run_id} value={run.run_id}>
+              {run.run_id}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {matrixStatus === "loading" ? <EmptyState title="Loading matrix..." detail="Reading existing quality_matrix artifacts." /> : null}
+      {matrixStatus === "browser-preview" ? (
+        <EmptyState title="Matrix loading needs Tauri" detail="Browser preview cannot read training run artifacts." />
+      ) : null}
+      {matrixStatus === "failed" ? <EmptyState title="Matrix failed" detail={matrixError ?? "The load_quality_matrix command returned an error."} /> : null}
+
+      {matrixStatus === "ready" || matrixStatus === "empty" ? (
+        <>
+          <div className="matrix-summary-grid">
+            <MatrixSummaryCard label="Tickers" value={rows.length} />
+            <MatrixSummaryCard label="Avg quality" value={averageQuality(rows)} />
+            <MatrixSummaryCard label="Warnings" value={warningsCount} />
+            <MatrixSummaryCard label="Hard failures" value={hardFailures} />
+            <MatrixSummaryCard label="Provider failures" value={providerFailures} />
+          </div>
+
+          {matrix?.warnings.length ? (
+            <div className="matrix-warning-strip">
+              {matrix.warnings.slice(0, 3).map((warning) => (
+                <span key={warning}>{warning}</span>
+              ))}
+            </div>
+          ) : null}
+
+          <div className="matrix-layout">
+            <div className="matrix-board" role="grid" aria-label="Ticker quality matrix">
+              {rows.length === 0 ? (
+                <EmptyState title="No quality rows" detail="This training run has no quality matrix rows." />
+              ) : (
+                rows.map((row) => (
+                  <button
+                    aria-label={`${row.ticker} quality ${row.quality_score ?? "unknown"}`}
+                    className={`matrix-cell ${scoreClass(row)}${selectedRow?.ticker === row.ticker ? " matrix-cell--selected" : ""}`}
+                    key={`${row.ticker}-${row.market ?? "market"}`}
+                    onClick={() => onSelectRow(row)}
+                    title={`${row.ticker}\nScore: ${row.quality_score ?? "unknown"}\nStatus: ${row.status ?? "unknown"}\nIssues: ${row.issue_types.join(", ") || "none"}\nHard failures: ${row.hard_failures.join(", ") || "none"}`}
+                    type="button"
+                  >
+                    <span>{row.ticker}</span>
+                  </button>
+                ))
+              )}
+            </div>
+
+            <aside className="matrix-side-panel" aria-label="Regression matrix detail">
+              <div className="matrix-panel-section">
+                <span className="subsection-title">Issue distribution</span>
+                {matrix?.issue_distribution.length ? (
+                  <ul className="compact-list">
+                    {matrix.issue_distribution.slice(0, 8).map((item) => (
+                      <li key={item.issue_type}>
+                        {item.issue_type}: {item.count}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="muted-copy">No issue distribution available.</p>
+                )}
+              </div>
+
+              <div className="matrix-panel-section">
+                <span className="subsection-title">Selected ticker</span>
+                {selectedRow ? (
+                  <dl className="detail-kv-grid detail-kv-grid--wide">
+                    <KeyValueLike label="Ticker" value={selectedRow.ticker} />
+                    <KeyValueLike label="Score" value={selectedRow.quality_score ?? "unknown"} />
+                    <KeyValueLike label="Grade" value={selectedRow.grade ?? "unknown"} />
+                    <KeyValueLike label="Status" value={selectedRow.status ?? "unknown"} />
+                    <KeyValueLike label="AI source" value={selectedRow.ai_source ?? "unknown"} />
+                    <KeyValueLike label="Provider" value={selectedRow.provider_status ?? "unknown"} />
+                  </dl>
+                ) : (
+                  <p className="muted-copy">Select a ticker cell to inspect quality details.</p>
+                )}
+                {selectedRow ? (
+                  <div className="split-lists">
+                    <div>
+                      <span className="subsection-title">Issues</span>
+                      <ProvenanceList emptyLabel="No issue types." items={selectedRow.issue_types} />
+                    </div>
+                    <div>
+                      <span className="subsection-title">Hard failures</span>
+                      <ProvenanceList emptyLabel="No hard failures." items={selectedRow.hard_failures} />
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </aside>
+          </div>
+        </>
+      ) : null}
+    </section>
+  );
+}
+
+function KeyValueLike({ label, value }: { label: string; value: ReactNode }): JSX.Element {
+  return (
+    <div>
+      <dt>{label}</dt>
+      <dd>{value}</dd>
+    </div>
+  );
+}
+
 function AppShell({ children }: { children: ReactNode }): JSX.Element {
   return <main className="studio-shell">{children}</main>;
 }
@@ -463,6 +708,15 @@ export function App(): JSX.Element {
   const [activeRunDetail, setActiveRunDetail] = useState<RunDetail | null>(null);
   const [runDetailStatus, setRunDetailStatus] = useState<RunDetailStatus>("idle");
   const [runDetailError, setRunDetailError] = useState<string | null>(null);
+  const [activeView, setActiveView] = useState<StudioView>("runs");
+  const [trainingRuns, setTrainingRuns] = useState<TrainingRunSummary[]>([]);
+  const [trainingRunsStatus, setTrainingRunsStatus] = useState<TrainingRunsStatus>("idle");
+  const [trainingRunsError, setTrainingRunsError] = useState<string | null>(null);
+  const [selectedTrainingRunId, setSelectedTrainingRunId] = useState<string | null>(null);
+  const [qualityMatrix, setQualityMatrix] = useState<QualityMatrix | null>(null);
+  const [matrixStatus, setMatrixStatus] = useState<MatrixStatus>("idle");
+  const [matrixError, setMatrixError] = useState<string | null>(null);
+  const [selectedMatrixRow, setSelectedMatrixRow] = useState<QualityMatrixRow | null>(null);
 
   const selectedRun = runs.find((run) => runKey(run) === selectedRunKey) ?? null;
 
@@ -566,6 +820,77 @@ export function App(): JSX.Element {
     };
   }, [selectedRun]);
 
+  useEffect(() => {
+    if (activeView !== "regression" || trainingRunsStatus !== "idle") {
+      return;
+    }
+
+    let mounted = true;
+    setTrainingRunsStatus("loading");
+    setTrainingRunsError(null);
+
+    listTrainingRuns()
+      .then((runs) => {
+        if (mounted) {
+          setTrainingRuns(runs);
+          setTrainingRunsStatus(runs.length > 0 ? "ready" : "empty");
+          setSelectedTrainingRunId((current) => current ?? (runs[0]?.run_id ?? null));
+        }
+      })
+      .catch((error: unknown) => {
+        if (mounted) {
+          const message = error instanceof Error ? error.message : String(error);
+          setTrainingRuns([]);
+          setTrainingRunsStatus(message.includes("__TAURI__") ? "browser-preview" : "failed");
+          setTrainingRunsError(
+            message.includes("__TAURI__")
+              ? "Tauri IPC is unavailable in browser preview. Regression Matrix requires the desktop runtime."
+              : message
+          );
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [activeView, trainingRunsStatus]);
+
+  useEffect(() => {
+    if (activeView !== "regression" || !selectedTrainingRunId) {
+      return;
+    }
+
+    let mounted = true;
+    setMatrixStatus("loading");
+    setMatrixError(null);
+    setSelectedMatrixRow(null);
+
+    loadQualityMatrix(selectedTrainingRunId)
+      .then((matrix) => {
+        if (mounted) {
+          setQualityMatrix(matrix);
+          setMatrixStatus(matrix.rows.length > 0 ? "ready" : "empty");
+          setSelectedMatrixRow(matrix.rows[0] ?? null);
+        }
+      })
+      .catch((error: unknown) => {
+        if (mounted) {
+          const message = error instanceof Error ? error.message : String(error);
+          setQualityMatrix(null);
+          setMatrixStatus(message.includes("__TAURI__") ? "browser-preview" : "failed");
+          setMatrixError(
+            message.includes("__TAURI__")
+              ? "Tauri IPC is unavailable in browser preview. Matrix loading requires the desktop runtime."
+              : message
+          );
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [activeView, selectedTrainingRunId]);
+
   return (
     <AppShell>
       <Sidebar
@@ -585,15 +910,31 @@ export function App(): JSX.Element {
             <h2>Research Run Detail</h2>
             <p>Select a run to inspect locked data, AI provenance, validator logs, and report artifacts.</p>
           </div>
+          <ViewTabs activeView={activeView} onChange={setActiveView} />
         </header>
 
-        <section className="card-grid" aria-label="Research detail cards">
-          <AppInfoCard appInfo={appInfo} error={appInfoError} status={appInfoStatus} />
-          <RunDetailPanel detail={activeRunDetail} error={runDetailError} status={runDetailStatus} />
-          {runDetailStatus === "idle" || runDetailStatus === "loading"
-            ? placeholderCards.map((card, index) => <ResearchCard card={card} key={card.title} wide={index >= 3} />)
-            : null}
-        </section>
+        {activeView === "runs" ? (
+          <section className="card-grid" aria-label="Research detail cards">
+            <AppInfoCard appInfo={appInfo} error={appInfoError} status={appInfoStatus} />
+            <RunDetailPanel detail={activeRunDetail} error={runDetailError} status={runDetailStatus} />
+            {runDetailStatus === "idle" || runDetailStatus === "loading"
+              ? placeholderCards.map((card, index) => <ResearchCard card={card} key={card.title} wide={index >= 3} />)
+              : null}
+          </section>
+        ) : (
+          <RegressionMatrixHub
+            error={trainingRunsError}
+            matrix={qualityMatrix}
+            matrixError={matrixError}
+            matrixStatus={matrixStatus}
+            onSelectRow={setSelectedMatrixRow}
+            onSelectRun={setSelectedTrainingRunId}
+            runs={trainingRuns}
+            selectedRow={selectedMatrixRow}
+            selectedTrainingRunId={selectedTrainingRunId}
+            trainingStatus={trainingRunsStatus}
+          />
+        )}
 
         <BottomProvenanceBar detail={activeRunDetail} status={runDetailStatus} />
       </section>

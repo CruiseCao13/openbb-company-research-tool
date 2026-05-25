@@ -1,5 +1,6 @@
 use serde::Serialize;
 use serde_json::Value;
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -175,6 +176,45 @@ pub struct ArtifactActionResult {
     message: String,
 }
 
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct TrainingRunSummary {
+    run_id: String,
+    path: String,
+    has_quality_matrix: bool,
+    has_issue_distribution: bool,
+    has_training_cases: bool,
+    generated_at: Option<String>,
+    summary_status: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub struct QualityMatrix {
+    run_id: String,
+    rows: Vec<QualityMatrixRow>,
+    issue_distribution: Vec<IssueDistributionItem>,
+    warnings: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub struct QualityMatrixRow {
+    ticker: String,
+    market: Option<String>,
+    company_name: Option<String>,
+    status: Option<String>,
+    quality_score: Option<f64>,
+    grade: Option<String>,
+    issue_types: Vec<String>,
+    hard_failures: Vec<String>,
+    ai_source: Option<String>,
+    provider_status: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct IssueDistributionItem {
+    issue_type: String,
+    count: u64,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ArtifactAction {
     Open,
@@ -213,6 +253,20 @@ fn load_run_detail(ticker: String, run_id: String) -> Result<RunDetail, String> 
     let reports_root = repo_root.join("reports");
     validate_reports_root(&repo_root, &reports_root)?;
     load_run_detail_from_reports_root(&reports_root, &ticker, &run_id)
+}
+
+#[tauri::command]
+fn list_training_runs() -> Result<Vec<TrainingRunSummary>, String> {
+    let repo_root = discover_repo_root()?;
+    let training_root = repo_root.join("reports").join("training_runs");
+    list_training_runs_from_root(&training_root)
+}
+
+#[tauri::command]
+fn load_quality_matrix(run_id: String) -> Result<QualityMatrix, String> {
+    let repo_root = discover_repo_root()?;
+    let training_root = repo_root.join("reports").join("training_runs");
+    load_quality_matrix_from_root(&training_root, &run_id)
 }
 
 #[tauri::command]
@@ -276,6 +330,293 @@ fn load_run_detail_from_reports_root(
     }
 
     Ok(build_run_detail(ticker, run_id, &run_path))
+}
+
+fn list_training_runs_from_root(training_root: &Path) -> Result<Vec<TrainingRunSummary>, String> {
+    if !training_root.exists() {
+        return Ok(Vec::new());
+    }
+
+    if !training_root.is_dir() {
+        return Err(format!(
+            "training runs root is not a directory: {}",
+            path_to_string(training_root)
+        ));
+    }
+
+    let mut runs = Vec::new();
+    for entry in read_dir_sorted(training_root)? {
+        let run_path = entry.path();
+        if !run_path.is_dir() {
+            continue;
+        }
+        let run_id = entry.file_name().to_string_lossy().into_owned();
+        runs.push(build_training_run_summary(&run_id, &run_path));
+    }
+
+    runs.sort_by(
+        |left, right| match (&left.generated_at, &right.generated_at) {
+            (Some(left_date), Some(right_date)) if left_date != right_date => {
+                right_date.cmp(left_date)
+            }
+            (Some(_), None) => std::cmp::Ordering::Less,
+            (None, Some(_)) => std::cmp::Ordering::Greater,
+            _ => left.run_id.cmp(&right.run_id),
+        },
+    );
+
+    Ok(runs)
+}
+
+fn build_training_run_summary(run_id: &str, run_path: &Path) -> TrainingRunSummary {
+    let summary = read_json_optional(&run_path.join("training_summary.json"))
+        .or_else(|| read_json_optional(&run_path.join("final_acceptance.json")));
+
+    TrainingRunSummary {
+        run_id: run_id.to_string(),
+        path: path_to_string(run_path),
+        has_quality_matrix: run_path.join("quality_matrix.json").is_file()
+            || run_path.join("quality_matrix.csv").is_file(),
+        has_issue_distribution: run_path.join("issue_distribution.json").is_file()
+            || run_path.join("issue_distribution.md").is_file(),
+        has_training_cases: run_path.join("training_cases_generated.jsonl").is_file()
+            || run_path
+                .join("external_correction_cases_generated.jsonl")
+                .is_file(),
+        generated_at: first_string(&[
+            summary
+                .as_ref()
+                .and_then(|json| json_pointer_string(json, "/generated_at")),
+            summary
+                .as_ref()
+                .and_then(|json| json_pointer_string(json, "/completed_at")),
+        ]),
+        summary_status: summary.as_ref().and_then(report_status_value),
+    }
+}
+
+fn load_quality_matrix_from_root(
+    training_root: &Path,
+    run_id: &str,
+) -> Result<QualityMatrix, String> {
+    validate_safe_path_segment(run_id, "run_id")?;
+    let run_path = training_root.join(run_id);
+    ensure_path_under(training_root, &run_path)?;
+
+    if !run_path.exists() {
+        return Ok(QualityMatrix {
+            run_id: run_id.to_string(),
+            rows: Vec::new(),
+            issue_distribution: Vec::new(),
+            warnings: vec![format!("training run not found: {run_id}")],
+        });
+    }
+
+    let mut warnings = Vec::new();
+    let rows = if run_path.join("quality_matrix.json").is_file() {
+        parse_quality_matrix_json(&run_path.join("quality_matrix.json"))?
+    } else if run_path.join("quality_matrix.csv").is_file() {
+        parse_quality_matrix_csv(&run_path.join("quality_matrix.csv"), &mut warnings)?
+    } else {
+        warnings.push("quality_matrix.json/csv missing".to_string());
+        Vec::new()
+    };
+
+    let issue_distribution = parse_issue_distribution(&run_path, &rows, &mut warnings)?;
+
+    Ok(QualityMatrix {
+        run_id: run_id.to_string(),
+        rows,
+        issue_distribution,
+        warnings,
+    })
+}
+
+fn parse_quality_matrix_json(path: &Path) -> Result<Vec<QualityMatrixRow>, String> {
+    let raw = fs::read_to_string(path)
+        .map_err(|err| format!("could not read quality matrix JSON: {err}"))?;
+    let json: Value = serde_json::from_str(&raw)
+        .map_err(|err| format!("malformed quality_matrix.json: {err}"))?;
+    let rows = json
+        .as_array()
+        .or_else(|| json.pointer("/rows").and_then(Value::as_array))
+        .or_else(|| json.pointer("/quality_matrix").and_then(Value::as_array))
+        .ok_or_else(|| "quality_matrix.json does not contain rows".to_string())?;
+
+    Ok(rows.iter().filter_map(row_from_json).collect())
+}
+
+fn row_from_json(row: &Value) -> Option<QualityMatrixRow> {
+    let ticker = first_string(&[
+        json_pointer_string(row, "/ticker"),
+        json_pointer_string(row, "/symbol"),
+    ])?;
+
+    Some(QualityMatrixRow {
+        ticker,
+        market: json_pointer_string(row, "/market"),
+        company_name: first_string(&[
+            json_pointer_string(row, "/company_name"),
+            json_pointer_string(row, "/name"),
+        ]),
+        status: first_string(&[
+            json_pointer_string(row, "/status"),
+            json_pointer_string(row, "/overall_status"),
+            json_pointer_string(row, "/report_status"),
+        ]),
+        quality_score: first_f64(&[
+            json_pointer_f64(row, "/quality_score"),
+            json_pointer_f64(row, "/total_quality_score"),
+            json_pointer_f64(row, "/score"),
+        ]),
+        grade: json_pointer_string(row, "/grade"),
+        issue_types: collect_strings_from_paths(&[Some(row)], &["/issue_types", "/issues"]),
+        hard_failures: collect_strings_from_paths(&[Some(row)], &["/hard_failures"]),
+        ai_source: first_string(&[
+            json_pointer_string(row, "/ai_source"),
+            json_pointer_string(row, "/source"),
+        ]),
+        provider_status: json_pointer_string(row, "/provider_status"),
+    })
+}
+
+fn parse_quality_matrix_csv(
+    path: &Path,
+    warnings: &mut Vec<String>,
+) -> Result<Vec<QualityMatrixRow>, String> {
+    let raw = fs::read_to_string(path)
+        .map_err(|err| format!("could not read quality matrix CSV: {err}"))?;
+    let mut lines = raw.lines().filter(|line| !line.trim().is_empty());
+    let Some(header_line) = lines.next() else {
+        warnings.push("quality_matrix.csv is empty".to_string());
+        return Ok(Vec::new());
+    };
+    let headers = split_csv_line(header_line)
+        .into_iter()
+        .map(|header| header.trim().to_ascii_lowercase())
+        .collect::<Vec<_>>();
+    let mut rows = Vec::new();
+
+    for line in lines {
+        let cells = split_csv_line(line);
+        let value = |names: &[&str]| -> Option<String> {
+            names.iter().find_map(|name| {
+                headers
+                    .iter()
+                    .position(|header| header == name)
+                    .and_then(|index| cells.get(index))
+                    .map(|value| value.trim())
+                    .filter(|value| !value.is_empty())
+                    .map(ToOwned::to_owned)
+            })
+        };
+
+        let Some(ticker) = value(&["ticker", "symbol"]) else {
+            warnings.push("CSV row skipped because ticker column is missing or empty".to_string());
+            continue;
+        };
+
+        rows.push(QualityMatrixRow {
+            ticker,
+            market: value(&["market"]),
+            company_name: value(&["company_name", "name"]),
+            status: value(&["status", "overall_status", "report_status"]),
+            quality_score: value(&["quality_score", "total_quality_score", "score"])
+                .and_then(|value| value.parse::<f64>().ok()),
+            grade: value(&["grade"]),
+            issue_types: split_list_value(value(&["issue_types", "issues"]).as_deref()),
+            hard_failures: split_list_value(value(&["hard_failures"]).as_deref()),
+            ai_source: value(&["ai_source", "source"]),
+            provider_status: value(&["provider_status"]),
+        });
+    }
+
+    Ok(rows)
+}
+
+fn split_csv_line(line: &str) -> Vec<String> {
+    let mut cells = Vec::new();
+    let mut current = String::new();
+    let mut in_quotes = false;
+    let mut chars = line.chars().peekable();
+
+    while let Some(ch) = chars.next() {
+        match ch {
+            '"' if in_quotes && chars.peek() == Some(&'"') => {
+                current.push('"');
+                chars.next();
+            }
+            '"' => in_quotes = !in_quotes,
+            ',' if !in_quotes => {
+                cells.push(current.trim().to_string());
+                current.clear();
+            }
+            _ => current.push(ch),
+        }
+    }
+    cells.push(current.trim().to_string());
+    cells
+}
+
+fn split_list_value(value: Option<&str>) -> Vec<String> {
+    value
+        .into_iter()
+        .flat_map(|value| value.split([';', '|', ',']))
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(ToOwned::to_owned)
+        .collect()
+}
+
+fn parse_issue_distribution(
+    run_path: &Path,
+    rows: &[QualityMatrixRow],
+    warnings: &mut Vec<String>,
+) -> Result<Vec<IssueDistributionItem>, String> {
+    if run_path.join("issue_distribution.json").is_file() {
+        let raw = fs::read_to_string(run_path.join("issue_distribution.json"))
+            .map_err(|err| format!("could not read issue_distribution.json: {err}"))?;
+        let json: Value = serde_json::from_str(&raw)
+            .map_err(|err| format!("malformed issue_distribution.json: {err}"))?;
+        if let Some(items) = json.as_array() {
+            return Ok(items
+                .iter()
+                .filter_map(|item| {
+                    Some(IssueDistributionItem {
+                        issue_type: first_string(&[
+                            json_pointer_string(item, "/issue_type"),
+                            json_pointer_string(item, "/issue"),
+                        ])?,
+                        count: json_pointer_u64(item, "/count").unwrap_or(1),
+                    })
+                })
+                .collect());
+        }
+        if let Some(object) = json.as_object() {
+            return Ok(object
+                .iter()
+                .filter_map(|(issue_type, count)| {
+                    count.as_u64().map(|count| IssueDistributionItem {
+                        issue_type: issue_type.clone(),
+                        count,
+                    })
+                })
+                .collect());
+        }
+        warnings.push("issue_distribution.json shape is unsupported".to_string());
+    }
+
+    let mut counts: BTreeMap<String, u64> = BTreeMap::new();
+    for row in rows {
+        for issue in row.issue_types.iter().chain(row.hard_failures.iter()) {
+            *counts.entry(issue.clone()).or_default() += 1;
+        }
+    }
+
+    Ok(counts
+        .into_iter()
+        .map(|(issue_type, count)| IssueDistributionItem { issue_type, count })
+        .collect())
 }
 
 fn validate_artifact_path(
@@ -1509,6 +1850,10 @@ fn json_pointer_u64(json: &Value, pointer: &str) -> Option<u64> {
     json.pointer(pointer).and_then(Value::as_u64)
 }
 
+fn json_pointer_f64(json: &Value, pointer: &str) -> Option<f64> {
+    json.pointer(pointer).and_then(Value::as_f64)
+}
+
 fn json_pointer_array_strings(json: &Value, pointer: &str) -> Vec<String> {
     let Some(value) = json.pointer(pointer) else {
         return Vec::new();
@@ -1544,6 +1889,10 @@ fn first_string(values: &[Option<String>]) -> Option<String> {
 }
 
 fn first_bool(values: &[Option<bool>]) -> Option<bool> {
+    values.iter().flatten().next().copied()
+}
+
+fn first_f64(values: &[Option<f64>]) -> Option<f64> {
     values.iter().flatten().next().copied()
 }
 
@@ -1620,6 +1969,8 @@ pub fn run() {
             get_app_info,
             list_runs,
             load_run_detail,
+            list_training_runs,
+            load_quality_matrix,
             open_artifact,
             reveal_in_folder
         ])
@@ -2477,6 +2828,136 @@ mod tests {
         assert!(detail.charts[0].image_path.is_none());
         assert!(!detail.charts[0].image_exists);
         assert_eq!(detail.charts[0].status.as_deref(), Some("WARNING"));
+    }
+
+    #[test]
+    fn list_training_runs_returns_empty_when_missing() {
+        let temp_dir = TempDir::new().expect("temp dir");
+        let runs =
+            list_training_runs_from_root(&temp_dir.path().join("reports").join("training_runs"))
+                .expect("training runs");
+
+        assert!(runs.is_empty());
+    }
+
+    #[test]
+    fn list_training_runs_detects_quality_matrix() {
+        let temp_dir = TempDir::new().expect("temp dir");
+        let run_path = temp_dir
+            .path()
+            .join("reports")
+            .join("training_runs")
+            .join("regression_01");
+        create_dir_all(&run_path).expect("run dir");
+        write(run_path.join("quality_matrix.json"), "[]").expect("matrix");
+        write(run_path.join("issue_distribution.md"), "# Issues").expect("issues");
+        write(run_path.join("training_cases_generated.jsonl"), "{}\n").expect("cases");
+
+        let runs =
+            list_training_runs_from_root(&temp_dir.path().join("reports").join("training_runs"))
+                .expect("training runs");
+
+        assert_eq!(runs.len(), 1);
+        assert_eq!(runs[0].run_id, "regression_01");
+        assert!(runs[0].has_quality_matrix);
+        assert!(runs[0].has_issue_distribution);
+        assert!(runs[0].has_training_cases);
+    }
+
+    #[test]
+    fn load_quality_matrix_reads_json() {
+        let temp_dir = TempDir::new().expect("temp dir");
+        let run_path = temp_dir.path().join("training_runs").join("json_run");
+        create_dir_all(&run_path).expect("run dir");
+        write(
+            run_path.join("quality_matrix.json"),
+            r#"{"rows":[{"ticker":"AAPL","market":"US","company_name":"Apple","status":"PASS","quality_score":88,"grade":"GOOD","issue_types":["weak_money_flow"],"hard_failures":[],"ai_source":"external_openai","provider_status":"PASS"}]}"#,
+        )
+        .expect("matrix");
+
+        let matrix =
+            load_quality_matrix_from_root(&temp_dir.path().join("training_runs"), "json_run")
+                .expect("matrix");
+
+        assert_eq!(matrix.rows.len(), 1);
+        assert_eq!(matrix.rows[0].ticker, "AAPL");
+        assert_eq!(matrix.rows[0].quality_score, Some(88.0));
+        assert_eq!(matrix.issue_distribution[0].issue_type, "weak_money_flow");
+    }
+
+    #[test]
+    fn load_quality_matrix_reads_csv_fallback() {
+        let temp_dir = TempDir::new().expect("temp dir");
+        let run_path = temp_dir.path().join("training_runs").join("csv_run");
+        create_dir_all(&run_path).expect("run dir");
+        write(
+            run_path.join("quality_matrix.csv"),
+            "ticker,market,company_name,status,quality_score,grade,issue_types,hard_failures,ai_source,provider_status\nRKLB,US,Rocket Lab,WARNING,72,ACCEPTABLE,weak_money_flow|generic_chart_explanation,,local_mock,PASS\n",
+        )
+        .expect("matrix");
+
+        let matrix =
+            load_quality_matrix_from_root(&temp_dir.path().join("training_runs"), "csv_run")
+                .expect("matrix");
+
+        assert_eq!(matrix.rows.len(), 1);
+        assert_eq!(matrix.rows[0].ticker, "RKLB");
+        assert_eq!(matrix.rows[0].issue_types.len(), 2);
+    }
+
+    #[test]
+    fn load_quality_matrix_handles_missing_columns() {
+        let temp_dir = TempDir::new().expect("temp dir");
+        let run_path = temp_dir.path().join("training_runs").join("minimal_csv");
+        create_dir_all(&run_path).expect("run dir");
+        write(run_path.join("quality_matrix.csv"), "ticker\nCAT\n").expect("matrix");
+
+        let matrix =
+            load_quality_matrix_from_root(&temp_dir.path().join("training_runs"), "minimal_csv")
+                .expect("matrix");
+
+        assert_eq!(matrix.rows[0].ticker, "CAT");
+        assert_eq!(matrix.rows[0].quality_score, None);
+        assert!(matrix.warnings.is_empty());
+    }
+
+    #[test]
+    fn load_quality_matrix_rejects_path_traversal() {
+        let temp_dir = TempDir::new().expect("temp dir");
+        let error = load_quality_matrix_from_root(&temp_dir.path().join("training_runs"), "../bad")
+            .expect_err("path traversal should fail");
+
+        assert!(error.contains("unsafe path segment"));
+    }
+
+    #[test]
+    fn quality_matrix_path_stays_under_reports() {
+        let temp_dir = TempDir::new().expect("temp dir");
+        let training_root = temp_dir.path().join("training_runs");
+        let error = load_quality_matrix_from_root(&training_root, "bad/../escape")
+            .expect_err("unsafe segment should fail");
+
+        assert!(error.contains("unsafe path segment"));
+    }
+
+    #[test]
+    fn issue_distribution_parsed_when_available() {
+        let temp_dir = TempDir::new().expect("temp dir");
+        let run_path = temp_dir.path().join("training_runs").join("issues");
+        create_dir_all(&run_path).expect("run dir");
+        write(run_path.join("quality_matrix.json"), "[]").expect("matrix");
+        write(
+            run_path.join("issue_distribution.json"),
+            r#"[{"issue_type":"wrong_framework","count":2},{"issue_type":"weak_money_flow","count":3}]"#,
+        )
+        .expect("issues");
+
+        let matrix =
+            load_quality_matrix_from_root(&temp_dir.path().join("training_runs"), "issues")
+                .expect("matrix");
+
+        assert_eq!(matrix.issue_distribution.len(), 2);
+        assert_eq!(matrix.issue_distribution[0].count, 2);
     }
 
     fn create_run_with_generated_at(

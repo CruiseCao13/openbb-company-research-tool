@@ -1,5 +1,12 @@
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
-import type { AppInfo, ArtifactActionResult, RunDetail, RunSummary } from "../types/app";
+import type {
+  AppInfo,
+  ArtifactActionResult,
+  QualityMatrix,
+  RunDetail,
+  RunSummary,
+  TrainingRunSummary
+} from "../types/app";
 
 export async function getAppInfo(): Promise<AppInfo> {
   return invoke<AppInfo>("get_app_info");
@@ -23,4 +30,12 @@ export async function revealInFolder(path: string): Promise<ArtifactActionResult
 
 export function artifactImageSrc(path: string): string {
   return convertFileSrc(path);
+}
+
+export async function listTrainingRuns(): Promise<TrainingRunSummary[]> {
+  return invoke<TrainingRunSummary[]>("list_training_runs");
+}
+
+export async function loadQualityMatrix(runId: string): Promise<QualityMatrix> {
+  return invoke<QualityMatrix>("load_quality_matrix", { runId });
 }

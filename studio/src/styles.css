@@ -307,6 +307,40 @@ button:focus-visible {
   padding: 2px 1px 0;
 }
 
+.view-tabs {
+  display: inline-flex;
+  gap: 4px;
+  border: 1px solid rgba(30, 41, 59, 0.86);
+  background: rgba(2, 6, 23, 0.46);
+  box-shadow: var(--shadow-inset);
+  padding: 4px;
+}
+
+.view-tab {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 7px 10px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.view-tab:hover {
+  border-color: rgba(143, 211, 255, 0.22);
+  color: var(--text-main);
+}
+
+.view-tab--active {
+  border-color: rgba(143, 211, 255, 0.38);
+  background:
+    linear-gradient(90deg, rgba(143, 211, 255, 0.12), transparent),
+    rgba(15, 23, 42, 0.82);
+  color: var(--info);
+}
+
 .workspace-header h2 {
   margin-top: 6px;
   font-size: 24px;
@@ -321,6 +355,186 @@ button:focus-visible {
   overflow: auto;
   padding-right: 2px;
   scrollbar-color: rgba(143, 211, 255, 0.22) transparent;
+}
+
+.matrix-hub {
+  display: grid;
+  min-height: 0;
+  align-content: start;
+  gap: 12px;
+  overflow: auto;
+  padding-right: 2px;
+  scrollbar-color: rgba(143, 211, 255, 0.22) transparent;
+}
+
+.matrix-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  border: 1px solid rgba(30, 41, 59, 0.86);
+  background:
+    linear-gradient(90deg, rgba(143, 211, 255, 0.07), transparent 42%),
+    rgba(2, 6, 23, 0.5);
+  box-shadow: var(--shadow-inset);
+  padding: 14px;
+}
+
+.matrix-toolbar h3 {
+  margin: 4px 0 0;
+  font-size: 20px;
+}
+
+.matrix-toolbar select {
+  min-width: 260px;
+  border: 1px solid rgba(143, 211, 255, 0.24);
+  background: rgba(15, 23, 42, 0.88);
+  color: var(--text-main);
+  padding: 8px 10px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+}
+
+.matrix-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.matrix-summary-card {
+  display: grid;
+  gap: 6px;
+  border: 1px solid rgba(30, 41, 59, 0.78);
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.58), rgba(2, 6, 23, 0.38)),
+    var(--surface);
+  box-shadow: var(--shadow-inset);
+  padding: 12px;
+}
+
+.matrix-summary-card span,
+.matrix-panel-section .subsection-title {
+  color: var(--text-muted);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.matrix-summary-card strong {
+  color: var(--text-main);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.matrix-warning-strip {
+  display: grid;
+  gap: 6px;
+  border: 1px solid rgba(251, 146, 60, 0.2);
+  border-left: 2px solid var(--warning);
+  background: rgba(251, 146, 60, 0.07);
+  padding: 10px;
+  color: var(--warning);
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+}
+
+.matrix-layout {
+  display: grid;
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 12px;
+}
+
+.matrix-board {
+  display: grid;
+  min-height: 240px;
+  align-content: start;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: 6px;
+  border: 1px solid rgba(30, 41, 59, 0.82);
+  background: rgba(2, 6, 23, 0.42);
+  box-shadow: var(--shadow-inset);
+  padding: 12px;
+}
+
+.matrix-cell {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  height: 28px;
+  place-items: center;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(15, 23, 42, 0.8);
+  color: var(--text-main);
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.matrix-cell span {
+  overflow: hidden;
+  max-width: 100%;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.matrix-cell:hover {
+  transform: translateY(-1px);
+  z-index: 1;
+}
+
+.matrix-cell--good {
+  border-color: rgba(52, 211, 153, 0.36);
+  background: rgba(52, 211, 153, 0.14);
+  color: var(--pass);
+}
+
+.matrix-cell--ok {
+  border-color: rgba(143, 211, 255, 0.34);
+  background: rgba(143, 211, 255, 0.1);
+  color: var(--info);
+}
+
+.matrix-cell--weak {
+  border-color: rgba(251, 146, 60, 0.34);
+  background: rgba(251, 146, 60, 0.12);
+  color: var(--warning);
+}
+
+.matrix-cell--fail {
+  border-color: rgba(244, 63, 94, 0.38);
+  background: rgba(244, 63, 94, 0.12);
+  color: var(--fail);
+}
+
+.matrix-cell--unknown {
+  color: var(--text-muted);
+}
+
+.matrix-cell--selected {
+  outline: 1px solid rgba(229, 231, 235, 0.74);
+  outline-offset: 2px;
+  box-shadow: 0 0 18px rgba(143, 211, 255, 0.14);
+}
+
+.matrix-side-panel {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.matrix-panel-section {
+  display: grid;
+  gap: 10px;
+  border: 1px solid rgba(30, 41, 59, 0.78);
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.58), rgba(2, 6, 23, 0.38)),
+    var(--surface);
+  box-shadow: var(--shadow-inset);
+  padding: 12px;
 }
 
 .app-info-card,
@@ -792,11 +1006,29 @@ button:focus-visible {
   .chart-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .matrix-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .matrix-layout {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 980px) {
-  .chart-grid {
+  .chart-grid,
+  .matrix-summary-grid {
     grid-template-columns: 1fr;
+  }
+
+  .matrix-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .matrix-toolbar select {
+    width: 100%;
   }
 }
 
