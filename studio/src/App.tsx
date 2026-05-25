@@ -542,17 +542,19 @@ function RunList({
   selectedRunKey: string | null;
   status: RunsStatus;
 }): JSX.Element {
+  const { t } = useTranslation();
+
   if (status === "loading") {
-    return <EmptyState title="Loading runs" detail="Scanning through Tauri IPC." />;
+    return <EmptyState title={t("loadingRuns")} detail={t("scanningRuns")} />;
   }
   if (status === "browser-preview") {
-    return <EmptyState title="Desktop required" detail="Real run discovery needs Tauri runtime." />;
+    return <EmptyState title={t("desktopRequired")} detail={t("realRunDiscoveryNeedsTauri")} />;
   }
   if (status === "failed") {
-    return <EmptyState title="Run discovery failed" detail={error ?? "list_runs returned an error."} />;
+    return <EmptyState title={t("runDiscoveryFailed")} detail={error ?? t("listRunsError")} />;
   }
   if (runs.length === 0) {
-    return <EmptyState title="No runs found" detail="No matching reports/TICKER/runs folders." />;
+    return <EmptyState title={t("noRunsFound")} detail={t("noMatchingRuns")} />;
   }
 
   return (
@@ -801,9 +803,9 @@ function DiagnosticsDrawer({
       <button className="diagnostics-strip" onClick={() => setExpanded((current) => !current)} type="button">
         <span>{t("diagnostics")}</span>
         <StatusBadge variant={detail?.ai_usage.external_ai_used ? "EXTERNAL_AI" : detail?.ai_usage.local_mock_used ? "LOCAL_MOCK" : "UNKNOWN"} />
-        <span>{detail?.provider.provider ?? "provider unknown"}</span>
-        <span>warnings {warnings.length}</span>
-        <span>data gaps {dataGapCount}</span>
+        <span>{detail?.provider.provider ?? t("providerUnknown")}</span>
+        <span>{t("warningsCount")} {warnings.length}</span>
+        <span>{t("dataGapsCount")} {dataGapCount}</span>
         {detail?.status.human_review_required || detail?.self_review.human_review_required ? (
           <StatusBadge variant="HUMAN_REVIEW" />
         ) : null}
@@ -812,39 +814,39 @@ function DiagnosticsDrawer({
       {expanded ? (
         <div className="diagnostics-panel">
           {!isReady ? (
-            <EmptyState title={status === "loading" ? "Loading diagnostics" : "No run selected"} detail="Select a run to inspect provenance and data gaps." />
+            <EmptyState title={status === "loading" ? t("loadingDiagnostics") : t("noRunSelected")} detail={t("selectRunInspect")} />
           ) : (
             <>
               <section>
                 <h3>{t("aiProvenance")}</h3>
                 <dl className="diagnostic-kv">
-                  <div><dt>Source</dt><dd>{detail.ai_usage.source ?? "unknown"}</dd></div>
-                  <div><dt>External AI</dt><dd>{booleanLabel(detail.ai_usage.external_ai_used)}</dd></div>
-                  <div><dt>Local mock</dt><dd>{booleanLabel(detail.ai_usage.local_mock_used)}</dd></div>
-                  <div><dt>New calls</dt><dd>{detail.ai_usage.new_external_ai_calls ?? "unknown"}</dd></div>
-                  <div><dt>Cache hits</dt><dd>{detail.ai_usage.cache_hits ?? "unknown"}</dd></div>
-                  <div><dt>Model</dt><dd>{detail.ai_usage.model ?? "unknown"}</dd></div>
+                  <div><dt>{t("source")}</dt><dd>{detail.ai_usage.source ?? t("unknown")}</dd></div>
+                  <div><dt>{t("externalAi")}</dt><dd>{booleanLabel(detail.ai_usage.external_ai_used)}</dd></div>
+                  <div><dt>{t("localMock")}</dt><dd>{booleanLabel(detail.ai_usage.local_mock_used)}</dd></div>
+                  <div><dt>{t("newCalls")}</dt><dd>{detail.ai_usage.new_external_ai_calls ?? t("unknown")}</dd></div>
+                  <div><dt>{t("cacheHits")}</dt><dd>{detail.ai_usage.cache_hits ?? t("unknown")}</dd></div>
+                  <div><dt>{t("model")}</dt><dd>{detail.ai_usage.model ?? t("unknown")}</dd></div>
                 </dl>
               </section>
               <section>
                 <h3>{t("provider")}</h3>
                 <dl className="diagnostic-kv">
-                  <div><dt>Provider</dt><dd>{detail.provider.provider ?? "unknown"}</dd></div>
-                  <div><dt>Source</dt><dd>{detail.provider.source ?? "unknown"}</dd></div>
-                  <div><dt>Adapter</dt><dd>{detail.provider.provider_adapter ?? "unknown"}</dd></div>
-                  <div><dt>Package</dt><dd>{booleanLabel(detail.provider.package_used)}</dd></div>
-                  <div><dt>Mock</dt><dd>{booleanLabel(detail.provider.mock)}</dd></div>
-                  <div><dt>Market</dt><dd>{detail.provider.market ?? "unknown"} / {detail.provider.currency ?? "unknown"}</dd></div>
+                  <div><dt>{t("provider")}</dt><dd>{detail.provider.provider ?? t("unknown")}</dd></div>
+                  <div><dt>{t("source")}</dt><dd>{detail.provider.source ?? t("unknown")}</dd></div>
+                  <div><dt>{t("adapter")}</dt><dd>{detail.provider.provider_adapter ?? t("unknown")}</dd></div>
+                  <div><dt>{t("package")}</dt><dd>{booleanLabel(detail.provider.package_used)}</dd></div>
+                  <div><dt>{t("mock")}</dt><dd>{booleanLabel(detail.provider.mock)}</dd></div>
+                  <div><dt>{t("market")}</dt><dd>{detail.provider.market ?? t("unknown")} / {detail.provider.currency ?? t("unknown")}</dd></div>
                 </dl>
               </section>
               <section>
                 <h3>{t("dataGaps")} & {t("warnings")}</h3>
                 {warnings.length === 0 ? (
-                  <p className="muted-copy">No data gaps, missing fields, or warnings reported.</p>
+                  <p className="muted-copy">{t("noDiagnosticsFindings")}</p>
                 ) : (
                   <ul className="compact-list">
                     {warnings.slice(0, 8).map((warning) => <li key={warning}>{warning}</li>)}
-                    {warnings.length > 8 ? <li>{warnings.length - 8} more</li> : null}
+                    {warnings.length > 8 ? <li>{warnings.length - 8} {t("more")}</li> : null}
                   </ul>
                 )}
               </section>
@@ -950,30 +952,30 @@ function RegressionMatrixHub({
   const warningsCount = (matrix?.warnings.length ?? 0) + rows.filter((row) => row.issue_types.length > 0).length;
 
   if (trainingStatus === "loading") {
-    return <EmptyState title="Loading training runs" detail="Scanning reports/training_runs through Tauri IPC." />;
+    return <EmptyState title={t("loadingTrainingRuns")} detail={t("scanningTrainingRuns")} />;
   }
   if (trainingStatus === "browser-preview") {
-    return <EmptyState title="Desktop runtime required" detail="Regression Matrix needs Tauri IPC to read existing artifacts." />;
+    return <EmptyState title={t("desktopRuntimeRequired")} detail={t("regressionMatrixNeedsTauri")} />;
   }
   if (trainingStatus === "failed") {
-    return <EmptyState title="Training run discovery failed" detail={error ?? "list_training_runs returned an error."} />;
+    return <EmptyState title={t("trainingRunDiscoveryFailed")} detail={error ?? t("listTrainingRunsError")} />;
   }
   if (runs.length === 0) {
-    return <EmptyState title="No training runs found" detail="No reports/training_runs folders were discovered." />;
+    return <EmptyState title={t("noTrainingRunsFound")} detail={t("noTrainingRunsFolders")} />;
   }
 
   return (
     <section className="matrix-workspace" aria-label="Regression Matrix Hub">
       <header className="matrix-hero">
         <div>
-          <p className="eyebrow">Quality control board</p>
+          <p className="eyebrow">{t("qualityControlBoard")}</p>
           <h2>{t("regressionHub")}</h2>
-          <p>Read existing training run quality matrices. No training or external API calls are performed.</p>
+          <p>{t("matrixExistingNotice")}</p>
         </div>
         <label className="training-selector">
           <span>{t("trainingRun")}</span>
           <select
-            aria-label="Training run selector"
+            aria-label={t("trainingRunSelector")}
             onChange={(event) => onSelectRun(event.target.value)}
             value={selectedTrainingRunId ?? ""}
           >
@@ -986,18 +988,18 @@ function RegressionMatrixHub({
         </label>
       </header>
 
-      {matrixStatus === "loading" ? <EmptyState title="Loading matrix" detail="Reading existing quality_matrix artifacts." /> : null}
-      {matrixStatus === "browser-preview" ? <EmptyState title="Desktop runtime required" detail="Matrix loading requires Tauri IPC." /> : null}
-      {matrixStatus === "failed" ? <EmptyState title="Matrix failed" detail={matrixError ?? "load_quality_matrix returned an error."} /> : null}
+      {matrixStatus === "loading" ? <EmptyState title={t("loadingMatrix")} detail={t("readingQualityMatrix")} /> : null}
+      {matrixStatus === "browser-preview" ? <EmptyState title={t("desktopRuntimeRequired")} detail={t("regressionMatrixNeedsTauri")} /> : null}
+      {matrixStatus === "failed" ? <EmptyState title={t("matrixFailed")} detail={matrixError ?? t("loadQualityMatrixError")} /> : null}
 
       {matrixStatus === "ready" || matrixStatus === "empty" ? (
         <>
           <div className="matrix-summary-grid">
-            <MatrixSummaryCard label="Total tickers" value={`${rows.length}/${totalRows.length}`} />
-            <MatrixSummaryCard label="Average quality" value={averageQuality(rows)} />
-            <MatrixSummaryCard label="Warnings" value={warningsCount} />
-            <MatrixSummaryCard label="Hard failures" value={hardFailures} />
-            <MatrixSummaryCard label="Provider failures" value={providerFailures} />
+            <MatrixSummaryCard label={t("totalTickers")} value={`${rows.length}/${totalRows.length}`} />
+            <MatrixSummaryCard label={t("averageQuality")} value={averageQuality(rows)} />
+            <MatrixSummaryCard label={t("warnings")} value={warningsCount} />
+            <MatrixSummaryCard label={t("hardFailures")} value={hardFailures} />
+            <MatrixSummaryCard label={t("providerFailures")} value={providerFailures} />
           </div>
 
           <div className="matrix-legend" aria-label="Quality score legend">
@@ -1005,7 +1007,7 @@ function RegressionMatrixHub({
             <span><i className="legend-dot legend-dot--ok" />70-84</span>
             <span><i className="legend-dot legend-dot--weak" />60-69</span>
             <span><i className="legend-dot legend-dot--fail" />&lt;60</span>
-            <span><i className="legend-dot legend-dot--unknown" />missing</span>
+            <span><i className="legend-dot legend-dot--unknown" />{t("missing")}</span>
           </div>
 
           <div className="matrix-filter-chips" aria-label="Matrix filters">
@@ -1024,7 +1026,7 @@ function RegressionMatrixHub({
           <div className="matrix-layout">
             <div className="matrix-board" role="grid" aria-label="Ticker quality matrix">
               {rows.length === 0 ? (
-                <EmptyState title="No quality rows" detail="This training run has no quality matrix rows." />
+                <EmptyState title={t("noQualityRows")} detail={t("noQualityRowsDetail")} />
               ) : (
                 rows.map((row) => (
                   <button

@@ -172,6 +172,7 @@ None. The implementation uses existing React, i18n, Tauri helper, and CSS-first 
 
 - EN/中文 UI chrome remains controlled by i18n.
 - Added localized command menu and micro-click settings labels.
+- Follow-up closure localized run-list states, diagnostics drawer labels, matrix empty states, Sankey qualitative/data-gap labels, run-detail loading states, and artifact dock messages to reduce mixed-language chrome in Chinese mode.
 - Settings persist in localStorage, including micro-click audio and pane widths.
 - Tickers, JSON field names, filenames, and generated report content are not translated.
 
@@ -191,8 +192,8 @@ None. The implementation uses existing React, i18n, Tauri helper, and CSS-first 
 
 ## Validation
 
-- `npm run typecheck`: PASS
-- `npm run build`: PASS
+- `npm run typecheck`: PASS, rerun after language chrome closure
+- `npm run build`: PASS, rerun after language chrome closure
 - `cargo check --manifest-path src-tauri/Cargo.toml`: PASS
 - `cargo build --manifest-path src-tauri/Cargo.toml`: PASS
 - `cargo test --manifest-path src-tauri/Cargo.toml`: PASS, 44 tests passed

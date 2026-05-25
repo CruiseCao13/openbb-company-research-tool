@@ -165,10 +165,10 @@ export function MoneyFlowSankey({ detail }: { detail: RunDetail }): JSX.Element 
 
   if (!graph) {
     return (
-      <DetailSection badge="DATA_GAP" title="Money Flow Sankey">
+      <DetailSection badge="DATA_GAP" title={t("moneyFlowSankey")}>
         <div className="sankey-empty">
           <strong>{t("moneyFlow")}</strong>
-          <span>Money-flow mechanism fields are not available for this run.</span>
+          <span>{t("moneyFlowMechanismUnavailable")}</span>
         </div>
       </DetailSection>
     );
@@ -193,8 +193,8 @@ export function MoneyFlowSankey({ detail }: { detail: RunDetail }): JSX.Element 
     <DetailSection badge="UNKNOWN" title={t("vascularMoneyFlow")}>
       <div className="sankey-panel sankey-panel--vascular">
         <div className="sankey-mode-badge">
-          <span>Qualitative flow map</span>
-          <small>Not amount-scaled</small>
+          <span>{t("qualitativeFlow")}</span>
+          <small>{t("qualitativeNotAmountScaled")}</small>
         </div>
         <svg className="sankey-svg" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Qualitative money flow Sankey">
           <defs>
@@ -638,18 +638,19 @@ type ArtifactButtonConfig = {
 };
 
 function ArtifactLinksPanel({ detail }: { detail: RunDetail }): JSX.Element {
-  const [message, setMessage] = useState<string>("No artifact action yet.");
+  const { t } = useTranslation();
+  const [message, setMessage] = useState<string>(t("noArtifactActionYet"));
   const [isBusy, setIsBusy] = useState<string | null>(null);
 
   const artifactButtons: ArtifactButtonConfig[] = [
-    { label: "Report", path: detail.artifacts.markdown_report_path, action: "open" },
-    { label: "Dashboard", path: detail.artifacts.dashboard_path, action: "open" },
-    { label: "PDF", path: detail.artifacts.pdf_report_path, action: "open" },
-    { label: "AI Usage", path: detail.artifacts.ai_usage_path, action: "open" },
-    { label: "Blueprint", path: detail.artifacts.blueprint_path, action: "open" },
-    { label: "Validator", path: detail.artifacts.validator_report_path, action: "open" },
-    { label: "Provider Payload", path: detail.artifacts.provider_payload_path, action: "open" },
-    { label: "Run Folder", path: detail.run_folder, action: "reveal" }
+    { label: t("report"), path: detail.artifacts.markdown_report_path, action: "open" },
+    { label: t("dashboard"), path: detail.artifacts.dashboard_path, action: "open" },
+    { label: t("pdf"), path: detail.artifacts.pdf_report_path, action: "open" },
+    { label: t("aiUsage"), path: detail.artifacts.ai_usage_path, action: "open" },
+    { label: t("blueprint"), path: detail.artifacts.blueprint_path, action: "open" },
+    { label: t("validator"), path: detail.artifacts.validator_report_path, action: "open" },
+    { label: t("providerPayload"), path: detail.artifacts.provider_payload_path, action: "open" },
+    { label: t("runFolder"), path: detail.run_folder, action: "reveal" }
   ];
 
   async function handleArtifactAction(config: ArtifactButtonConfig): Promise<void> {
@@ -658,33 +659,33 @@ function ArtifactLinksPanel({ detail }: { detail: RunDetail }): JSX.Element {
     }
 
     setIsBusy(config.label);
-    setMessage(`${config.action === "open" ? "Opening" : "Revealing"} ${config.label}...`);
+    setMessage(`${config.action === "open" ? t("openingArtifact") : t("revealingArtifact")} ${config.label}...`);
     try {
       const result =
         config.action === "open" ? await openArtifact(config.path) : await revealInFolder(config.path);
-      setMessage(result.ok ? `${config.label} ${config.action === "open" ? "opened" : "revealed"}.` : `${config.label} action returned a warning.`);
+      setMessage(result.ok ? `${config.label} ${config.action === "open" ? t("artifactOpened") : t("artifactRevealed")}.` : `${config.label} ${t("artifactWarning")}`);
     } catch (error: unknown) {
       const text = error instanceof Error ? error.message : String(error);
-      setMessage(text.includes("__TAURI__") ? "Desktop runtime required for artifact actions." : text);
+      setMessage(text.includes("__TAURI__") ? t("desktopArtifactRequired") : text);
     } finally {
       setIsBusy(null);
     }
   }
 
   return (
-    <DetailSection badge="UNKNOWN" title="Artifact Dock">
+    <DetailSection badge="UNKNOWN" title={t("artifactDock")}>
       <div className="artifact-button-grid">
         {artifactButtons.map((config) => (
           <button
             className="artifact-button artifact-button--large"
-            data-tooltip={config.path ? `${config.label} artifact is available` : `${config.label} artifact is missing`}
+            data-tooltip={config.path ? `${config.label} ${t("artifactAvailable")}` : `${config.label} ${t("artifactMissing")}`}
             disabled={!config.path || isBusy !== null}
             key={config.label}
             onClick={() => void handleArtifactAction(config)}
             type="button"
           >
             <span>{config.label}</span>
-            <small>{config.path ? config.action : "missing"}</small>
+            <small>{config.path ? t(config.action === "open" ? "actionOpen" : "actionReveal") : t("missing")}</small>
           </button>
         ))}
       </div>
@@ -694,19 +695,21 @@ function ArtifactLinksPanel({ detail }: { detail: RunDetail }): JSX.Element {
 }
 
 export function RunDetailPanel({ activeTab, detail, error, status }: RunDetailPanelProps): JSX.Element {
+  const { t } = useTranslation();
+
   if (status === "idle") {
-    return <EmptyRunDetailState title="No run selected" detail="Select a run from the left rail to load structured run metadata." />;
+    return <EmptyRunDetailState title={t("noRunSelected")} detail={t("selectRunStructured")} />;
   }
 
   if (status === "loading") {
-    return <SkeletonSurface detail="Reading structured metadata through Tauri IPC." title="Loading run detail" variant="gauges" />;
+    return <SkeletonSurface detail={t("readingRunDetail")} title={t("loadingRunDetail")} variant="gauges" />;
   }
 
   if (status === "browser-preview" || status === "error" || !detail) {
     return (
       <EmptyRunDetailState
-        title={status === "browser-preview" ? "Detail loading needs Tauri" : "Run detail failed"}
-        detail={error ?? "The load_run_detail command returned an error."}
+        title={status === "browser-preview" ? t("detailLoadingNeedsTauri") : t("runDetailFailed")}
+        detail={error ?? t("loadRunDetailError")}
       />
     );
   }
