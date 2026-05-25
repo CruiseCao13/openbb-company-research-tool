@@ -1,33 +1,34 @@
-# v5 Path Anchoring Audit
+# Root Path Anchoring Audit
 
 Generated: 2026-05-25 Asia/Singapore
 
-## Scope
+## Runtime Check
 
-Searched Rust crates for generated-output path construction patterns:
+`cargo run -p research-rs -- run AAPL --ai local --run-id path_audit_aapl --pack` completed from `research-rs/` and wrote to repo-root `reports/AAPL/runs/path_audit_aapl`.
 
-```bash
-rg -n "PathBuf::from\(\"reports\"|Path::new\(\"reports\"|current_dir\(\).*reports|reports/_cache|_cache/ai|batch_runs|quality_runs|samples|release_checks" research-rs/crates
-```
+`find research-rs/reports -type f` result: `(none)`
 
-## Findings
+During this final audit, batch generation also exposed a stale cwd-rooted `research-rs/training_cases/corrections/v5_correction_cases.jsonl`. That was fixed by routing global v5 training case output through the shared repo-root resolver.
 
-| Path Family | Result | Evidence |
+`research-rs/training_cases/` result after cleanup: `(absent)`
+
+## Source Findings
+
+| Generated Path Family | Resolver / Evidence | Status |
 |---|---|---|
-| AI cache | PASS | `research_core::paths::ai_cache_dir()` resolves to repo-root `reports/_cache/ai`. |
-| Batch runs | PASS | `research_core::paths::batch_runs_dir()` resolves to repo-root `reports/batch_runs`. |
-| Quality runs | PASS | `research_core::paths::quality_runs_dir()` resolves to repo-root `reports/quality_runs`. |
-| Samples | PASS | `research_core::paths::samples_dir()` resolves to repo-root `reports/samples`. |
-| Release checks | PASS | `research_core::paths::release_checks_dir()` resolves to repo-root `reports/release_checks`. |
-| Direct `PathBuf::from("reports")` | PASS | No generated-output construction found in crates. |
-| Direct `Path::new("reports")` | PASS | No generated-output construction found in crates. |
-| `current_dir().join("reports")` | PASS | No generated-output construction found in crates. |
-| `research-rs/reports` | PASS | Directory absent; `.gitignore` remains defensive. |
+| reports root | `research_core::paths::reports_root()` | PASS |
+| AI cache | `research_core::paths::ai_cache_dir()` | PASS |
+| batch runs | `research_core::paths::batch_runs_dir()` | PASS |
+| quality runs | `research_core::paths::quality_runs_dir()` | PASS |
+| samples | `research_core::paths::samples_dir()` | PASS |
+| release checks | `research_core::paths::release_checks_dir()` | PASS |
+| global training cases | `research_core::paths::training_cases_dir()` | PASS |
+| provider scripts | repo-root provider resolver | PASS |
 
-References to `reports/samples/...` inside tests and README checks are assertions against expected repo-root files, not output roots.
+References to `reports/samples/...` inside README/tests are assertions or sample links, not generated output roots.
 
-## Result
+## Remaining Risk
 
-Generated v5 output paths are anchored through the shared repo-root path resolver.
+The audit now covers the path families that were observed during run, batch, cache, samples, release checks, and training case generation. Any future generated path family should be added to `research_core::paths` rather than constructed from cwd.
 
 Status: PASS

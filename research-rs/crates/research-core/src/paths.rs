@@ -29,3 +29,7 @@ pub fn samples_dir() -> Result<PathBuf> {
 pub fn release_checks_dir() -> Result<PathBuf> {
     Ok(reports_root()?.join("release_checks"))
 }
+
+pub fn training_cases_dir() -> Result<PathBuf> {
+    Ok(discover_repo_root()?.join("training_cases"))
+}

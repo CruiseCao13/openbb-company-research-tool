@@ -2,6 +2,7 @@ use crate::cache::digest_str;
 use crate::error::{ResearchError, ResearchErrorKind};
 use crate::paths::{
     ai_cache_dir, batch_runs_dir, quality_runs_dir, release_checks_dir, samples_dir,
+    training_cases_dir,
 };
 use crate::provider::{discover_repo_root, discover_repo_root_from, resolve_provider_script};
 use crate::run_folder::RunFolder;
@@ -174,6 +175,15 @@ fn release_checks_path_anchored_to_repo_root() {
 }
 
 #[test]
+fn training_cases_path_anchored_to_repo_root() {
+    let root = discover_repo_root().expect("repo root should resolve");
+    assert_eq!(
+        training_cases_dir().expect("training cases dir should resolve"),
+        root.join("training_cases")
+    );
+}
+
+#[test]
 fn no_research_rs_reports_created_during_run() {
     let root = discover_repo_root().expect("repo root should resolve");
     for path in [
@@ -182,6 +192,7 @@ fn no_research_rs_reports_created_during_run() {
         quality_runs_dir().unwrap(),
         samples_dir().unwrap(),
         release_checks_dir().unwrap(),
+        training_cases_dir().unwrap(),
     ] {
         assert!(
             !path.starts_with(root.join("research-rs/reports")),

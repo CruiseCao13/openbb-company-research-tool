@@ -10,7 +10,7 @@ use research_core::config::EngineConfig;
 use research_core::io::{ensure_dir, write_if_changed};
 use research_core::normalizer::write_normalized_outputs;
 use research_core::parser::write_parser_report;
-use research_core::paths::batch_runs_dir;
+use research_core::paths::{batch_runs_dir, training_cases_dir};
 use research_core::provider::fetch_provider_payload;
 use research_core::run_folder::RunFolder;
 use research_core::schema_version::write_schema_validation_report;
@@ -282,7 +282,7 @@ pub fn run_batch(options: &BatchRunOptions) -> Result<PathBuf> {
                 .append(true)
                 .open(&case_path)?
                 .write_all(line.as_bytes())?;
-            let global_path = Path::new("training_cases")
+            let global_path = training_cases_dir()?
                 .join("corrections")
                 .join("v5_correction_cases.jsonl");
             if let Some(parent) = global_path.parent() {

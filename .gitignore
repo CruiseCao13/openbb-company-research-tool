@@ -14,6 +14,7 @@ __pycache__/
 .pytest_cache/
 .ipynb_checkpoints/
 research-rs/target/
+research-rs/training_cases/
 
 # Generated outputs
 reports/*
