@@ -20,7 +20,7 @@ jobs:
       - name: Rust tests
         run: cargo test --manifest-path research-rs/Cargo.toml
       - name: Python provider syntax
-        run: python -m py_compile providers/*.py
+        run: python3 -m py_compile providers/*.py
       - name: Build CLI and doctor smoke
         run: |
           cargo build --manifest-path research-rs/Cargo.toml --bin research-rs
