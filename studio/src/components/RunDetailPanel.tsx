@@ -79,6 +79,7 @@ function DetailSection({
 
 type SankeyNodeDatum = {
   name: string;
+  kind: "inflow" | "engine" | "reinvestment" | "liquidity" | "gap" | "return";
 };
 
 type SankeyLinkDatum = {
@@ -86,6 +87,7 @@ type SankeyLinkDatum = {
   target: number;
   value: number;
   label: string;
+  kind: "inflow" | "cash" | "reinvestment" | "risk" | "gap";
 };
 
 function compactText(value: string | null | undefined, fallback: string): string {
@@ -109,36 +111,48 @@ function buildMoneyFlowGraph(detail: RunDetail): SankeyGraph<SankeyNodeDatum, Sa
 
   return {
     nodes: [
-      { name: "Money source" },
-      { name: "Operating engine" },
-      { name: "Cash uses" },
-      { name: "Financing / liquidity" },
-      { name: "Data gaps" }
+      { name: "Revenue", kind: "inflow" },
+      { name: "Cash engine", kind: "engine" },
+      { name: "Reinvestment", kind: "reinvestment" },
+      { name: "Liquidity", kind: "liquidity" },
+      { name: "Data gaps", kind: "gap" },
+      { name: "Shareholder return", kind: "return" }
     ],
     links: [
       {
         source: 0,
         target: 1,
         value: 1,
-        label: compactText(sourceText, "Revenue or operating source not specified.")
+        label: compactText(sourceText, "Revenue or operating source not specified."),
+        kind: "inflow"
       },
       {
         source: 1,
         target: 2,
         value: 1,
-        label: compactText(useText, "Cash uses not specified.")
+        label: compactText(useText, "Cash uses not specified."),
+        kind: "reinvestment"
       },
       {
         source: 1,
         target: 3,
         value: debtText ? 1 : 0.45,
-        label: compactText(debtText, "Financing pressure not specified.")
+        label: compactText(debtText, "Financing pressure not specified."),
+        kind: debtText ? "risk" : "cash"
       },
       {
         source: 1,
         target: 4,
         value: detail.blueprint.data_gaps.length || detail.provider.missing_fields.length ? 0.75 : 0.25,
-        label: compactText([...detail.blueprint.data_gaps, ...detail.provider.missing_fields].join("; "), "No explicit data gap reported.")
+        label: compactText([...detail.blueprint.data_gaps, ...detail.provider.missing_fields].join("; "), "No explicit data gap reported."),
+        kind: "gap"
+      },
+      {
+        source: 3,
+        target: 5,
+        value: detail.financial_interpretation.cash_flow_explanation ? 0.55 : 0.25,
+        label: compactText(detail.financial_interpretation.cash_flow_explanation, "Shareholder return support is not specified."),
+        kind: "cash"
       }
     ]
   };
@@ -160,10 +174,10 @@ export function MoneyFlowSankey({ detail }: { detail: RunDetail }): JSX.Element 
   }
 
   const width = 980;
-  const height = 460;
+  const height = 540;
   const layout = sankey<SankeyNodeDatum, SankeyLinkDatum>()
-    .nodeWidth(14)
-    .nodePadding(22)
+    .nodeWidth(22)
+    .nodePadding(34)
     .extent([
       [16, 18],
       [width - 18, height - 18]
@@ -175,32 +189,54 @@ export function MoneyFlowSankey({ detail }: { detail: RunDetail }): JSX.Element 
   const path = sankeyLinkHorizontal<SankeyNodeDatum, SankeyLinkDatum>();
 
   return (
-    <DetailSection badge="UNKNOWN" title="D3 Money Flow Sankey">
-      <div className="sankey-panel">
+    <DetailSection badge="UNKNOWN" title={t("vascularMoneyFlow")}>
+      <div className="sankey-panel sankey-panel--vascular">
         <div className="sankey-mode-badge">
           <span>Qualitative flow map</span>
           <small>Not amount-scaled</small>
         </div>
         <svg className="sankey-svg" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Qualitative money flow Sankey">
           <defs>
-            <linearGradient id="sankey-link-gradient" x1="0%" x2="100%" y1="0%" y2="0%">
-              <stop offset="0%" stopColor="rgba(143, 211, 255, 0.72)" />
-              <stop offset="100%" stopColor="rgba(52, 211, 153, 0.5)" />
+            <filter id="sankey-vascular-glow" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="6" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            <linearGradient id="sankey-link-gradient-inflow" x1="0%" x2="100%" y1="0%" y2="0%">
+              <stop offset="0%" stopColor="rgba(52, 211, 153, 0.22)" />
+              <stop offset="52%" stopColor="rgba(52, 211, 153, 0.9)" />
+              <stop offset="100%" stopColor="rgba(143, 211, 255, 0.62)" />
+            </linearGradient>
+            <linearGradient id="sankey-link-gradient-reinvestment" x1="0%" x2="100%" y1="0%" y2="0%">
+              <stop offset="0%" stopColor="rgba(143, 211, 255, 0.2)" />
+              <stop offset="58%" stopColor="rgba(96, 165, 250, 0.82)" />
+              <stop offset="100%" stopColor="rgba(129, 140, 248, 0.42)" />
+            </linearGradient>
+            <linearGradient id="sankey-link-gradient-risk" x1="0%" x2="100%" y1="0%" y2="0%">
+              <stop offset="0%" stopColor="rgba(251, 146, 60, 0.25)" />
+              <stop offset="58%" stopColor="rgba(251, 146, 60, 0.85)" />
+              <stop offset="100%" stopColor="rgba(244, 63, 94, 0.48)" />
+            </linearGradient>
+            <linearGradient id="sankey-link-gradient-gap" x1="0%" x2="100%" y1="0%" y2="0%">
+              <stop offset="0%" stopColor="rgba(148, 163, 184, 0.14)" />
+              <stop offset="70%" stopColor="rgba(251, 146, 60, 0.48)" />
             </linearGradient>
           </defs>
           {rendered.links.map((link, index) => (
             <path
-              className="sankey-link"
+              className={`sankey-link sankey-link--${link.kind}`}
               d={path(link) ?? undefined}
               key={`${link.index ?? index}-${link.label}`}
-              strokeWidth={Math.max(8, link.width ?? 8)}
+              strokeWidth={Math.max(18, (link.width ?? 8) * 1.4)}
             >
-              <title>{link.label}</title>
+              <title>{`${link.label}\n${t("qualitativeSankey")}`}</title>
             </path>
           ))}
           {rendered.nodes.map((node) => (
-            <g className="sankey-node" key={node.name}>
-              <rect height={(node.y1 ?? 0) - (node.y0 ?? 0)} rx="6" width={(node.x1 ?? 0) - (node.x0 ?? 0)} x={node.x0} y={node.y0} />
+            <g className={`sankey-node sankey-node--${node.kind}`} key={node.name}>
+              <rect height={(node.y1 ?? 0) - (node.y0 ?? 0)} rx="13" width={(node.x1 ?? 0) - (node.x0 ?? 0)} x={node.x0} y={node.y0} />
               <text
                 textAnchor={(node.x0 ?? 0) < width / 2 ? "start" : "end"}
                 x={(node.x0 ?? 0) < width / 2 ? (node.x1 ?? 0) + 10 : (node.x0 ?? 0) - 10}

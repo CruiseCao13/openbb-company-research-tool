@@ -2501,3 +2501,464 @@ select:focus-visible {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* Vascular terminal pass: visual-first landing, flow network, gauges, and hidden detail text. */
+.studio-shell--landing .workspace {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.studio-shell--landing .nav-rail .run-list-panel {
+  min-height: 0;
+}
+
+.example-run-list {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.example-run-list button {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 18px;
+  background: rgba(2, 6, 23, 0.3);
+  color: var(--text-main);
+  cursor: pointer;
+  padding: 8px;
+  text-align: left;
+}
+
+.example-run-list button:hover {
+  border-color: rgba(143, 211, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.example-run-list p {
+  margin: 8px 4px 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.landing-hero {
+  grid-template-columns: minmax(0, 1.18fr) minmax(360px, 0.82fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  overflow: hidden;
+  padding: 24px;
+}
+
+.landing-hero__canvas {
+  position: relative;
+  grid-row: 1 / span 2;
+  min-height: 600px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 48% 40%, rgba(52, 211, 153, 0.12), transparent 28%),
+    radial-gradient(circle at 58% 58%, rgba(143, 211, 255, 0.12), transparent 32%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(15, 23, 42, 0.38));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 30px 90px rgba(0, 0, 0, 0.34);
+}
+
+.landing-hero__canvas::before {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(rgba(143, 211, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(143, 211, 255, 0.018) 1px, transparent 1px);
+  background-size: 28px 28px;
+  content: "";
+  mask-image: radial-gradient(circle at center, black, transparent 78%);
+}
+
+.landing-hero__content {
+  align-content: end;
+  gap: 14px;
+  padding: 12px 8px;
+}
+
+.landing-hero h2 {
+  font-size: clamp(48px, 5vw, 72px);
+  background: linear-gradient(180deg, #f8fafc, #94a3b8);
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.landing-hero__content > p:not(.eyebrow) {
+  max-width: 460px;
+  font-size: 16px;
+}
+
+.example-ticker-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.example-ticker-strip button {
+  border: 1px solid rgba(143, 211, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.34);
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 7px 10px;
+  font-family: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+  font-size: 10px;
+}
+
+.example-ticker-strip button:hover {
+  color: var(--info);
+  border-color: rgba(143, 211, 255, 0.44);
+}
+
+.landing-search-console {
+  display: grid;
+  align-self: end;
+  gap: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 28px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(15, 23, 42, 0.5)),
+    rgba(2, 6, 23, 0.44);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 26px 80px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(20px) saturate(145%);
+  padding: 16px;
+}
+
+.landing-search-console label,
+.landing-search-console__controls {
+  display: grid;
+  gap: 8px;
+}
+
+.landing-search-console label span {
+  color: var(--text-muted);
+  font-family: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.landing-search-console input,
+.landing-search-console select {
+  width: 100%;
+  border: 1px solid rgba(143, 211, 255, 0.16);
+  border-radius: 16px;
+  background: rgba(2, 6, 23, 0.48);
+  color: var(--text-main);
+  padding: 12px 13px;
+}
+
+.landing-search-console__controls {
+  grid-template-columns: 0.8fr 1.2fr;
+}
+
+.landing-search-console__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.landing-search-console p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.vascular-demo {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.vascular-demo svg {
+  width: min(92%, 980px);
+  height: auto;
+  overflow: visible;
+}
+
+.vascular-path {
+  fill: none;
+  filter: url("#vascular-glow");
+  stroke-linecap: round;
+  stroke-dasharray: 26 34;
+  animation: sankey-flow 5s linear infinite;
+}
+
+.vascular-path--main {
+  stroke: url("#vascular-green");
+  stroke-width: 46;
+}
+
+.vascular-path--blue {
+  stroke: url("#vascular-blue");
+  stroke-width: 28;
+  animation-duration: 6s;
+}
+
+.vascular-path--risk {
+  stroke: url("#vascular-risk");
+  stroke-width: 24;
+  animation-duration: 5.6s;
+}
+
+.vascular-path--thin {
+  stroke: rgba(148, 163, 184, 0.28);
+  stroke-width: 14;
+}
+
+.vascular-node circle {
+  fill: rgba(15, 23, 42, 0.84);
+  stroke: rgba(255, 255, 255, 0.18);
+  stroke-width: 1.2;
+  filter: url("#vascular-glow");
+}
+
+.vascular-node text {
+  opacity: 0.54;
+  fill: var(--text-main);
+  font-family: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+  font-size: 13px;
+  transition: opacity 160ms ease;
+}
+
+.vascular-node:hover text,
+.vascular-demo:hover .vascular-node text {
+  opacity: 1;
+}
+
+.vascular-demo__badge {
+  position: absolute;
+  top: 22px;
+  left: 22px;
+  display: grid;
+  gap: 3px;
+  border: 1px solid rgba(143, 211, 255, 0.2);
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.48);
+  backdrop-filter: blur(14px);
+  padding: 8px 12px;
+  font-family: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+}
+
+.vascular-demo__badge span {
+  color: var(--info);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.vascular-demo__badge strong {
+  color: var(--text-main);
+  font-size: 11px;
+}
+
+.sankey-panel--vascular {
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 38% 42%, rgba(52, 211, 153, 0.13), transparent 34%),
+    radial-gradient(circle at 72% 62%, rgba(143, 211, 255, 0.1), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(15, 23, 42, 0.42));
+}
+
+.sankey-panel--vascular .sankey-svg {
+  min-height: 470px;
+}
+
+.sankey-link {
+  filter: url("#sankey-vascular-glow");
+  stroke-linecap: round;
+}
+
+.sankey-link--inflow,
+.sankey-link--cash {
+  stroke: url("#sankey-link-gradient-inflow");
+}
+
+.sankey-link--reinvestment {
+  stroke: url("#sankey-link-gradient-reinvestment");
+}
+
+.sankey-link--risk {
+  stroke: url("#sankey-link-gradient-risk");
+}
+
+.sankey-link--gap {
+  stroke: url("#sankey-link-gradient-gap");
+}
+
+.sankey-node rect {
+  filter: url("#sankey-vascular-glow");
+  rx: 13px;
+}
+
+.sankey-node text {
+  opacity: 0.42;
+  transition: opacity 160ms ease, fill 160ms ease;
+}
+
+.sankey-node:hover text,
+.sankey-panel:hover .sankey-node text {
+  opacity: 0.95;
+  fill: #f8fafc;
+}
+
+.sankey-sidecar {
+  opacity: 0.62;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.sankey-panel:hover .sankey-sidecar {
+  opacity: 1;
+  transform: translateX(-2px);
+}
+
+.gauge-dashboard {
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(15, 23, 42, 0.48)),
+    rgba(2, 6, 23, 0.36);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 18px 60px rgba(0, 0, 0, 0.28);
+  padding: 14px;
+}
+
+.gauge-dashboard__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.gauge-dashboard__header small {
+  color: var(--text-muted);
+  font-family: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.gauge-dashboard__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.gauge-dial {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+  background: rgba(2, 6, 23, 0.32);
+  padding: 12px;
+}
+
+.gauge-dial:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 42px rgba(143, 211, 255, 0.1);
+}
+
+.gauge-dial__meter {
+  position: relative;
+  display: grid;
+  width: 84px;
+  height: 84px;
+  place-items: center;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at center, rgba(2, 6, 23, 0.9) 0 56%, transparent 57%),
+    conic-gradient(var(--gauge-color) 0 230deg, rgba(148, 163, 184, 0.16) 230deg 360deg);
+}
+
+.gauge-dial--good {
+  --gauge-color: rgba(52, 211, 153, 0.86);
+}
+
+.gauge-dial--warning {
+  --gauge-color: rgba(251, 146, 60, 0.86);
+}
+
+.gauge-dial--risk {
+  --gauge-color: rgba(244, 63, 94, 0.86);
+}
+
+.gauge-dial--unknown {
+  --gauge-color: rgba(148, 163, 184, 0.45);
+}
+
+.gauge-dial__meter span {
+  max-width: 58px;
+  color: var(--text-main);
+  font-family: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+  font-size: 9px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.gauge-dial__body {
+  display: grid;
+  gap: 4px;
+}
+
+.gauge-dial__body strong {
+  font-size: 12px;
+}
+
+.gauge-dial__body span {
+  color: var(--text-muted);
+  font-family: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.gauge-dial__body p {
+  overflow: hidden;
+  max-height: 0;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+  opacity: 0;
+  transition: max-height 180ms ease, opacity 180ms ease;
+}
+
+.gauge-dial:hover .gauge-dial__body p {
+  max-height: 120px;
+  opacity: 1;
+}
+
+.chart-card .detail-copy,
+.chart-facts,
+.compact-list {
+  transition: opacity 160ms ease, max-height 160ms ease;
+}
+
+.chart-card:not(:hover) .detail-copy,
+.chart-card:not(:hover) .chart-facts {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+}
+
+@media (max-width: 1180px) {
+  .landing-hero,
+  .landing-search-console__controls,
+  .gauge-dashboard__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-hero__canvas {
+    grid-row: auto;
+    min-height: 460px;
+  }
+}

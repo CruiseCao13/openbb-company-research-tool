@@ -48,16 +48,20 @@ type StudioDensity = "compact" | "comfortable";
 type StudioMotion = "on" | "off";
 type StudioGlass = "low" | "medium" | "high";
 type MatrixFilter = "ALL" | "PASS" | "WARNING" | "FAIL" | "DATA_GAP" | "LOCAL" | "EXTERNAL";
+type LandingMarket = "auto" | "us" | "cn";
+type LandingAnalysisMode = "load_existing" | "run_local" | "external_disabled";
 type TrainingRunsStatus = "idle" | "loading" | "ready" | "empty" | "failed" | "browser-preview";
 type MatrixStatus = "idle" | "loading" | "ready" | "empty" | "failed" | "browser-preview";
 
 const detailTabs: Array<{ id: RunDetailTab; labelKey: string }> = [
-  { id: "summary", labelKey: "overview" },
+  { id: "summary", labelKey: "flow" },
   { id: "charts", labelKey: "charts" },
+  { id: "gaps", labelKey: "questions" },
   { id: "audit", labelKey: "auditTrail" },
-  { id: "gaps", labelKey: "dataGaps" },
-  { id: "artifacts", labelKey: "artifacts" }
+  { id: "artifacts", labelKey: "files" }
 ];
+
+const exampleTickers = ["AAPL", "GOOGL", "RKLB", "600519.SH", "JPM"];
 
 function StatusBadge({ variant }: { variant: BadgeVariant }): JSX.Element {
   return <span className={`status-badge status-badge--${variant.toLowerCase()}`}>{variant}</span>;
@@ -265,45 +269,139 @@ function StudioTopBar({
 
 function LandingHero({
   onEnter,
+  onLandingSearch,
   onOpenLatest,
-  onOpenMatrix
+  onOpenMatrix,
+  onSetAnalysisMode,
+  onSetMarket,
+  landingAnalysisMode,
+  landingMarket,
+  landingSearch
 }: {
   onEnter: () => void;
+  onLandingSearch: (value: string) => void;
   onOpenLatest: () => void;
   onOpenMatrix: () => void;
+  onSetAnalysisMode: (value: LandingAnalysisMode) => void;
+  onSetMarket: (value: LandingMarket) => void;
+  landingAnalysisMode: LandingAnalysisMode;
+  landingMarket: LandingMarket;
+  landingSearch: string;
 }): JSX.Element {
   const { t } = useTranslation();
 
   return (
     <section className="landing-hero" aria-label="Studio landing">
-      <div className="hero-orbit" aria-hidden="true">
-        <span />
-        <span />
-        <span />
+      <div className="hero-orbit" aria-hidden="true"><span /><span /><span /></div>
+      <div className="landing-hero__canvas" aria-label="Example Preview vascular money flow">
+        <ExampleVascularPreview />
       </div>
       <div className="landing-hero__content">
-        <p className="eyebrow">v6 Tauri Research Studio</p>
+        <p className="eyebrow">{t("examplePreview")}</p>
         <h2>{t("heroTitle")}</h2>
         <p>{t("heroSubtitle")}</p>
-        <div className="landing-hero__actions">
-          <button className="hero-cta hero-cta--primary" onClick={onEnter} type="button">
-            {t("enterStudio")}
-          </button>
-          <button className="hero-cta" onClick={onOpenLatest} type="button">
-            {t("openLatestRun")}
-          </button>
-          <button className="hero-cta" onClick={onOpenMatrix} type="button">
-            {t("viewQualityMatrix")}
-          </button>
+        <div className="example-ticker-strip" aria-label="Example companies">
+          {exampleTickers.map((ticker) => (
+            <button key={ticker} onClick={() => onLandingSearch(ticker)} type="button">
+              {ticker}
+            </button>
+          ))}
         </div>
       </div>
-      <div className="landing-hero__terminal" aria-label="Research terminal preview">
-        <div><span>01</span><strong>Trace the business model</strong></div>
-        <div><span>02</span><strong>Verify locked numbers</strong></div>
-        <div><span>03</span><strong>Follow the cash conversion</strong></div>
-        <div><span>04</span><strong>Inspect provenance and gaps</strong></div>
-      </div>
+      <form
+        className="landing-search-console"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onEnter();
+        }}
+      >
+        <label>
+          <span>{t("searchTicker")}</span>
+          <input
+            autoComplete="off"
+            onChange={(event) => onLandingSearch(event.target.value)}
+            placeholder={t("searchTickerPlaceholder")}
+            value={landingSearch}
+          />
+        </label>
+        <div className="landing-search-console__controls">
+          <select aria-label={t("market")} onChange={(event) => onSetMarket(event.target.value as LandingMarket)} value={landingMarket}>
+            <option value="auto">{t("auto")}</option>
+            <option value="us">US</option>
+            <option value="cn">CN_A</option>
+          </select>
+          <select
+            aria-label={t("analysisMode")}
+            onChange={(event) => onSetAnalysisMode(event.target.value as LandingAnalysisMode)}
+            value={landingAnalysisMode}
+          >
+            <option value="load_existing">{t("loadExistingRun")}</option>
+            <option value="run_local" disabled>{t("runLocalComingNext")}</option>
+            <option value="external_disabled" disabled>{t("externalDisabled")}</option>
+          </select>
+        </div>
+        <div className="landing-search-console__actions">
+          <button className="hero-cta hero-cta--primary" type="submit">{t("analyze")}</button>
+          <button className="hero-cta" onClick={onOpenLatest} type="button">{t("loadLatest")}</button>
+          <button className="hero-cta" onClick={onOpenMatrix} type="button">{t("viewMatrix")}</button>
+        </div>
+        <p>{t("localOnlyNotice")}</p>
+      </form>
     </section>
+  );
+}
+
+function ExampleVascularPreview(): JSX.Element {
+  const { t } = useTranslation();
+  return (
+    <div className="vascular-demo" aria-label={t("examplePreview")}>
+      <svg viewBox="0 0 900 520" role="img" aria-label="Example qualitative vascular money flow preview">
+        <defs>
+          <filter id="vascular-glow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="7" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+          <linearGradient id="vascular-green" x1="0%" x2="100%" y1="0%" y2="0%">
+            <stop offset="0%" stopColor="rgba(52, 211, 153, 0.1)" />
+            <stop offset="48%" stopColor="rgba(52, 211, 153, 0.88)" />
+            <stop offset="100%" stopColor="rgba(143, 211, 255, 0.78)" />
+          </linearGradient>
+          <linearGradient id="vascular-blue" x1="0%" x2="100%" y1="0%" y2="0%">
+            <stop offset="0%" stopColor="rgba(143, 211, 255, 0.14)" />
+            <stop offset="55%" stopColor="rgba(143, 211, 255, 0.82)" />
+            <stop offset="100%" stopColor="rgba(96, 165, 250, 0.36)" />
+          </linearGradient>
+          <linearGradient id="vascular-risk" x1="0%" x2="100%" y1="0%" y2="0%">
+            <stop offset="0%" stopColor="rgba(251, 146, 60, 0.18)" />
+            <stop offset="62%" stopColor="rgba(251, 146, 60, 0.72)" />
+            <stop offset="100%" stopColor="rgba(244, 63, 94, 0.5)" />
+          </linearGradient>
+        </defs>
+        <path className="vascular-path vascular-path--main" d="M90 250 C190 120 300 170 400 235 C500 300 620 270 790 120" />
+        <path className="vascular-path vascular-path--blue" d="M400 235 C470 160 570 120 710 210" />
+        <path className="vascular-path vascular-path--risk" d="M405 250 C485 330 610 360 780 405" />
+        <path className="vascular-path vascular-path--thin" d="M190 260 C275 330 350 348 485 385" />
+        {[
+          ["Revenue", 90, 250],
+          ["Cash Engine", 400, 235],
+          ["Reinvestment", 710, 210],
+          ["Free Cash", 790, 120],
+          ["Risk / Gaps", 780, 405]
+        ].map(([label, x, y]) => (
+          <g className="vascular-node" key={label as string}>
+            <circle cx={x as number} cy={y as number} r="16" />
+            <text x={(x as number) + 26} y={(y as number) + 4}>{label}</text>
+          </g>
+        ))}
+      </svg>
+      <div className="vascular-demo__badge">
+        <span>{t("examplePreview")}</span>
+        <strong>{t("qualitativeFlow")}</strong>
+      </div>
+    </div>
   );
 }
 
@@ -360,11 +458,11 @@ function SettingsCenter({
       <aside className="settings-center" aria-label="Settings center">
         <div className="settings-center__header">
           <div>
-            <p className="eyebrow">Studio Control</p>
+            <p className="eyebrow">{t("studioControl")}</p>
             <h2>{t("settings")}</h2>
           </div>
           <button className="topbar-chip" onClick={onClose} type="button">
-            Close
+            {t("close")}
           </button>
         </div>
         <div className="settings-grid">
@@ -431,13 +529,13 @@ function SettingsCenter({
               <span>{defaultLanding ? t("on") : t("off")}</span>
             </label>
           </SettingGroup>
-          <SettingGroup title="Start on latest run">
+          <SettingGroup title={t("startOnLatestRun")}>
             <label className="settings-toggle">
               <input checked={startOnLatest} onChange={(event) => onStartLatest(event.target.checked)} type="checkbox" />
               <span>{startOnLatest ? t("on") : t("off")}</span>
             </label>
           </SettingGroup>
-          <SettingGroup title="Open matrix by default">
+          <SettingGroup title={t("openMatrixByDefault")}>
             <label className="settings-toggle">
               <input checked={openMatrixByDefault} onChange={(event) => onMatrixDefault(event.target.checked)} type="checkbox" />
               <span>{openMatrixByDefault ? t("on") : t("off")}</span>
@@ -494,6 +592,7 @@ function Sidebar({
   runsStatus,
   search,
   selectedRunKey,
+  showRunResults,
   totalRuns
 }: {
   error: string | null;
@@ -506,6 +605,7 @@ function Sidebar({
   runsStatus: RunsStatus;
   search: string;
   selectedRunKey: string | null;
+  showRunResults: boolean;
   totalRuns: number;
 }): JSX.Element {
   const { t } = useTranslation();
@@ -557,19 +657,31 @@ function Sidebar({
 
       <section className="run-list-panel" aria-label="Runs">
         <div className="rail-section-header">
-          <span>Runs</span>
-          <small>{runs.length}</small>
+          <span>{showRunResults ? t("runs") : t("examples")}</span>
+          <small>{showRunResults ? runs.length : exampleTickers.length}</small>
         </div>
-        <RunList
-          error={error}
-          runs={runs}
-          selectedRunKey={selectedRunKey}
-          status={runsStatus}
-          onSelectRun={(run) => {
-            onChangeMode("research");
-            onSelectRun(run);
-          }}
-        />
+        {showRunResults ? (
+          <RunList
+            error={error}
+            runs={runs}
+            selectedRunKey={selectedRunKey}
+            status={runsStatus}
+            onSelectRun={(run) => {
+              onChangeMode("research");
+              onSelectRun(run);
+            }}
+          />
+        ) : (
+          <div className="example-run-list">
+            {exampleTickers.map((ticker) => (
+              <button key={ticker} onClick={() => onSearch(ticker)} type="button">
+                <CompanyMonogram market={ticker.includes(".") ? "CN_A" : "US"} status="UNKNOWN" ticker={ticker} />
+                <span>{ticker}</span>
+              </button>
+            ))}
+            <p>{t("searchToLoad")}</p>
+          </div>
+        )}
       </section>
     </aside>
   );
@@ -1160,11 +1272,82 @@ function SimpleList({ emptyLabel, items }: { emptyLabel: string; items: string[]
   );
 }
 
+function gaugeVariant(status: BadgeVariant): "good" | "warning" | "risk" | "unknown" {
+  if (status === "PASS" || status === "EXTERNAL_AI" || status === "CACHE") {
+    return "good";
+  }
+  if (status === "WARNING" || status === "DATA_GAP" || status === "HUMAN_REVIEW" || status === "LOCAL_MOCK") {
+    return "warning";
+  }
+  if (status === "FAIL" || status === "PROVIDER_MOCK") {
+    return "risk";
+  }
+  return "unknown";
+}
+
+function GaugeDial({
+  detail,
+  label,
+  status,
+  summary
+}: {
+  detail: string;
+  label: string;
+  status: BadgeVariant;
+  summary: string;
+}): JSX.Element {
+  const variant = gaugeVariant(status);
+  return (
+    <article className={`gauge-dial gauge-dial--${variant}`}>
+      <div className="gauge-dial__meter" aria-hidden="true">
+        <span>{variant === "unknown" ? "--" : status}</span>
+      </div>
+      <div className="gauge-dial__body">
+        <strong>{label}</strong>
+        <span>{summary}</span>
+        <p>{detail}</p>
+      </div>
+    </article>
+  );
+}
+
 function InsightRail({ detail, warningsFirst }: { detail: RunDetail | null; warningsFirst: boolean }): JSX.Element {
   const { t } = useTranslation();
   const warnings = collectWarnings(detail);
-  const warningBlock = (
-    <section className="insight-card insight-card--warning">
+  const gaugeItems = [
+    {
+      label: t("dataConfidenceGauge"),
+      status: detail ? statusToBadge(detail.status.overall_status) : "UNKNOWN",
+      summary: detail?.status.overall_status ?? t("unknown"),
+      detail: detail ? "Status is read from report_status metadata." : t("selectRun")
+    },
+    {
+      label: t("cashFlowQualityGauge"),
+      status: detail?.financial_interpretation.cash_flow_explanation ? "PASS" : "DATA_GAP",
+      summary: detail?.financial_interpretation.cash_flow_explanation ? t("available") : t("dataGap"),
+      detail: detail?.financial_interpretation.cash_flow_explanation ?? "No cash-flow explanation loaded."
+    },
+    {
+      label: t("moneyFlowSpecificityGauge"),
+      status: detail?.financial_interpretation.where_money_comes_from && detail.financial_interpretation.where_money_goes ? "PASS" : "DATA_GAP",
+      summary: detail?.financial_interpretation.where_money_comes_from ? t("available") : t("dataGap"),
+      detail: detail?.financial_interpretation.where_money_comes_from ?? "Money source mechanism is missing."
+    },
+    {
+      label: t("humanReviewGauge"),
+      status: detail?.status.human_review_required || detail?.self_review.human_review_required ? "HUMAN_REVIEW" : detail ? "PASS" : "UNKNOWN",
+      summary: detail?.status.human_review_required || detail?.self_review.human_review_required ? t("required") : detail ? "OK" : t("unknown"),
+      detail: detail ? "Human-review flag comes from status and self-review metadata." : t("selectRun")
+    },
+    {
+      label: t("providerCoverageGauge"),
+      status: detail?.provider.mock ? "PROVIDER_MOCK" : detail?.provider.missing_fields.length ? "WARNING" : detail ? "PASS" : "UNKNOWN",
+      summary: detail?.provider.provider ?? t("unknown"),
+      detail: detail?.provider.missing_fields.join("; ") || "Provider coverage has no missing fields listed."
+    }
+  ] satisfies Array<{ detail: string; label: string; status: BadgeVariant; summary: string }>;
+  const warningCard = (
+    <section className="insight-card insight-card--warning" key="warnings">
       <div className="card-header">
         <span className="card-label">{t("warnings")}</span>
         <StatusBadge variant={warnings.length > 0 ? "WARNING" : "PASS"} />
@@ -1172,26 +1355,29 @@ function InsightRail({ detail, warningsFirst }: { detail: RunDetail | null; warn
       <SimpleList emptyLabel="No warnings for the selected run." items={warnings} />
     </section>
   );
-  const cards = [
-    <section className="insight-card" key="identity">
-      <span className="card-label">{t("companyIdentity")}</span>
-      <strong>{detail?.company.name ?? detail?.ticker ?? "No run selected"}</strong>
-      <p>{detail?.company.frame ?? "Select a run to inspect company identity."}</p>
-    </section>,
-    <section className="insight-card" key="money">
-      <span className="card-label">{t("moneyFlow")}</span>
-      <p>{detail?.financial_interpretation.where_money_comes_from ?? "Money source mechanism will appear here."}</p>
-      <p>{detail?.financial_interpretation.where_money_goes ?? "Cash-use mechanism will appear here."}</p>
-    </section>,
-    warningBlock,
-    <section className="insight-card" key="blueprint">
-      <span className="card-label">{t("blueprint")}</span>
-      <p>{detail?.blueprint.core_thesis ?? "Research blueprint summary will appear after loading a run."}</p>
+  const gaugePanel = (
+    <section className="gauge-dashboard" key="gauges" aria-label="Gauge dashboard">
+      <div className="gauge-dashboard__header">
+        <span className="card-label">{t("gaugeDashboard")}</span>
+        <small>{t("hoverForMeaning")}</small>
+      </div>
+      <div className="gauge-dashboard__grid">
+        {gaugeItems.map((item) => <GaugeDial key={item.label} {...item} />)}
+      </div>
+    </section>
+  );
+  const questionsCard = (
+    <section className="insight-card" key="questions">
+      <span className="card-label">{t("nextQuestions")}</span>
       <SimpleList emptyLabel="No next checks loaded." items={detail?.blueprint.next_checks ?? []} />
     </section>
-  ];
+  );
 
-  return <aside className="insight-rail" aria-label="Run insights">{warningsFirst ? [warningBlock, ...cards.filter((card) => card !== warningBlock)] : cards}</aside>;
+  return (
+    <aside className="insight-rail" aria-label="Run insights">
+      {warningsFirst ? [warningCard, gaugePanel, questionsCard] : [gaugePanel, warningCard, questionsCard]}
+    </aside>
+  );
 }
 
 function AppShell({
@@ -1241,6 +1427,8 @@ export function App(): JSX.Element {
   const [runsStatus, setRunsStatus] = useState<RunsStatus>("loading");
   const [runsError, setRunsError] = useState<string | null>(null);
   const [runSearch, setRunSearch] = useState<string>("");
+  const [landingMarket, setLandingMarket] = useState<LandingMarket>("auto");
+  const [landingAnalysisMode, setLandingAnalysisMode] = useState<LandingAnalysisMode>("load_existing");
   const [selectedRunKey, setSelectedRunKey] = useState<string | null>(null);
   const [activeRunDetail, setActiveRunDetail] = useState<RunDetail | null>(null);
   const [runDetailStatus, setRunDetailStatus] = useState<RunDetailStatus>("idle");
@@ -1325,15 +1513,26 @@ export function App(): JSX.Element {
   }, [defaultLanding, density, fontScale, glass, language, motion, openMatrixByDefault, startOnLatest, warningsFirst]);
 
   function openLatestRun(): void {
-    const latest = runs[0];
+    const query = runSearch.trim().toLowerCase();
+    const latest =
+      query.length > 0
+        ? runs.find((run) => `${run.ticker} ${run.run_id}`.toLowerCase().includes(query))
+        : runs[0];
     if (latest) {
       setSelectedRunKey(runKey(latest));
+      setMode("research");
+      setDetailTab("summary");
+      return;
     }
-    setMode("research");
-    setDetailTab("summary");
+    setMode("landing");
   }
 
   function enterStudio(): void {
+    const query = runSearch.trim().toLowerCase();
+    const match = query ? runs.find((run) => `${run.ticker} ${run.run_id}`.toLowerCase().includes(query)) : selectedRun;
+    if (match) {
+      setSelectedRunKey(runKey(match));
+    }
     setMode("research");
     setDetailTab("summary");
   }
@@ -1514,6 +1713,7 @@ export function App(): JSX.Element {
         runsStatus={runsStatus}
         search={runSearch}
         selectedRunKey={selectedRunKey}
+        showRunResults={mode !== "landing" || runSearch.trim().length > 0}
         totalRuns={runs.length}
         onChangeMode={setMode}
         onOpenSettings={() => setSettingsOpen(true)}
@@ -1543,7 +1743,17 @@ export function App(): JSX.Element {
         />
 
         {mode === "landing" ? (
-          <LandingHero onEnter={enterStudio} onOpenLatest={openLatestRun} onOpenMatrix={() => setMode("matrix")} />
+          <LandingHero
+            landingAnalysisMode={landingAnalysisMode}
+            landingMarket={landingMarket}
+            landingSearch={runSearch}
+            onEnter={enterStudio}
+            onLandingSearch={setRunSearch}
+            onOpenLatest={openLatestRun}
+            onOpenMatrix={() => setMode("matrix")}
+            onSetAnalysisMode={setLandingAnalysisMode}
+            onSetMarket={setLandingMarket}
+          />
         ) : mode === "research" ? (
           <>
             <RunWorkspaceHeader
