@@ -69,6 +69,7 @@ pub fn render_run(input: RenderRunInput<'_>) -> Result<()> {
     write_table_plan(folder)?;
     write_section_source_map(folder, payload)?;
     write_company_specific_artifacts(folder, payload, understanding, interpretation, blueprint)?;
+    write_financial_report_framework_coverage(folder, payload, interpretation, blueprint)?;
     write_money_flow_map(folder, payload, interpretation)?;
     write_evidence_map(folder, payload, understanding, interpretation, blueprint)?;
     write_lunr_root_cause_report(
@@ -660,7 +661,8 @@ fn write_company_specific_artifacts(
         "key_available_facts": key_facts,
         "key_missing_facts": key_missing,
         "confidence": confidence,
-        "data_limited_reason": data_limited_reason
+        "data_limited_reason": data_limited_reason,
+        "framework_sections": ["business_model"]
     });
     write_json(
         &folder.metadata.join("company_fact_sheet.json"),
@@ -684,7 +686,8 @@ fn write_company_specific_artifacts(
         "revenue_evidence_refs": ["raw/provider_payload.json", "metadata/company_understanding.json", "data/normalized_financials.json"],
         "unsupported_revenue_claims": interpretation.unsupported_due_to_missing_data,
         "missing_revenue_fields": missing_fields_from_facts(std::slice::from_ref(&revenue)),
-        "confidence": if fact_status(&revenue) == "available" { "medium" } else { "data_limited" }
+        "confidence": if fact_status(&revenue) == "available" { "medium" } else { "data_limited" },
+        "framework_sections": ["business_model", "revenue_growth"]
     });
     write_json(
         &folder.metadata.join("revenue_engine_map.json"),
@@ -712,7 +715,8 @@ fn write_company_specific_artifacts(
         },
         "cost_evidence_refs": ["raw/provider_payload.json", "data/normalized_financials.json"],
         "missing_cost_fields": missing_fields_from_facts(&cost_facts),
-        "confidence": if available_lines(&cost_facts).len() >= 2 { "medium" } else { "data_limited" }
+        "confidence": if available_lines(&cost_facts).len() >= 2 { "medium" } else { "data_limited" },
+        "framework_sections": ["gross_margin", "operating_profit"]
     });
     write_json(
         &folder.metadata.join("cost_structure_map.json"),
@@ -754,7 +758,8 @@ fn write_company_specific_artifacts(
         "financing_need": financing_need,
         "bank_or_insurance_specific_capital_metrics": bank_available,
         "evidence_refs": ["raw/provider_payload.json", "data/normalized_financials.json", "metadata/unit_policy.json"],
-        "missing_fields": missing_fields_from_facts(&capital_facts)
+        "missing_fields": missing_fields_from_facts(&capital_facts),
+        "framework_sections": ["net_profit", "balance_sheet"]
     });
     write_json(
         &folder.metadata.join("capital_allocation_map.json"),
@@ -797,7 +802,8 @@ fn write_company_specific_artifacts(
             "metadata/revenue_engine_map.json",
             "metadata/cost_structure_map.json",
             "metadata/capital_allocation_map.json"
-        ]
+        ],
+        "framework_sections": ["cash_flow"]
     });
     write_json(
         &folder.metadata.join("money_flow_mechanism.json"),
@@ -889,8 +895,286 @@ fn build_company_specific_questions(
             "Money Flow",
             "Financial Statement Interpretation",
             "Data Gaps"
+        ],
+        "framework_sections": [
+            "key_business_metrics",
+            "guidance",
+            "market_expectations",
+            "valuation"
         ]
     })
+}
+
+fn framework_section(
+    section_id: &str,
+    status: &str,
+    covered_checks: Vec<&str>,
+    missing_checks: Vec<&str>,
+    evidence_refs: Vec<&str>,
+    report_sections: Vec<&str>,
+    notes: &str,
+) -> serde_json::Value {
+    json!({
+        "section_id": section_id,
+        "status": status,
+        "covered_checks": covered_checks,
+        "missing_checks": missing_checks,
+        "evidence_refs": evidence_refs,
+        "report_sections": report_sections,
+        "notes": notes
+    })
+}
+
+fn write_financial_report_framework_coverage(
+    folder: &RunFolder,
+    payload: &ProviderPayload,
+    interpretation: &FinancialInterpretation,
+    blueprint: &ResearchBlueprint,
+) -> Result<()> {
+    let has_profile = !payload.company_profile.name.is_empty()
+        || !payload.company_profile.description.is_empty()
+        || !payload.company_profile.industry.is_empty();
+    let has_revenue = metric_present(
+        &payload.income_statement,
+        &["revenue", "total revenue", "营业收入"],
+    );
+    let has_gross = metric_present(
+        &payload.income_statement,
+        &["gross profit", "毛利率", "毛利"],
+    );
+    let has_operating_profit = metric_present(
+        &payload.income_statement,
+        &["operating income", "营业利润", "operating profit"],
+    );
+    let has_net_profit = metric_present(
+        &payload.income_statement,
+        &["net income", "归母净利润", "净利润"],
+    );
+    let has_ocf = metric_present(
+        &payload.cash_flow,
+        &["operating cash flow", "cash from operations", "经营现金"],
+    );
+    let has_capex = metric_present(
+        &payload.cash_flow,
+        &["capex", "capital expenditure", "资本开支"],
+    );
+    let has_fcf = metric_present(&payload.cash_flow, &["free cash flow", "fcf", "自由现金流"]);
+    let has_cash = metric_present(&payload.balance_sheet, &["cash", "货币资金"]);
+    let has_debt = metric_present(
+        &payload.balance_sheet,
+        &["debt", "borrowings", "有息负债", "负债"],
+    );
+    let has_working_capital = metric_present(
+        &payload.balance_sheet,
+        &["inventory", "receivable", "存货", "应收"],
+    );
+    let has_valuation = payload
+        .valuation_snapshot
+        .as_object()
+        .map(|object| {
+            object
+                .values()
+                .any(|value| value.as_f64().unwrap_or(0.0) > 0.0)
+        })
+        .unwrap_or(false);
+    let has_guidance = payload
+        .segments
+        .iter()
+        .any(|value| value.to_string().to_lowercase().contains("guidance"))
+        || blueprint
+            .next_checks
+            .iter()
+            .any(|check| check.to_lowercase().contains("guidance"));
+    let has_expectations = payload
+        .segments
+        .iter()
+        .any(|value| value.to_string().to_lowercase().contains("expectation"));
+
+    let sections = vec![
+        framework_section(
+            "business_model",
+            if has_profile { "PASS" } else { "DATA_GAP" },
+            if has_profile { vec!["product_or_service", "customer"] } else { vec![] },
+            if has_profile {
+                vec!["willingness_to_pay", "recurring_or_one_time_revenue", "growth_source_quality"]
+            } else {
+                vec![
+                    "product_or_service",
+                    "customer",
+                    "willingness_to_pay",
+                    "recurring_or_one_time_revenue",
+                    "growth_source_quality",
+                ]
+            },
+            vec!["metadata/company_fact_sheet.json", "metadata/revenue_engine_map.json"],
+            vec!["Company Identity", "Business Model"],
+            "Business-model coverage is anchored to provider profile and revenue-engine artifacts.",
+        ),
+        framework_section(
+            "revenue_growth",
+            if has_revenue { "WARNING" } else { "DATA_GAP" },
+            if has_revenue { vec!["current_revenue"] } else { vec![] },
+            vec!["yoy_growth", "qoq_growth", "guidance", "expectation_gap"],
+            vec!["metadata/revenue_engine_map.json", "raw/provider_payload.json"],
+            vec!["Business Model", "Financial Statement Interpretation"],
+            "Current revenue is checked when available; growth rates, guidance, and expectations remain data gaps unless provider supplies them.",
+        ),
+        framework_section(
+            "gross_margin",
+            if has_gross { "WARNING" } else { "DATA_GAP" },
+            if has_gross { vec!["gross_profit", "gross_margin"] } else { vec![] },
+            vec!["pricing_power", "cost_control", "product_mix"],
+            vec!["metadata/cost_structure_map.json"],
+            vec!["Financial Statement Interpretation"],
+            "Gross margin is used only when locked data exists and remains sector-aware.",
+        ),
+        framework_section(
+            "operating_profit",
+            if has_operating_profit { "WARNING" } else { "DATA_GAP" },
+            if has_operating_profit { vec!["operating_income"] } else { vec![] },
+            vec!["operating_margin", "operating_leverage", "expense_ratio"],
+            vec!["metadata/cost_structure_map.json"],
+            vec!["Financial Statement Interpretation"],
+            "Operating profit coverage is partial unless margin and expense-ratio data are present.",
+        ),
+        framework_section(
+            "net_profit",
+            if has_net_profit { "WARNING" } else { "DATA_GAP" },
+            if has_net_profit { vec!["net_income"] } else { vec![] },
+            vec!["eps", "dilution", "one_time_items"],
+            vec!["metadata/capital_allocation_map.json"],
+            vec!["Financial Statement Interpretation"],
+            "Net profit is not treated as final quality without cash-flow and one-time item checks.",
+        ),
+        framework_section(
+            "cash_flow",
+            if has_ocf && has_capex && has_fcf { "PASS" } else if has_ocf { "WARNING" } else { "DATA_GAP" },
+            {
+                let mut checks = Vec::new();
+                if has_ocf { checks.push("operating_cash_flow"); }
+                if has_capex { checks.push("capex"); }
+                if has_fcf { checks.push("free_cash_flow"); }
+                checks
+            },
+            {
+                let mut missing = Vec::new();
+                if !has_ocf { missing.push("operating_cash_flow"); }
+                if !has_capex { missing.push("capex"); }
+                if !has_fcf { missing.push("free_cash_flow"); }
+                missing.push("financing_need");
+                missing
+            },
+            vec!["metadata/money_flow_mechanism.json", "metadata/capital_allocation_map.json"],
+            vec!["Money Flow", "Financial Statement Interpretation"],
+            "Cash-flow coverage asks whether operations fund reinvestment; missing cash-flow rows stay data gaps.",
+        ),
+        framework_section(
+            "balance_sheet",
+            if has_cash || has_debt || has_working_capital { "WARNING" } else { "DATA_GAP" },
+            {
+                let mut checks = Vec::new();
+                if has_cash { checks.push("cash"); }
+                if has_debt { checks.push("debt"); }
+                if has_working_capital {
+                    checks.push("inventory");
+                    checks.push("receivables");
+                }
+                checks
+            },
+            vec!["current_assets", "current_liabilities", "goodwill"],
+            vec!["metadata/capital_allocation_map.json"],
+            vec!["Financial Statement Interpretation", "Data Gaps and Unsupported Claims"],
+            "Balance-sheet coverage is partial unless liquidity, debt, working capital, and goodwill fields are all present.",
+        ),
+        framework_section(
+            "key_business_metrics",
+            "DATA_GAP",
+            vec![],
+            vec![
+                "sector_specific_kpis",
+                "kpi_to_revenue_link",
+                "kpi_to_profit_link",
+                "kpi_to_cash_flow_link",
+            ],
+            vec!["metadata/company_specific_questions.json"],
+            vec!["Next Checks"],
+            "Provider payload does not reliably include sector KPIs, so the report asks next-check questions instead of inventing KPI conclusions.",
+        ),
+        framework_section(
+            "guidance",
+            if has_guidance { "WARNING" } else { "DATA_GAP" },
+            if has_guidance { vec!["management_commentary"] } else { vec![] },
+            vec!["revenue_guidance", "margin_guidance", "full_year_outlook"],
+            vec!["metadata/company_specific_questions.json"],
+            vec!["Next Checks", "Data Gaps and Unsupported Claims"],
+            "Guidance is treated as unavailable unless explicitly present in provider data or next-check artifacts.",
+        ),
+        framework_section(
+            "market_expectations",
+            if has_expectations { "WARNING" } else { "DATA_GAP" },
+            if has_expectations { vec!["actual_vs_expectation"] } else { vec![] },
+            vec!["beat_or_miss", "expectation_revision"],
+            vec!["metadata/research_blueprint.json"],
+            vec!["Data Gaps and Unsupported Claims"],
+            "Market expectations are not inferred from price action; missing expectation data remains a data gap.",
+        ),
+        framework_section(
+            "valuation",
+            if has_valuation { "WARNING" } else { "DATA_GAP" },
+            if has_valuation { vec!["valuation_method_fit"] } else { vec![] },
+            vec!["implied_growth", "margin_of_safety", "downside_if_growth_misses"],
+            vec!["data/valuation_snapshot.json", "metadata/research_blueprint.json"],
+            vec!["Valuation Frame"],
+            "Valuation coverage discusses method fit and missing inputs only; it must not create investment advice.",
+        ),
+    ];
+
+    write_json(
+        &folder
+            .metadata
+            .join("financial_report_framework_coverage.json"),
+        &json!({
+            "schema_version": SCHEMA_VERSION,
+            "framework_version": "v1",
+            "core_question": {
+                "zh": "一家公司是否具备持续创造现金流的能力？",
+                "en": "Can the company consistently generate cash flow?"
+            },
+            "ticker": payload.ticker,
+            "sections": sections
+        }),
+    )?;
+
+    let rows = sections
+        .iter()
+        .map(|section| {
+            let id = section
+                .get("section_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+            let status = section.get("status").and_then(|v| v.as_str()).unwrap_or("");
+            let missing = section
+                .get("missing_checks")
+                .and_then(|v| v.as_array())
+                .map(|items| {
+                    items
+                        .iter()
+                        .filter_map(|item| item.as_str())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                })
+                .unwrap_or_default();
+            format!("| {id} | {status} | {missing} |\n")
+        })
+        .collect::<String>();
+    write_if_changed(
+        &folder.audit.join("financial_report_framework_coverage.md"),
+        &format!(
+            "# Financial Report Framework Coverage\n\nCore question: Can the company consistently generate cash flow?\n\n| Section | Status | Missing checks |\n|---|---|---|\n{rows}\n## Safety\n\n- No investment recommendation is generated.\n- No target price is generated.\n- Guidance and market expectations remain DATA_GAP unless provider data explicitly supports them.\n"
+        ),
+    )?;
+    let _ = interpretation;
+    Ok(())
 }
 
 fn field_destination_row(

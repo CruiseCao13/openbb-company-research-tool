@@ -108,7 +108,8 @@ fn report_renderer_has_required_sections() {
     assert!(report.contains("Model:"));
     assert!(report.contains("Prompt Versions:"));
     assert!(report.contains("## 4. Money Flow"));
-    assert!(report.contains("## 13. Appendix: Locked Data"));
+    assert!(report.contains("## 13. Financial Report Framework Coverage"));
+    assert!(report.contains("## 14. Appendix: Locked Data"));
 }
 
 #[test]
@@ -307,6 +308,106 @@ fn chart_observation_quality_report_generated() {
     let source = include_str!("renderer.rs");
     assert!(source.contains("chart_observation_quality_report.md"));
     assert!(source.contains("Generic template-only explanation"));
+}
+
+#[test]
+fn financial_report_framework_yaml_exists() {
+    let yaml =
+        include_str!("../../../../docs/investment_rubric/financial_report_reading_framework.yaml");
+    assert!(yaml.contains("framework_version: v1"));
+    assert!(yaml.contains("core_question:"));
+}
+
+#[test]
+fn financial_report_framework_has_11_sections() {
+    let yaml =
+        include_str!("../../../../docs/investment_rubric/financial_report_reading_framework.yaml");
+    assert_eq!(yaml.matches("  - id: ").count(), 11);
+    assert!(yaml.contains("id: business_model"));
+    assert!(yaml.contains("id: valuation"));
+}
+
+#[test]
+fn financial_report_framework_docs_are_split_zh_en() {
+    let zh =
+        include_str!("../../../../docs/investment_rubric/financial_report_reading_framework.zh.md");
+    let en =
+        include_str!("../../../../docs/investment_rubric/financial_report_reading_framework.en.md");
+    assert!(zh.contains("# 财报阅读核心方法"));
+    assert!(zh.contains("财报阅读的核心，是判断一家公司是否具备持续创造现金流的能力。"));
+    assert!(!zh.contains("# Financial Report Reading Framework"));
+    assert!(en.contains("# Financial Report Reading Framework"));
+    assert!(en.contains("The core of financial report analysis is to judge whether a company can consistently generate cash flow."));
+    assert!(!en.contains("# 财报阅读核心方法"));
+}
+
+#[test]
+fn company_fact_sheet_links_business_model_section() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("\"framework_sections\": [\"business_model\"]"));
+}
+
+#[test]
+fn revenue_engine_map_links_revenue_growth_section() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("\"framework_sections\": [\"business_model\", \"revenue_growth\"]"));
+}
+
+#[test]
+fn cost_structure_map_links_gross_margin_and_operating_profit() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("\"framework_sections\": [\"gross_margin\", \"operating_profit\"]"));
+}
+
+#[test]
+fn money_flow_mechanism_links_cash_flow_section() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("\"framework_sections\": [\"cash_flow\"]"));
+}
+
+#[test]
+fn framework_coverage_json_generated() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("financial_report_framework_coverage.json"));
+    assert!(source.contains("write_financial_report_framework_coverage"));
+}
+
+#[test]
+fn framework_coverage_report_generated() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("financial_report_framework_coverage.md"));
+    assert!(source.contains("Financial Report Framework Coverage"));
+}
+
+#[test]
+fn framework_coverage_marks_missing_guidance_as_data_gap() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("\"guidance\""));
+    assert!(source.contains("DATA_GAP"));
+    assert!(source.contains("revenue_guidance"));
+}
+
+#[test]
+fn framework_coverage_marks_market_expectation_gap_when_unavailable() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("\"market_expectations\""));
+    assert!(source.contains("Market expectations are not inferred from price action"));
+}
+
+#[test]
+fn valuation_section_does_not_generate_buy_sell_advice() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("Valuation coverage discusses method fit"));
+    assert!(source.contains("No investment recommendation is generated"));
+    assert!(source.contains("No target price is generated"));
+}
+
+#[test]
+fn report_includes_framework_coverage_summary() {
+    let source = include_str!("markdown.rs");
+    assert!(source.contains("Financial Report Framework Coverage"));
+    assert!(source.contains("财报阅读框架覆盖情况"));
+    assert!(source.contains("audit/financial_report_framework_coverage.md"));
 }
 
 #[test]

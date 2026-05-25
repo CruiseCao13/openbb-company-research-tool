@@ -88,6 +88,134 @@ fn money_flow_fact_anchors(payload: &ProviderPayload) -> String {
     .join("")
 }
 
+fn has_metric(rows: &[StatementRow], needles: &[&str]) -> bool {
+    rows.iter().any(|row| {
+        let metric = row.metric.to_lowercase();
+        row.value.is_some()
+            && needles
+                .iter()
+                .any(|needle| metric.contains(&needle.to_lowercase()))
+    })
+}
+
+fn framework_coverage_rows(payload: &ProviderPayload) -> String {
+    let has_profile = !payload.company_profile.name.is_empty()
+        || !payload.company_profile.description.is_empty()
+        || !payload.company_profile.industry.is_empty();
+    let has_revenue = has_metric(
+        &payload.income_statement,
+        &["revenue", "total revenue", "营业收入"],
+    );
+    let has_gross = has_metric(
+        &payload.income_statement,
+        &["gross profit", "毛利率", "毛利"],
+    );
+    let has_operating_profit = has_metric(
+        &payload.income_statement,
+        &["operating income", "operating profit", "营业利润"],
+    );
+    let has_net_profit = has_metric(
+        &payload.income_statement,
+        &["net income", "归母净利润", "净利润"],
+    );
+    let has_ocf = has_metric(
+        &payload.cash_flow,
+        &["operating cash flow", "cash from operations", "经营现金"],
+    );
+    let has_capex = has_metric(
+        &payload.cash_flow,
+        &["capex", "capital expenditure", "资本开支"],
+    );
+    let has_fcf = has_metric(&payload.cash_flow, &["free cash flow", "fcf", "自由现金流"]);
+    let has_balance = has_metric(
+        &payload.balance_sheet,
+        &["cash", "debt", "存货", "应收", "负债"],
+    );
+    let has_valuation = payload
+        .valuation_snapshot
+        .as_object()
+        .map(|object| {
+            object
+                .values()
+                .any(|value| value.as_f64().unwrap_or(0.0) > 0.0)
+        })
+        .unwrap_or(false);
+    let rows = [
+        (
+            "Business Model",
+            if has_profile { "PASS" } else { "DATA_GAP" },
+            if has_profile {
+                "profile and company_fact_sheet"
+            } else {
+                "company profile"
+            },
+        ),
+        (
+            "Revenue Growth",
+            if has_revenue { "WARNING" } else { "DATA_GAP" },
+            "YoY/QoQ/guidance/expectation checks",
+        ),
+        (
+            "Gross Margin",
+            if has_gross { "WARNING" } else { "DATA_GAP" },
+            "pricing power, cost control, product mix",
+        ),
+        (
+            "Operating Profit",
+            if has_operating_profit {
+                "WARNING"
+            } else {
+                "DATA_GAP"
+            },
+            "operating leverage and expense ratios",
+        ),
+        (
+            "Net Profit",
+            if has_net_profit {
+                "WARNING"
+            } else {
+                "DATA_GAP"
+            },
+            "EPS, dilution, one-time items",
+        ),
+        (
+            "Cash Flow",
+            if has_ocf && has_capex && has_fcf {
+                "PASS"
+            } else if has_ocf {
+                "WARNING"
+            } else {
+                "DATA_GAP"
+            },
+            "OCF/capex/FCF/financing need",
+        ),
+        (
+            "Balance Sheet",
+            if has_balance { "WARNING" } else { "DATA_GAP" },
+            "current assets/liabilities and goodwill",
+        ),
+        (
+            "Key Business Metrics",
+            "DATA_GAP",
+            "sector KPIs and KPI-to-cash-flow link",
+        ),
+        ("Guidance", "DATA_GAP", "revenue, margin, full-year outlook"),
+        (
+            "Market Expectations",
+            "DATA_GAP",
+            "actual vs expectation and revisions",
+        ),
+        (
+            "Valuation",
+            if has_valuation { "WARNING" } else { "DATA_GAP" },
+            "implied growth, margin of safety, downside if growth misses",
+        ),
+    ];
+    rows.iter()
+        .map(|(section, status, missing)| format!("| {section} | {status} | {missing} |\n"))
+        .collect()
+}
+
 fn latest_value_for_fields(payload: &ProviderPayload, fields: &[&str]) -> String {
     for field in fields {
         let value = match *field {
@@ -309,6 +437,7 @@ pub fn render_report(
         ),
     ]);
     let money_flow_fact_anchors = money_flow_fact_anchors(payload);
+    let framework_coverage_rows = framework_coverage_rows(payload);
     let company_specific_question = blueprint.key_questions.first().cloned().unwrap_or_else(|| {
         format!(
             "Which missing field would most change the money-flow read for {}?",
@@ -353,7 +482,8 @@ pub fn render_report(
 10. AI Self Review
 11. Next Checks
 12. Charts and Evidence
-13. Appendix: Locked Data
+13. Financial Report Framework Coverage
+14. Appendix: Locked Data
 
 ## 1. Report Status
 
@@ -513,7 +643,19 @@ Wrong-framework risks:
 
 {chart_manifest}
 
-## 13. Appendix: Locked Data
+## 13. Financial Report Framework Coverage
+
+Core question: can this company consistently generate cash flow?
+
+Detailed audit: `audit/financial_report_framework_coverage.md`
+
+| Framework section | Status | Major missing items / next human checks |
+|---|---|---|
+{framework_coverage_rows}
+
+Guidance and market expectations are marked as data gaps unless locked provider data explicitly supports them. Valuation coverage is limited to method fit and missing inputs; it does not create an investment recommendation.
+
+## 14. Appendix: Locked Data
 
 Table 3. Locked data coverage  
 Unit: count / text  
@@ -600,6 +742,7 @@ How to read this table: it tells you which locked data exists before relying on 
         income_count = payload.income_statement.len(),
         balance_count = payload.balance_sheet.len(),
         cash_count = payload.cash_flow.len(),
+        framework_coverage_rows = framework_coverage_rows,
     )
 }
 
@@ -616,6 +759,7 @@ pub fn render_report_zh(
     } else {
         payload.company_profile.name.clone()
     };
+    let framework_coverage_rows = framework_coverage_rows(payload);
     format!(
         r#"# {ticker} 公司研究报告
 
@@ -651,7 +795,8 @@ pub fn render_report_zh(
 10. AI 自我复核
 11. 下一步核查
 12. 图表与证据
-13. 附录：锁定数据
+13. 财报阅读框架覆盖情况
+14. 附录：锁定数据
 
 ## 1. 报告状态
 
@@ -814,7 +959,19 @@ What it means：它只说明市场如何定价部分指标。
 What not to overread：估值倍数不是目标价。  
 Next check：确认该倍数是否适合当前资产类型。
 
-## 13. 附录：锁定数据
+## 13. 财报阅读框架覆盖情况
+
+核心问题：一家公司是否具备持续创造现金流的能力？
+
+详细审计文件：`audit/financial_report_framework_coverage.md`
+
+| 框架部分 | 状态 | 主要缺口 / 下一步人工核查 |
+|---|---|---|
+{framework_coverage_rows}
+
+未来指引和市场预期如果没有锁定数据支持，必须标为数据缺口。估值只讨论方法适配和缺失输入，不生成投资建议。
+
+## 14. 附录：锁定数据
 
 Table 3. 锁定数据覆盖  
 单位：条数 / 文本  
@@ -886,6 +1043,7 @@ How to read this table：先看数据覆盖，再决定解释可信度。
         industry = payload.company_profile.industry,
         currency = payload.company_profile.currency,
         price_count = payload.price_history.len(),
+        framework_coverage_rows = framework_coverage_rows,
     )
 }
 

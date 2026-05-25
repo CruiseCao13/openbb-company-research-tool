@@ -1,0 +1,154 @@
+framework_version: v1
+core_question:
+  zh: 一家公司是否具备持续创造现金流的能力？
+  en: Can the company consistently generate cash flow?
+sections:
+  - id: business_model
+    zh_title: 商业模式
+    en_title: Business Model
+    zh_question: 公司靠什么赚钱？
+    en_question: What does the company make money from?
+    required_checks:
+      - product_or_service
+      - customer
+      - willingness_to_pay
+      - recurring_or_one_time_revenue
+      - growth_source_quality
+    output_artifacts:
+      - company_fact_sheet
+      - revenue_engine_map
+
+  - id: revenue_growth
+    zh_title: 收入增长
+    en_title: Revenue Growth
+    zh_question: 公司有没有变大？
+    en_question: Is the company getting bigger?
+    required_checks:
+      - current_revenue
+      - yoy_growth
+      - qoq_growth
+      - guidance
+      - expectation_gap
+    output_artifacts:
+      - revenue_engine_map
+
+  - id: gross_margin
+    zh_title: 毛利率
+    en_title: Gross Margin
+    zh_question: 增长有没有质量？
+    en_question: Does growth have quality?
+    required_checks:
+      - gross_profit
+      - gross_margin
+      - pricing_power
+      - cost_control
+      - product_mix
+    output_artifacts:
+      - cost_structure_map
+
+  - id: operating_profit
+    zh_title: 经营利润
+    en_title: Operating Profit
+    zh_question: 主营业务是否变强？
+    en_question: Is the core business getting stronger?
+    required_checks:
+      - operating_income
+      - operating_margin
+      - operating_leverage
+      - expense_ratio
+    output_artifacts:
+      - cost_structure_map
+
+  - id: net_profit
+    zh_title: 净利润
+    en_title: Net Profit
+    zh_question: 最终有没有留下收益？
+    en_question: Does the company retain earnings after all costs?
+    required_checks:
+      - net_income
+      - eps
+      - dilution
+      - one_time_items
+    output_artifacts:
+      - capital_allocation_map
+
+  - id: cash_flow
+    zh_title: 现金流
+    en_title: Cash Flow
+    zh_question: 公司有没有自我造血能力？
+    en_question: Can the company fund itself through operations?
+    required_checks:
+      - operating_cash_flow
+      - capex
+      - free_cash_flow
+      - financing_need
+    output_artifacts:
+      - money_flow_mechanism
+
+  - id: balance_sheet
+    zh_title: 资产负债表
+    en_title: Balance Sheet
+    zh_question: 公司体质是否稳固？
+    en_question: Is the company financially resilient?
+    required_checks:
+      - cash
+      - debt
+      - current_assets
+      - current_liabilities
+      - inventory
+      - receivables
+      - goodwill
+    output_artifacts:
+      - capital_allocation_map
+
+  - id: key_business_metrics
+    zh_title: 经营指标
+    en_title: Key Business Metrics
+    zh_question: 数字背后的原因是什么？
+    en_question: What explains the financial results?
+    required_checks:
+      - sector_specific_kpis
+      - kpi_to_revenue_link
+      - kpi_to_profit_link
+      - kpi_to_cash_flow_link
+    output_artifacts:
+      - company_specific_questions
+
+  - id: guidance
+    zh_title: 未来指引
+    en_title: Guidance
+    zh_question: 管理层对未来怎么看？
+    en_question: What does management indicate about the future?
+    required_checks:
+      - revenue_guidance
+      - margin_guidance
+      - full_year_outlook
+      - management_commentary
+    output_artifacts:
+      - company_specific_questions
+
+  - id: market_expectations
+    zh_title: 市场预期
+    en_title: Market Expectations
+    zh_question: 结果是否超出预期？
+    en_question: Did results differ from market expectations?
+    required_checks:
+      - actual_vs_expectation
+      - beat_or_miss
+      - expectation_revision
+    output_artifacts:
+      - research_blueprint
+
+  - id: valuation
+    zh_title: 估值水平
+    en_title: Valuation
+    zh_question: 当前价格是否已经透支未来？
+    en_question: Has the current price already priced in too much future growth?
+    required_checks:
+      - valuation_method_fit
+      - implied_growth
+      - margin_of_safety
+      - downside_if_growth_misses
+    output_artifacts:
+      - valuation_snapshot
+      - research_blueprint
