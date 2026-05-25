@@ -1,0 +1,8 @@
+{
+  "schema_version": "v5.0.0",
+  "ai_mode": "local",
+  "external_ai_used": false,
+  "new_external_ai_calls": 0,
+  "cache_hits": 0,
+  "no_ai_cache": false
+}

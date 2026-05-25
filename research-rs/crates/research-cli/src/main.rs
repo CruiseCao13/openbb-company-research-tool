@@ -10,6 +10,7 @@ use research_core::config::EngineConfig;
 use research_core::io::{write_if_changed, write_json};
 use research_core::normalizer::write_normalized_outputs;
 use research_core::parser::write_parser_report;
+use research_core::paths::{release_checks_dir, reports_root, samples_dir};
 use research_core::provider::fetch_provider_payload;
 use research_core::run_folder::RunFolder;
 use research_core::schema_version::write_schema_validation_report;
@@ -572,7 +573,7 @@ fn command_output(cmd: &str, args: &[&str]) -> String {
 }
 
 fn write_provider_health() -> Result<()> {
-    let path = PathBuf::from("reports/release_checks/provider_health.md");
+    let path = release_checks_dir()?.join("provider_health.md");
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
     }
@@ -615,7 +616,7 @@ fn write_provider_health() -> Result<()> {
     } else {
         "unavailable"
     };
-    let cache_status = if PathBuf::from("reports/_cache").exists() {
+    let cache_status = if reports_root()?.join("_cache").exists() {
         "exists"
     } else {
         "will be created on first cached run"
@@ -629,10 +630,18 @@ fn write_provider_health() -> Result<()> {
 }
 
 fn write_sample_gallery() -> Result<()> {
-    let samples = PathBuf::from("reports/samples");
+    let samples = samples_dir()?;
     fs::create_dir_all(&samples)?;
     let mut rows = String::new();
-    let sample_tickers = ["AAPL", "GOOGL", "CAT", "ISRG", "AMD", "600519.SH"];
+    let sample_tickers = [
+        "AAPL",
+        "GOOGL",
+        "CAT",
+        "ISRG",
+        "AMD",
+        "600519.SH",
+        "000001.SZ",
+    ];
     for ticker in sample_tickers {
         let dir = samples.join(ticker);
         let status = if dir.exists() {
@@ -650,7 +659,7 @@ fn write_sample_gallery() -> Result<()> {
     write_if_changed(&samples.join("index.html"), &html)?;
     write_if_changed(
         &samples.join("README.md"),
-        "# v5 Sample Gallery\n\nOpen `index.html` for the static sample gallery. Samples are generated reports and dashboards used to inspect product quality, not investment advice.\n\nExpected showcase names: AAPL, GOOGL, CAT, ISRG, AMD, and 600519.SH. A sample may be marked missing until its run has been generated and copied into this folder.\n",
+        "# v5 Sample Gallery\n\nOpen `index.html` for the static sample gallery. Samples are generated reports and dashboards used to inspect product quality, not investment advice.\n\nExpected showcase names: AAPL, GOOGL, CAT, ISRG, AMD, 600519.SH, and 000001.SZ. A sample may be marked missing until its run has been generated and copied into this folder.\n",
     )?;
     println!("Sample gallery: {}", samples.join("index.html").display());
     Ok(())

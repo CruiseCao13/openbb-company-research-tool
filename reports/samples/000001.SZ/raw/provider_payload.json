@@ -1,0 +1,33 @@
+{
+  "schema_version": "v5.0.0",
+  "ticker": "000001.SZ",
+  "market": "CN_A",
+  "provider": "akshare",
+  "fetched_at": "2026-05-25T03:04:07.374014+00:00",
+  "company_profile": {
+    "name": "000001.SZ",
+    "sector": "",
+    "industry": "",
+    "description": "",
+    "exchange": "",
+    "currency": ""
+  },
+  "price_history": [],
+  "income_statement": [],
+  "balance_sheet": [],
+  "cash_flow": [],
+  "valuation_snapshot": {},
+  "segments": [],
+  "metadata": {
+    "data_quality_warnings": [
+      "A-share provider adapter is unavailable or screening-only in this environment."
+    ],
+    "source": "akshare",
+    "provider_version": "v5-provider-bridge"
+  },
+  "error": {
+    "error_type": "ProviderUnavailable",
+    "error_message": "A-share provider adapter is unavailable or screening-only in this environment.",
+    "stage": "provider_fetch"
+  }
+}

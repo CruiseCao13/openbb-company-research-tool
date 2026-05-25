@@ -1,0 +1,17 @@
+{
+  "schema_version": "v5.0.0",
+  "ticker": "000001.SZ",
+  "reporting_currency": "",
+  "income_statement": [],
+  "balance_sheet": [],
+  "cash_flow": [],
+  "valuation_snapshot": {
+    "pe": null,
+    "ps": null,
+    "pb": null,
+    "ev_revenue": null,
+    "ev_ebitda": null,
+    "market_cap": null,
+    "raw_keys": []
+  }
+}

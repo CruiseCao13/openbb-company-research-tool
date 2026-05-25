@@ -2,4 +2,4 @@
 
 Open `index.html` for the static sample gallery. Samples are generated reports and dashboards used to inspect product quality, not investment advice.
 
-Expected showcase names: AAPL, GOOGL, CAT, ISRG, AMD, and 600519.SH. A sample may be marked missing until its run has been generated and copied into this folder.
+Expected showcase names: AAPL, GOOGL, CAT, ISRG, AMD, 600519.SH, and 000001.SZ. A sample may be marked missing until its run has been generated and copied into this folder.

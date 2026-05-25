@@ -10,6 +10,7 @@ use research_core::config::EngineConfig;
 use research_core::io::{ensure_dir, write_if_changed};
 use research_core::normalizer::write_normalized_outputs;
 use research_core::parser::write_parser_report;
+use research_core::paths::batch_runs_dir;
 use research_core::provider::fetch_provider_payload;
 use research_core::run_folder::RunFolder;
 use research_core::schema_version::write_schema_validation_report;
@@ -52,9 +53,7 @@ struct Row {
 
 pub fn run_batch(options: &BatchRunOptions) -> Result<PathBuf> {
     let eval = load_eval_set(&options.eval_set)?;
-    let batch_root = PathBuf::from("reports")
-        .join("batch_runs")
-        .join(&options.run_id);
+    let batch_root = batch_runs_dir()?.join(&options.run_id);
     ensure_dir(&batch_root)?;
     let config = EngineConfig::default();
     let tickers = eval

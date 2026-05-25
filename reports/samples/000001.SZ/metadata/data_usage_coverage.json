@@ -1,0 +1,139 @@
+{
+  "critical_unused_fields": [],
+  "fetched_data_fields": [
+    {
+      "fetched": false,
+      "field": "price history",
+      "source": "price_history",
+      "unused_reason": "Price history missing; price/drawdown charts become data gap cards.",
+      "used_in_appendix": true,
+      "used_in_chart": false,
+      "used_in_report": false,
+      "used_in_table": false
+    },
+    {
+      "fetched": false,
+      "field": "revenue",
+      "source": "income_statement",
+      "unused_reason": "Revenue missing; financial trend table/chart cannot prove growth.",
+      "used_in_appendix": true,
+      "used_in_chart": false,
+      "used_in_report": false,
+      "used_in_table": false
+    },
+    {
+      "fetched": false,
+      "field": "operating income",
+      "source": "income_statement",
+      "unused_reason": "Operating income missing; margin quality remains less verifiable.",
+      "used_in_appendix": true,
+      "used_in_chart": false,
+      "used_in_report": false,
+      "used_in_table": false
+    },
+    {
+      "fetched": false,
+      "field": "net income",
+      "source": "income_statement",
+      "unused_reason": "Net income missing; profitability checks are limited.",
+      "used_in_appendix": true,
+      "used_in_chart": false,
+      "used_in_report": false,
+      "used_in_table": false
+    },
+    {
+      "fetched": false,
+      "field": "operating cash flow",
+      "source": "cash_flow",
+      "unused_reason": "Operating cash flow missing; money-flow analysis is degraded.",
+      "used_in_appendix": true,
+      "used_in_chart": false,
+      "used_in_report": false,
+      "used_in_table": false
+    },
+    {
+      "fetched": false,
+      "field": "capex",
+      "source": "cash_flow",
+      "unused_reason": "Capex missing; free-cash-flow bridge cannot be fully verified.",
+      "used_in_appendix": true,
+      "used_in_chart": false,
+      "used_in_report": false,
+      "used_in_table": false
+    },
+    {
+      "fetched": false,
+      "field": "free cash flow",
+      "source": "cash_flow",
+      "unused_reason": "Free cash flow missing; report explains operating cash flow and capex separately.",
+      "used_in_appendix": true,
+      "used_in_chart": false,
+      "used_in_report": false,
+      "used_in_table": false
+    },
+    {
+      "fetched": false,
+      "field": "cash",
+      "source": "balance_sheet",
+      "unused_reason": "Cash missing; runway and liquidity checks are limited.",
+      "used_in_appendix": true,
+      "used_in_chart": false,
+      "used_in_report": false,
+      "used_in_table": false
+    },
+    {
+      "fetched": false,
+      "field": "debt",
+      "source": "balance_sheet",
+      "unused_reason": "Debt missing; leverage checks are limited.",
+      "used_in_appendix": true,
+      "used_in_chart": false,
+      "used_in_report": false,
+      "used_in_table": false
+    },
+    {
+      "fetched": false,
+      "field": "shares",
+      "source": "statements",
+      "unused_reason": "Share count missing; dilution/buyback quality needs manual verification.",
+      "used_in_appendix": true,
+      "used_in_chart": false,
+      "used_in_report": false,
+      "used_in_table": false
+    },
+    {
+      "fetched": false,
+      "field": "valuation multiples",
+      "source": "valuation_snapshot",
+      "unused_reason": "Valuation multiples missing or not meaningful for this profile.",
+      "used_in_appendix": true,
+      "used_in_chart": false,
+      "used_in_report": false,
+      "used_in_table": false
+    }
+  ],
+  "industry_critical_fields": [
+    "营业收入",
+    "归母净利润",
+    "扣非净利润",
+    "经营现金流",
+    "货币资金",
+    "有息负债",
+    "ROE"
+  ],
+  "missing_critical_fields": [
+    "price history",
+    "revenue",
+    "operating income",
+    "net income",
+    "operating cash flow",
+    "capex",
+    "free cash flow",
+    "cash",
+    "debt",
+    "shares",
+    "valuation multiples",
+    "Provider payload has an error; numeric conclusions must stay screening-only."
+  ],
+  "validator_impact": "PASS"
+}

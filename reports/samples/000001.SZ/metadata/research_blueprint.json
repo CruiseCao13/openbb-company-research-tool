@@ -1,0 +1,52 @@
+{
+  "schema_version": "v5.0.0",
+  "ai_provenance": {
+    "source": "local_mock",
+    "external_ai_used": false,
+    "local_mock_used": true,
+    "cache_hit": false,
+    "new_external_ai_call": false,
+    "model": "local-compact-analyst-fallback",
+    "prompt_version": "research_blueprint_v1",
+    "request_attempted": false,
+    "request_success": false,
+    "request_id": "",
+    "generated_at": "2026-05-25T11:04:07.381179+08:00",
+    "input_digest": "a217f48e16d37d86e1cbb451fe48fd8504772dee938288ca3c1476a199109e20",
+    "output_digest": "c1f9e18fab201244c86bee07af0812ccc4e73f76611cf9c457c93888a8ee22a4"
+  },
+  "core_thesis": "The central research question is whether the Unknown / Data-Limited Screening frame is supported by locked data and company-specific evidence.",
+  "asset_profile": "Unknown / Data-Limited Screening",
+  "secondary_profile": "Framework not fully covered",
+  "must_analyze": [
+    "business model",
+    "money flow",
+    "industry-specific drivers"
+  ],
+  "must_not_analyze_as_core": [
+    "confident complete industry conclusion"
+  ],
+  "key_questions": [
+    "What does this company actually sell?",
+    "Which metrics are industry-specific?",
+    "What data is missing?"
+  ],
+  "red_flags": [
+    "framework uncertainty",
+    "missing industry metrics"
+  ],
+  "valuation_frame": "Screening-only until industry-specific valuation drivers are verified.",
+  "data_gaps": [
+    "Provider payload has an error; numeric conclusions must stay screening-only."
+  ],
+  "next_checks": [
+    "Read the latest filing for revenue engines.",
+    "Identify industry-specific KPIs.",
+    "Decide which valuation method is actually suitable."
+  ],
+  "report_section_guidance": [
+    "Start with identity, then money flow, then valuation fit, then unsupported claims."
+  ],
+  "confidence": "LOW",
+  "human_review_required": true
+}

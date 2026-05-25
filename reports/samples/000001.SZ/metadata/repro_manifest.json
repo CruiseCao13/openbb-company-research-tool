@@ -1,0 +1,40 @@
+{
+  "ai_mode": "local",
+  "cache_keys": {
+    "ai_response": "b1a0eea308bd9e0af24a4ff4bafaf54b27887ea6fd2df3272f1276457f779b09",
+    "provider_payload": "cf9f17e7c1ef573f7f4d8ea208ac7b51c0dd470ff9ac6ed7d534f1bef0f13016",
+    "report_render": "6f15454935475b5e97d412bc86b509dd0955579987daada4633ae8fe6d3133a9"
+  },
+  "chart_renderer_version": "chart_provider-v5.0.0",
+  "command_used": "target/debug/research-rs run 000001.SZ --market cn --provider akshare --ai local --run-id sample_v5 --pack",
+  "environment_summary": {
+    "arch": "aarch64",
+    "os": "macos",
+    "pdf_export": "PASS"
+  },
+  "generated_at": "2026-05-25T11:04:07.895053+08:00",
+  "git_commit": "7a40ee2",
+  "model_name": "local-compact-analyst",
+  "prompt_versions": {
+    "chart_explanation": "chart_explanation_v1",
+    "company_understanding": "company_understanding_v1",
+    "content_quality_judge": "content_quality_judge_v1",
+    "financial_interpretation": "financial_interpretation_v1",
+    "research_blueprint": "research_blueprint_v1",
+    "self_review": "self_review_v1",
+    "table_explanation": "table_explanation_v1"
+  },
+  "provider": "akshare",
+  "provider_payload_digest": "cf9f17e7c1ef573f7f4d8ea208ac7b51c0dd470ff9ac6ed7d534f1bef0f13016",
+  "provider_version": "v5-provider-bridge",
+  "report_renderer_version": "research-report-v5.0.0",
+  "run_id": "sample_v5",
+  "rust_binary_version": "5.0.0",
+  "schema_version": "v5.0.0",
+  "schema_versions": {
+    "current": "v5.0.0",
+    "provider_payload": "v5.0.0",
+    "report_status": "v5.0.0"
+  },
+  "ticker": "000001.SZ"
+}

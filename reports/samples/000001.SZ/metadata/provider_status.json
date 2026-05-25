@@ -1,0 +1,11 @@
+{
+  "ticker": "000001.SZ",
+  "provider": "akshare",
+  "status": "PASS",
+  "cache_hit": false,
+  "attempts": 1,
+  "stdout_excerpt": "",
+  "stderr_excerpt": "",
+  "user_message": "Provider payload is available and parsed into the locked-data contract.",
+  "suggested_next_action": "Continue to validation and report rendering."
+}

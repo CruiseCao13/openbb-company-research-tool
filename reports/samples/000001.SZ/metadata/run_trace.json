@@ -1,0 +1,92 @@
+{
+  "ticker": "000001.SZ",
+  "run_id": "sample_v5",
+  "started_at": "2026-05-25T11:04:07.289679+08:00",
+  "finished_at": "2026-05-25T11:04:07.932533+08:00",
+  "total_ms": 642,
+  "provider_used": "akshare",
+  "ai_mode": "local",
+  "ai_calls": 0,
+  "cache_hits": 0,
+  "stages": [
+    {
+      "stage": "provider_fetch",
+      "status": "WARNING",
+      "duration_ms": 88,
+      "cache_hit": false,
+      "provider_used": "akshare",
+      "ai_calls": 0,
+      "errors": [
+        "A-share provider adapter is unavailable or screening-only in this environment."
+      ],
+      "warnings": [
+        "A-share provider adapter is unavailable or screening-only in this environment."
+      ],
+      "output_files": [
+        "raw/provider_payload.json",
+        "metadata/provider_status.json",
+        "data/normalized_financials.json",
+        "data/normalized_price_history.json",
+        "audit/parser_report.md",
+        "audit/normalizer_report.md"
+      ]
+    },
+    {
+      "stage": "provider_validation",
+      "status": "PASS",
+      "duration_ms": 0,
+      "cache_hit": false,
+      "provider_used": "akshare",
+      "ai_calls": 0,
+      "errors": [],
+      "warnings": [],
+      "output_files": [
+        "audit/provider_validation.md"
+      ]
+    },
+    {
+      "stage": "local_compact_ai_analysis",
+      "status": "PASS",
+      "duration_ms": 2,
+      "cache_hit": false,
+      "provider_used": null,
+      "ai_calls": 0,
+      "errors": [],
+      "warnings": [],
+      "output_files": [
+        "metadata/company_understanding.json",
+        "metadata/financial_interpretation.json",
+        "metadata/research_blueprint.json",
+        "self_review/ai_self_review.json"
+      ]
+    },
+    {
+      "stage": "report_render",
+      "status": "PASS",
+      "duration_ms": 529,
+      "cache_hit": false,
+      "provider_used": null,
+      "ai_calls": 0,
+      "errors": [],
+      "warnings": [],
+      "output_files": [
+        "report/000001.SZ_research_report.md",
+        "dashboard.html",
+        "audit/visual_lint_report.md"
+      ]
+    },
+    {
+      "stage": "pack",
+      "status": "PASS",
+      "duration_ms": 21,
+      "cache_hit": false,
+      "provider_used": null,
+      "ai_calls": 0,
+      "errors": [],
+      "warnings": [],
+      "output_files": [
+        "/Users/cruise/Projects/investment-tools/openbb-company-research-tool/reports/000001.SZ/runs/sample_v5/pack/000001.SZ_research_pack.zip"
+      ]
+    }
+  ]
+}

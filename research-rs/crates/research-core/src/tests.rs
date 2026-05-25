@@ -1,5 +1,8 @@
 use crate::cache::digest_str;
 use crate::error::{ResearchError, ResearchErrorKind};
+use crate::paths::{
+    ai_cache_dir, batch_runs_dir, quality_runs_dir, release_checks_dir, samples_dir,
+};
 use crate::provider::{discover_repo_root, discover_repo_root_from, resolve_provider_script};
 use crate::run_folder::RunFolder;
 use crate::types::{
@@ -117,6 +120,75 @@ fn run_folder_reports_root_is_repo_root_anchored() {
     };
     let folder = RunFolder::new(&ctx);
     assert_eq!(folder.root, root.join("reports/AAPL/runs/path_test"));
+}
+
+#[test]
+fn ai_cache_path_anchored_to_repo_root_from_repo_root() {
+    let root = discover_repo_root().expect("repo root should resolve");
+    let cache = ai_cache_dir().expect("AI cache dir should resolve");
+    assert_eq!(cache, root.join("reports/_cache/ai"));
+}
+
+#[test]
+fn ai_cache_path_anchored_to_repo_root_from_research_rs_dir() {
+    let root = discover_repo_root().expect("repo root should resolve");
+    let cache = ai_cache_dir().expect("AI cache dir should resolve");
+    assert!(!cache.starts_with(root.join("research-rs/reports")));
+    assert_eq!(cache, root.join("reports/_cache/ai"));
+}
+
+#[test]
+fn batch_runs_path_anchored_to_repo_root() {
+    let root = discover_repo_root().expect("repo root should resolve");
+    assert_eq!(
+        batch_runs_dir().expect("batch runs dir should resolve"),
+        root.join("reports/batch_runs")
+    );
+}
+
+#[test]
+fn quality_runs_path_anchored_to_repo_root() {
+    let root = discover_repo_root().expect("repo root should resolve");
+    assert_eq!(
+        quality_runs_dir().expect("quality runs dir should resolve"),
+        root.join("reports/quality_runs")
+    );
+}
+
+#[test]
+fn samples_path_anchored_to_repo_root() {
+    let root = discover_repo_root().expect("repo root should resolve");
+    assert_eq!(
+        samples_dir().expect("samples dir should resolve"),
+        root.join("reports/samples")
+    );
+}
+
+#[test]
+fn release_checks_path_anchored_to_repo_root() {
+    let root = discover_repo_root().expect("repo root should resolve");
+    assert_eq!(
+        release_checks_dir().expect("release checks dir should resolve"),
+        root.join("reports/release_checks")
+    );
+}
+
+#[test]
+fn no_research_rs_reports_created_during_run() {
+    let root = discover_repo_root().expect("repo root should resolve");
+    for path in [
+        ai_cache_dir().unwrap(),
+        batch_runs_dir().unwrap(),
+        quality_runs_dir().unwrap(),
+        samples_dir().unwrap(),
+        release_checks_dir().unwrap(),
+    ] {
+        assert!(
+            !path.starts_with(root.join("research-rs/reports")),
+            "{} should not be rooted under research-rs/reports",
+            path.display()
+        );
+    }
 }
 
 #[test]

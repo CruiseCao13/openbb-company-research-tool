@@ -1,0 +1,9 @@
+{
+  "company_understanding": "company_understanding_v1",
+  "financial_interpretation": "financial_interpretation_v1",
+  "research_blueprint": "research_blueprint_v1",
+  "self_review": "self_review_v1",
+  "content_quality_judge": "content_quality_judge_v1",
+  "chart_explanation": "chart_explanation_v1",
+  "table_explanation": "table_explanation_v1"
+}

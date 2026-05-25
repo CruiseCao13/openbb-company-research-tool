@@ -1,0 +1,57 @@
+{
+  "ai_mode": "local",
+  "cache_hits": 0,
+  "cache_used": false,
+  "entries": [
+    {
+      "cache_hit": false,
+      "cache_key": "a216584aad62ab964ccd513f6fbb4101627e141b636c4e59e7cb3b417ed8e73c",
+      "cache_source": "none",
+      "input_digest": "47ccd6019f1e659cebfe984181ad76caf584a19fd22fdbc373c8b8ae6da5e292",
+      "invalidation_reason": "cache not used or disabled by --no-ai-cache",
+      "model": "local-compact-analyst-fallback",
+      "output_digest": "192796b97d65aab75638ab4144691d78175b85dfb64db525392f9ce5969aa54d",
+      "prompt_version": "company_understanding_v1",
+      "schema_version": "v5.0.0",
+      "task": "company_understanding"
+    },
+    {
+      "cache_hit": false,
+      "cache_key": "2fbc2bf3223a790f1bb9f6b3afea81dba728869505c494f3930a7e7c32adc8f8",
+      "cache_source": "none",
+      "input_digest": "410387fcce342069750d25fc1c716c4e137b25becd673e25496ffd3aa5a450a7",
+      "invalidation_reason": "cache not used or disabled by --no-ai-cache",
+      "model": "local-compact-analyst-fallback",
+      "output_digest": "8138f9eed27cb2853a61402f2a62f2d8b10e0769f9907e98e23b7b4ea03027e0",
+      "prompt_version": "financial_interpretation_v1",
+      "schema_version": "v5.0.0",
+      "task": "financial_interpretation"
+    },
+    {
+      "cache_hit": false,
+      "cache_key": "3206b1c37c21ffbcef433a50588b878bce6c42e08f57605cf39eda38d6574796",
+      "cache_source": "none",
+      "input_digest": "f7c9c8216148aec527d4d4d6ff9fb538cb420b79211dca168de84e8aaabe0f4d",
+      "invalidation_reason": "cache not used or disabled by --no-ai-cache",
+      "model": "local-compact-analyst-fallback",
+      "output_digest": "224cf552a942313de0bb604dcab44366970862bcda446679149e937caf188c19",
+      "prompt_version": "research_blueprint_v1",
+      "schema_version": "v5.0.0",
+      "task": "research_blueprint"
+    },
+    {
+      "cache_hit": false,
+      "cache_key": "38701f64d89b08155bce919805ad023367a2f0960c024ee9c831c9a963ac3ce6",
+      "cache_source": "none",
+      "input_digest": "34eb99e40c803b7a1500e3a1bc0040b5de8f153b7852b71ad20041f310ab9937",
+      "invalidation_reason": "cache not used or disabled by --no-ai-cache",
+      "model": "local-compact-analyst-fallback",
+      "output_digest": "42a539b0c5a0ca0a0a3fa18519ac460d7224dbc4ab34a623eb9148dbfacf930c",
+      "prompt_version": "self_review_v1",
+      "schema_version": "v5.0.0",
+      "task": "self_review"
+    }
+  ],
+  "no_ai_cache": false,
+  "schema_version": "v5.0.0"
+}

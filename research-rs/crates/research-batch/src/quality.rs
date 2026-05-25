@@ -2,6 +2,7 @@ use crate::runner::{run_batch, BatchRunOptions};
 use anyhow::Result;
 use chrono::Local;
 use research_core::io::{ensure_dir, write_if_changed, write_json};
+use research_core::paths::quality_runs_dir;
 use research_core::validation::detect_forbidden_advice;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -343,9 +344,7 @@ pub fn run_quality(options: &QualityRunOptions) -> Result<PathBuf> {
         pack: options.pack,
         force: options.force,
     })?;
-    let quality_root = PathBuf::from("reports")
-        .join("quality_runs")
-        .join(&options.run_id);
+    let quality_root = quality_runs_dir()?.join(&options.run_id);
     ensure_dir(&quality_root)?;
     let mut rdr = csv::Reader::from_path(batch_root.join("company_matrix.csv"))?;
     let mut reviews = Vec::new();

@@ -1,0 +1,424 @@
+{
+  "ticker": "000001.SZ",
+  "run_id": "sample_v5",
+  "generated_at": "2026-05-25T11:04:07.917185+08:00",
+  "files": [
+    "charts/Figure_05_valuation_frame.md",
+    "charts/Figure_04_money_flow.md",
+    "charts/Figure_03_financial_trend.md",
+    "charts/Figure_02_drawdown.md",
+    "charts/Figure_01_price_vs_benchmark.md",
+    "charts/chart_manifest.json",
+    "dashboard.html",
+    "README.md",
+    "audit/lint_report.md",
+    "audit/table_selection_report.md",
+    "audit/data_inventory_report.md",
+    "audit/pdf_export_report.md",
+    "audit/visual_lint_report.md",
+    "audit/schema_validation.md",
+    "audit/data_quality.md",
+    "audit/table_quality_report.md",
+    "audit/parser_report.md",
+    "audit/section_source_map.md",
+    "audit/chart_selection_report.md",
+    "audit/chart_table_quality_report.md",
+    "audit/normalizer_report.md",
+    "audit/evidence_map.md",
+    "audit/provider_validation.md",
+    "audit/validator_report.md",
+    "audit/iteration_log.md",
+    "audit/output_consistency_report.md",
+    "audit/cache_report.md",
+    "audit/data_usage_coverage_report.md",
+    "audit/chart_coverage_report.md",
+    "audit/rewrite_trace.md",
+    "audit/money_flow_quality_report.md",
+    "self_review/ai_self_review.json",
+    "self_review/ai_self_review.md",
+    "ai/cache_info.json",
+    "ai/prompts/financial_interpretation_financial_interpretation_v1.md",
+    "ai/prompts/self_review_self_review_v1.md",
+    "ai/prompts/research_blueprint_research_blueprint_v1.md",
+    "ai/prompts/company_understanding_company_understanding_v1.md",
+    "report/000001.SZ_research_report.pdf",
+    "report/000001.SZ_research_report.md",
+    "data/normalized_price_history.json",
+    "data/normalized_financials.json",
+    "metadata/ai_usage.json",
+    "metadata/pdf_status.json",
+    "metadata/data_usage_coverage.json",
+    "metadata/unit_policy.json",
+    "metadata/output_consistency.json",
+    "metadata/validation_passes.json",
+    "metadata/chart_table_quality.json",
+    "metadata/table_plan.json",
+    "metadata/provider_status.json",
+    "metadata/financial_interpretation.json",
+    "metadata/section_source_map.json",
+    "metadata/repro_manifest.json",
+    "metadata/cache_summary.json",
+    "metadata/report_status.json",
+    "metadata/company_understanding.json",
+    "metadata/ai_cache_trace.json",
+    "metadata/research_blueprint.json",
+    "metadata/evidence_map.json",
+    "metadata/provider_cache_info.json",
+    "metadata/money_flow_map.json",
+    "metadata/rewrite_status.json",
+    "metadata/data_inventory.json",
+    "metadata/chart_plan.json",
+    "metadata/product_quality_score.json",
+    "metadata/prompt_versions.json",
+    "raw/provider_payload.json"
+  ],
+  "report_status": "WARNING",
+  "ai_mode": "local",
+  "provider": "PROVIDER_ERROR",
+  "has_dashboard": true,
+  "has_pdf": true,
+  "has_charts": true,
+  "has_self_review": true,
+  "file_entries": [
+    {
+      "path": "charts/Figure_05_valuation_frame.md",
+      "size_bytes": 142,
+      "sha256": "184c8b059b2b642bce8df2a914da2e4dae024ab56bd38d23204635b90bb4f82d"
+    },
+    {
+      "path": "charts/Figure_04_money_flow.md",
+      "size_bytes": 136,
+      "sha256": "ec1d707cd7ba52c0edbc56f624385a5f457b734bb4b209a2eb188656a72a5216"
+    },
+    {
+      "path": "charts/Figure_03_financial_trend.md",
+      "size_bytes": 114,
+      "sha256": "bce30906cbe55d50cab80fc6fc546cad8f20208650063bf92389934f0391c697"
+    },
+    {
+      "path": "charts/Figure_02_drawdown.md",
+      "size_bytes": 122,
+      "sha256": "7896fb5d8f634678b5bf39d402eb5e6d49e5ade30bdc8de5056b72944ea0bb0a"
+    },
+    {
+      "path": "charts/Figure_01_price_vs_benchmark.md",
+      "size_bytes": 125,
+      "sha256": "2663a59c6f1b72b82be9aaf6ca009bae965ca362c96c05d1507a3f209bb80de1"
+    },
+    {
+      "path": "charts/chart_manifest.json",
+      "size_bytes": 1118,
+      "sha256": "13682af2d3b52b817544bcb74ae87c2abd0eab341ed1e564e7cb158678ab8283"
+    },
+    {
+      "path": "dashboard.html",
+      "size_bytes": 7030,
+      "sha256": "c39dbffd54cc8985d91f45b1e7320d1f34b09dd6fcd86ef051a857726df99bfd"
+    },
+    {
+      "path": "README.md",
+      "size_bytes": 411,
+      "sha256": "11b22e969508101db3b82477c5e76d9172821e7a652fdc33b22fd90c72ca2bbf"
+    },
+    {
+      "path": "audit/lint_report.md",
+      "size_bytes": 52,
+      "sha256": "b4c92e1a5f8c78e22a7010c13973c7a097c1555a0530f3925a9d796b2991ca5f"
+    },
+    {
+      "path": "audit/table_selection_report.md",
+      "size_bytes": 192,
+      "sha256": "7e01f1e015a56eba677c40825c60ff34c1738810691c7e53b9075f0f56de168a"
+    },
+    {
+      "path": "audit/data_inventory_report.md",
+      "size_bytes": 1019,
+      "sha256": "3609f99b146fc396ad3b9e3a14ffa0e41394b3dc645e8d5e668bc52424c4dec8"
+    },
+    {
+      "path": "audit/pdf_export_report.md",
+      "size_bytes": 783,
+      "sha256": "8831c39a196f24be4827922cc565ddeed27d5ca71a8f46005ee7610e8c2c94e0"
+    },
+    {
+      "path": "audit/visual_lint_report.md",
+      "size_bytes": 339,
+      "sha256": "b48eccff9832229a509c56bee494690361a9ea9502f0fdadb51eac4150bc7cd6"
+    },
+    {
+      "path": "audit/schema_validation.md",
+      "size_bytes": 759,
+      "sha256": "69f8e3bf6ca4f306c16d072116014970f5c2764cf87848c8852bb151d81c6a36"
+    },
+    {
+      "path": "audit/data_quality.md",
+      "size_bytes": 90,
+      "sha256": "c5a1d1c67f323d7fde604ce3b9dd06e79727978a0f463dcd6cdf1abf423cdaae"
+    },
+    {
+      "path": "audit/table_quality_report.md",
+      "size_bytes": 211,
+      "sha256": "d668eb6d60ada02088856d312c4493065a5b1cc7d5590fca590ada8c3aef10f9"
+    },
+    {
+      "path": "audit/parser_report.md",
+      "size_bytes": 406,
+      "sha256": "89fe0beba6acfd59a503cceac88ac734215e9198dc19a21b28d566683b24ce84"
+    },
+    {
+      "path": "audit/section_source_map.md",
+      "size_bytes": 311,
+      "sha256": "60e8d8e939cdc9a666deeb33ce582504a9da91cb30836887339f3cbc1206c372"
+    },
+    {
+      "path": "audit/chart_selection_report.md",
+      "size_bytes": 446,
+      "sha256": "638def41b62f0404d9d1ed35bdc5e6a9ae9cb495fbe4cc041d5b9928cb43f0f7"
+    },
+    {
+      "path": "audit/chart_table_quality_report.md",
+      "size_bytes": 738,
+      "sha256": "3fa0d0f62bb28c4f583af20adac77f482e0950c41b4156e87082077511558f7b"
+    },
+    {
+      "path": "audit/normalizer_report.md",
+      "size_bytes": 548,
+      "sha256": "ce3937240a539fcc57cc07c416c1a0b6852430e13e28580fd9a7ef14670fe6a1"
+    },
+    {
+      "path": "audit/evidence_map.md",
+      "size_bytes": 570,
+      "sha256": "094812eec06178dffadf0c08a2b9c2de46386d2426b09fcbfdda92007f77d9cb"
+    },
+    {
+      "path": "audit/provider_validation.md",
+      "size_bytes": 83,
+      "sha256": "99a9c6b2c27bcbe869e4c3a813bd5fe64092ae390564db14ed52093395cfd965"
+    },
+    {
+      "path": "audit/validator_report.md",
+      "size_bytes": 1100,
+      "sha256": "31d718391f2b48e442e2f1d46bb8c77e7502f5155a9049c61d05b1c5f568010a"
+    },
+    {
+      "path": "audit/iteration_log.md",
+      "size_bytes": 416,
+      "sha256": "4b37dfeccc8c35a3c2bd92cac55f86b03ea469cc05dd0afaf4d9e75539cba757"
+    },
+    {
+      "path": "audit/output_consistency_report.md",
+      "size_bytes": 267,
+      "sha256": "0fcab524014c74de462de2f52b5e4acd6e59afbe48c8cc605bcf171a7713921d"
+    },
+    {
+      "path": "audit/cache_report.md",
+      "size_bytes": 332,
+      "sha256": "11fa831776cc04cfc4fad3dbf690b5f2f78028c2d066883f7466c401c9b08c84"
+    },
+    {
+      "path": "audit/data_usage_coverage_report.md",
+      "size_bytes": 2234,
+      "sha256": "e1f16ddd051fad43042c297fd8c33d0b8ef39b91cc1184c3c48c12bca1d5735b"
+    },
+    {
+      "path": "audit/chart_coverage_report.md",
+      "size_bytes": 283,
+      "sha256": "42be479b57784d11468b39d76b3f5fa7722f7c5dd55aa2a68ee27e95119000ea"
+    },
+    {
+      "path": "audit/rewrite_trace.md",
+      "size_bytes": 273,
+      "sha256": "74de6ac4f4d55348ead84fa47bcc60270bc0a88b558a2c0c7ee65ca715a9f16b"
+    },
+    {
+      "path": "audit/money_flow_quality_report.md",
+      "size_bytes": 521,
+      "sha256": "9ae8b5783c9f7f683100791206a32b16fb543e6100ff5d016d2c6760024992b9"
+    },
+    {
+      "path": "self_review/ai_self_review.json",
+      "size_bytes": 1132,
+      "sha256": "db68fc145270c30553bf7e4de89dac4125aba96190658e8b1342af3cfdbdf500"
+    },
+    {
+      "path": "self_review/ai_self_review.md",
+      "size_bytes": 476,
+      "sha256": "a9496801b1179e7591b9092730e3df398ace76f4b926f890ae2fe29796440101"
+    },
+    {
+      "path": "ai/cache_info.json",
+      "size_bytes": 157,
+      "sha256": "0a3440a7078ab4f14b7e98c9897f1ecf805f9a198b3a6cdd3e5307a72be9fc30"
+    },
+    {
+      "path": "ai/prompts/financial_interpretation_financial_interpretation_v1.md",
+      "size_bytes": 293,
+      "sha256": "9e0d0db815a561e34c92197d3651405716a3d0e3a6bb1546edfe0e438cc4c311"
+    },
+    {
+      "path": "ai/prompts/self_review_self_review_v1.md",
+      "size_bytes": 267,
+      "sha256": "8901d3255b2a07d3815a60f81593d082250d9fee3bea6ff2ed820954dff1e03f"
+    },
+    {
+      "path": "ai/prompts/research_blueprint_research_blueprint_v1.md",
+      "size_bytes": 281,
+      "sha256": "7ec271ed43b49c95315fb9f1064f0849638b3c23b433d32d869fd90a04fc80e1"
+    },
+    {
+      "path": "ai/prompts/company_understanding_company_understanding_v1.md",
+      "size_bytes": 287,
+      "sha256": "330cc7670b70c420deae2a0be853811116908f37b7484ce632d9390b78a5b81e"
+    },
+    {
+      "path": "report/000001.SZ_research_report.pdf",
+      "size_bytes": 15902,
+      "sha256": "5bf75a296c6ac9fda89909941ca47179a1a86bee37a9402655cab906f290cbf5"
+    },
+    {
+      "path": "report/000001.SZ_research_report.md",
+      "size_bytes": 9306,
+      "sha256": "f9ee0c48757d6715df14c7097870b1abc330f5dcaefdbe7406b17b2aa6798277"
+    },
+    {
+      "path": "data/normalized_price_history.json",
+      "size_bytes": 98,
+      "sha256": "e9994703bbd1b97838aef934b4fd0c9d9a3e58897a706a7b61e1beba8f462b37"
+    },
+    {
+      "path": "data/normalized_financials.json",
+      "size_bytes": 323,
+      "sha256": "4be40a5ab2235e8b6c0e10a17c2171ea79fb01b3fb235f2ae80ae949c988019b"
+    },
+    {
+      "path": "metadata/ai_usage.json",
+      "size_bytes": 3485,
+      "sha256": "6fd1870310380cc6d4d3ae9e0b6a43531282ba5ae1da9d9328b89c158e1f7f23"
+    },
+    {
+      "path": "metadata/pdf_status.json",
+      "size_bytes": 241,
+      "sha256": "9260480ff041fdace1c6155852f2b1e5492a5d095bf083c3a7a9798e152422dd"
+    },
+    {
+      "path": "metadata/data_usage_coverage.json",
+      "size_bytes": 4015,
+      "sha256": "70d142dd578985b9dc8ee6daceed353e646e84c4aeda27a9d6e504179920e165"
+    },
+    {
+      "path": "metadata/unit_policy.json",
+      "size_bytes": 327,
+      "sha256": "a605351438b9cc683bb3267f4128b71b59c420e081eed68e65c6c2b781b29174"
+    },
+    {
+      "path": "metadata/output_consistency.json",
+      "size_bytes": 777,
+      "sha256": "07eb88ee0454850cefc46f638ee785f323fc293e46a04ac321d61a60fca6031a"
+    },
+    {
+      "path": "metadata/validation_passes.json",
+      "size_bytes": 2699,
+      "sha256": "dc160ca8f30f7212810f91ea81143559e1e1300d9c094de9a5287fb996d0fa04"
+    },
+    {
+      "path": "metadata/chart_table_quality.json",
+      "size_bytes": 623,
+      "sha256": "71a391b3754011c76fb0be85a7901abd7f26269790eb510addca85701cbd27d2"
+    },
+    {
+      "path": "metadata/table_plan.json",
+      "size_bytes": 1648,
+      "sha256": "d0cc6e282f616aa6b8457389ae6570dbfd1f7bce73a2bf6abb386e7c7d8cacf4"
+    },
+    {
+      "path": "metadata/provider_status.json",
+      "size_bytes": 328,
+      "sha256": "0305af84db51877f88fe999e6a568d8054843a1d5178c42660745178bdb4cf1a"
+    },
+    {
+      "path": "metadata/financial_interpretation.json",
+      "size_bytes": 1994,
+      "sha256": "71fa7cafbbd74cc306dc39800803748be1a84a076486ed9c24711241287caef5"
+    },
+    {
+      "path": "metadata/section_source_map.json",
+      "size_bytes": 2374,
+      "sha256": "841a3022c8eeb4f9c27dea58e0f0bcac24df24cb33344073945f288bbeaad4fd"
+    },
+    {
+      "path": "metadata/repro_manifest.json",
+      "size_bytes": 1559,
+      "sha256": "a408b0e16f047de5464d903f8c34cb7f187ed710148ec3aa9963754807cc582d"
+    },
+    {
+      "path": "metadata/cache_summary.json",
+      "size_bytes": 332,
+      "sha256": "645696a2d18221b178369f38ecc193ccce8f6d407b27c94f80de98b7fe08ea7c"
+    },
+    {
+      "path": "metadata/report_status.json",
+      "size_bytes": 490,
+      "sha256": "db4da1c224ab3b49bbc7b2fc1430bef6cd04a776901ab954c4616963f0c8ac78"
+    },
+    {
+      "path": "metadata/company_understanding.json",
+      "size_bytes": 1641,
+      "sha256": "850c4b14306b41e68103f2a8fc0fa9d042b022c6f5550a8c448b15e4a65e458f"
+    },
+    {
+      "path": "metadata/ai_cache_trace.json",
+      "size_bytes": 2464,
+      "sha256": "0dd7a999cd0f2dc83856b7b27967bdfd3059442afc754c1dca185bbe25727e79"
+    },
+    {
+      "path": "metadata/research_blueprint.json",
+      "size_bytes": 1846,
+      "sha256": "fc69f302a717138d3722444076fae10d23e753b99482a7f91ed44e0d99e60fda"
+    },
+    {
+      "path": "metadata/evidence_map.json",
+      "size_bytes": 2398,
+      "sha256": "7f99f5b8030d597bf1c03e3a840c399dcf52be09d43bb5477eb542ebc1d667aa"
+    },
+    {
+      "path": "metadata/provider_cache_info.json",
+      "size_bytes": 183,
+      "sha256": "674b31d443ef6a6dc15ab699abb3e47e7b85da6f479fb63c9cdb68dc235adae1"
+    },
+    {
+      "path": "metadata/money_flow_map.json",
+      "size_bytes": 1029,
+      "sha256": "c52d85ce44b78b7b99c7c694ed7392815014a9bca40062ebec89e384a2d43dd6"
+    },
+    {
+      "path": "metadata/rewrite_status.json",
+      "size_bytes": 240,
+      "sha256": "67f972d563f9c82ef7ba99115f995875b0d4956fe6c2f5d0d7518a37c7973792"
+    },
+    {
+      "path": "metadata/data_inventory.json",
+      "size_bytes": 2603,
+      "sha256": "8baaf2e2a8a55df05e8519d425b7d4b76f5c1d721383552b56344c4886c6055a"
+    },
+    {
+      "path": "metadata/chart_plan.json",
+      "size_bytes": 4009,
+      "sha256": "8291826262ce5a5a13c087a0a29263c745d527bd0998a0816acae0f2944f0adf"
+    },
+    {
+      "path": "metadata/product_quality_score.json",
+      "size_bytes": 465,
+      "sha256": "9b9dfb86ef1b9aa7ae4aea4d6e0cf63aeb9758f1967def4cbb1279f37bb8e940"
+    },
+    {
+      "path": "metadata/prompt_versions.json",
+      "size_bytes": 352,
+      "sha256": "1ea55c19cfa7df51404b47cd47e10e6fb3f94af82e4dac8f27740750ed19c6b9"
+    },
+    {
+      "path": "raw/provider_payload.json",
+      "size_bytes": 853,
+      "sha256": "cf9f17e7c1ef573f7f4d8ea208ac7b51c0dd470ff9ac6ed7d534f1bef0f13016"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "schema_version": "v5.0.0",
+  "ai_provenance": {
+    "source": "local_mock",
+    "external_ai_used": false,
+    "local_mock_used": true,
+    "cache_hit": false,
+    "new_external_ai_call": false,
+    "model": "local-compact-analyst-fallback",
+    "prompt_version": "self_review_v1",
+    "request_attempted": false,
+    "request_success": false,
+    "request_id": "",
+    "generated_at": "2026-05-25T11:04:07.381290+08:00",
+    "input_digest": "625d8a7d209e1cc6e7badc127ffd8de7b107c01c9facc32bd50a3cb5ed0edb7c",
+    "output_digest": "f00423726fb298a4589c66a25775377e823a132eef27828fe9ee279bdac05641"
+  },
+  "company_understanding_check": "PASS",
+  "framework_fit_check": "PASS",
+  "numeric_consistency_check": "PASS",
+  "money_flow_check": "PASS",
+  "unsupported_claims": [
+    "Provider payload has an error; numeric conclusions must stay screening-only.",
+    "Provider error prevents full financial interpretation."
+  ],
+  "wrong_framework_risk": [
+    "Framework is not fully identified; report must stay screening-only."
+  ],
+  "required_rewrite_sections": [],
+  "final_confidence": "LOW",
+  "human_review_required": true
+}

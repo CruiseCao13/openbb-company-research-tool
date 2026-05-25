@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Result};
 use research_core::cache::digest_str;
 use research_core::io::{ensure_dir, write_if_changed, write_json};
+use research_core::paths::ai_cache_dir;
 use research_core::types::{AiProvenance, AiTaskUsage, AiUsage, ProviderPayload, SCHEMA_VERSION};
 use serde_json::json;
 use std::path::{Path, PathBuf};
@@ -81,11 +82,8 @@ fn compact_prompt(payload: &ProviderPayload, task: &str, prompt_version: &str) -
     )
 }
 
-fn cache_path(cache_key: &str) -> PathBuf {
-    PathBuf::from("reports")
-        .join("_cache")
-        .join("ai")
-        .join(format!("{cache_key}.json"))
+fn cache_path(cache_key: &str) -> Result<PathBuf> {
+    Ok(ai_cache_dir()?.join(format!("{cache_key}.json")))
 }
 
 fn estimate_tokens(text: &str) -> usize {
@@ -342,7 +340,7 @@ pub fn run_ai_usage_gate(
             prompt_version,
             model
         ));
-        let cache_path = cache_path(&cache_key);
+        let cache_path = cache_path(&cache_key)?;
         if !options.no_ai_cache && cache_path.exists() {
             let cached = std::fs::read_to_string(&cache_path).unwrap_or_default();
             write_if_changed(
@@ -376,11 +374,9 @@ pub fn run_ai_usage_gate(
         external_ai_attempted = true;
         match call_openai(task, &prompt, &model) {
             Ok((request_id, content)) => {
-                ensure_dir(
-                    cache_path
-                        .parent()
-                        .unwrap_or_else(|| Path::new("reports/_cache/ai")),
-                )?;
+                if let Some(parent) = cache_path.parent() {
+                    ensure_dir(parent)?;
+                }
                 write_if_changed(&cache_path, &content)?;
                 write_if_changed(
                     &ai_dir.join("responses").join(format!("{task}.json")),

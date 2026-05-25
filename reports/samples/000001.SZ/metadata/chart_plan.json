@@ -1,0 +1,84 @@
+{
+  "charts": [
+    {
+      "can_prove": "It can support a first-pass interpretation of trend, risk path, money flow, or valuation context.",
+      "cannot_prove": "It cannot prove future returns, fair value, or a buy/sell decision.",
+      "data_used": [
+        "price_history"
+      ],
+      "figure_id": "Figure_01",
+      "next_check": "Verify the underlying provider data and add company/industry-specific metrics where available.",
+      "research_question": "Did the stock outperform the benchmark with acceptable risk?",
+      "status": "planned_or_generated",
+      "title": "Price / Benchmark Performance",
+      "why_selected": "This chart maps a core report question to locked provider data rather than adding decoration."
+    },
+    {
+      "can_prove": "It can support a first-pass interpretation of trend, risk path, money flow, or valuation context.",
+      "cannot_prove": "It cannot prove future returns, fair value, or a buy/sell decision.",
+      "data_used": [
+        "price_history"
+      ],
+      "figure_id": "Figure_02",
+      "next_check": "Verify the underlying provider data and add company/industry-specific metrics where available.",
+      "research_question": "How painful was the risk path?",
+      "status": "planned_or_generated",
+      "title": "Drawdown / Risk Path",
+      "why_selected": "This chart maps a core report question to locked provider data rather than adding decoration."
+    },
+    {
+      "can_prove": "It can support a first-pass interpretation of trend, risk path, money flow, or valuation context.",
+      "cannot_prove": "It cannot prove future returns, fair value, or a buy/sell decision.",
+      "data_used": [
+        "income_statement"
+      ],
+      "figure_id": "Figure_03",
+      "next_check": "Verify the underlying provider data and add company/industry-specific metrics where available.",
+      "research_question": "Is growth translating into financial progress?",
+      "status": "planned_or_generated",
+      "title": "Financial Trend",
+      "why_selected": "This chart maps a core report question to locked provider data rather than adding decoration."
+    },
+    {
+      "can_prove": "It can support a first-pass interpretation of trend, risk path, money flow, or valuation context.",
+      "cannot_prove": "It cannot prove future returns, fair value, or a buy/sell decision.",
+      "data_used": [
+        "cash_flow"
+      ],
+      "figure_id": "Figure_04",
+      "next_check": "Verify the underlying provider data and add company/industry-specific metrics where available.",
+      "research_question": "Where does money come from, and where does it go?",
+      "status": "planned_or_generated",
+      "title": "Money Flow / Cash Flow Bridge",
+      "why_selected": "This chart maps a core report question to locked provider data rather than adding decoration."
+    },
+    {
+      "can_prove": "It can support a first-pass interpretation of trend, risk path, money flow, or valuation context.",
+      "cannot_prove": "It cannot prove future returns, fair value, or a buy/sell decision.",
+      "data_used": [
+        "valuation_snapshot"
+      ],
+      "figure_id": "Figure_05",
+      "next_check": "Verify the underlying provider data and add company/industry-specific metrics where available.",
+      "research_question": "Which valuation lens is meaningful for this company?",
+      "status": "planned_or_generated",
+      "title": "Valuation Frame",
+      "why_selected": "This chart maps a core report question to locked provider data rather than adding decoration."
+    }
+  ],
+  "not_charted": [
+    {
+      "data": "company_profile.description",
+      "reason": "Text field; used in company identity section and dashboard."
+    },
+    {
+      "data": "segments",
+      "reason": "Not available from provider; shown as data gap/manual check."
+    },
+    {
+      "data": "raw provider rows",
+      "reason": "Raw rows stay in locked data/appendix; report charts use selected evidence only."
+    }
+  ],
+  "ticker": "000001.SZ"
+}

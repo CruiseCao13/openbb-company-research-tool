@@ -1,0 +1,61 @@
+{
+  "renderer_policy": "Renderer may format and arrange sections but must not invent thesis, valuation, risks, business model, money-flow interpretation, or next checks.",
+  "schema_version": "v5.0.0",
+  "section_10_ai_self_review": [
+    "self_review/ai_self_review.json"
+  ],
+  "section_11_next_checks": [
+    "metadata/research_blueprint.json:next_checks"
+  ],
+  "section_12_charts_and_evidence": [
+    "metadata/chart_plan.json",
+    "metadata/evidence_map.json",
+    "metadata/chart_table_quality.json"
+  ],
+  "section_13_locked_data_appendix": [
+    "raw/provider_payload.json"
+  ],
+  "section_1_report_status": [
+    "metadata/report_status.json",
+    "metadata/ai_usage.json"
+  ],
+  "section_2_company_identity": [
+    "metadata/company_understanding.json:company_identity",
+    "metadata/company_understanding.json:correct_research_frame",
+    "metadata/company_understanding.json:not_this"
+  ],
+  "section_3_business_model": [
+    "metadata/company_understanding.json:business_model",
+    "metadata/company_understanding.json:revenue_engines",
+    "metadata/company_understanding.json:profit_pool"
+  ],
+  "section_4_money_flow": [
+    "metadata/financial_interpretation.json:where_money_comes_from",
+    "metadata/financial_interpretation.json:where_money_goes"
+  ],
+  "section_5_financial_statement_interpretation": [
+    "metadata/financial_interpretation.json:revenue_explanation",
+    "metadata/financial_interpretation.json:margin_explanation",
+    "metadata/financial_interpretation.json:cash_flow_explanation",
+    "metadata/financial_interpretation.json:capex_or_rnd_pressure",
+    "metadata/financial_interpretation.json:debt_and_financing",
+    "metadata/financial_interpretation.json:shareholder_return_quality"
+  ],
+  "section_6_ai_research_blueprint": [
+    "metadata/research_blueprint.json:core_thesis",
+    "metadata/research_blueprint.json:must_analyze",
+    "metadata/research_blueprint.json:must_not_analyze_as_core",
+    "metadata/research_blueprint.json:key_questions"
+  ],
+  "section_7_valuation_frame": [
+    "metadata/research_blueprint.json:valuation_frame"
+  ],
+  "section_8_risks_and_red_flags": [
+    "metadata/research_blueprint.json:red_flags"
+  ],
+  "section_9_data_gaps": [
+    "metadata/research_blueprint.json:data_gaps",
+    "metadata/financial_interpretation.json:unsupported_due_to_missing_data"
+  ],
+  "ticker": "000001.SZ"
+}

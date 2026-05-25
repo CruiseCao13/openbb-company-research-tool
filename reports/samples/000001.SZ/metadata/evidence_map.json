@@ -1,0 +1,77 @@
+{
+  "ai_interpretation": [
+    {
+      "chart_refs": [],
+      "claim": "000001.SZ is best treated as Unknown / Data-Limited Screening based on the locked provider profile and financial context.",
+      "confidence": "LOW",
+      "data_refs": [
+        "company_profile"
+      ],
+      "evidence_type": "AI_interpretation",
+      "section": "Company Identity",
+      "table_refs": [
+        "Table_1_status_summary"
+      ],
+      "unsupported": false
+    },
+    {
+      "chart_refs": [
+        "Figure_04_money_flow"
+      ],
+      "claim": "Money comes from operating revenue when available, operating cash flow if positive, and financing when operating cash is insufficient.",
+      "confidence": "MEDIUM",
+      "data_refs": [
+        "income_statement",
+        "cash_flow",
+        "balance_sheet"
+      ],
+      "evidence_type": "AI_interpretation",
+      "section": "Money Flow",
+      "table_refs": [
+        "Table_3_money_flow_summary"
+      ],
+      "unsupported": false
+    },
+    {
+      "chart_refs": [
+        "Figure_03_financial_trend",
+        "Figure_04_money_flow",
+        "Figure_05_valuation_frame"
+      ],
+      "claim": "The central research question is whether the Unknown / Data-Limited Screening frame is supported by locked data and company-specific evidence.",
+      "confidence": "LOW",
+      "data_refs": [
+        "provider_payload",
+        "company_understanding",
+        "financial_interpretation"
+      ],
+      "evidence_type": "AI_interpretation",
+      "section": "AI Research Blueprint",
+      "table_refs": [
+        "Table_4_research_blueprint"
+      ],
+      "unsupported": false
+    }
+  ],
+  "ai_provenance": {
+    "cache_hit": false,
+    "external_ai_used": false,
+    "generated_at": "2026-05-25T11:04:07.381179+08:00",
+    "input_digest": "a217f48e16d37d86e1cbb451fe48fd8504772dee938288ca3c1476a199109e20",
+    "local_mock_used": true,
+    "model": "local-compact-analyst-fallback",
+    "new_external_ai_call": false,
+    "output_digest": "c1f9e18fab201244c86bee07af0812ccc4e73f76611cf9c457c93888a8ee22a4",
+    "prompt_version": "research_blueprint_v1",
+    "request_attempted": false,
+    "request_id": "",
+    "request_success": false,
+    "source": "local_mock"
+  },
+  "assumption": [],
+  "data_gap": [
+    "Provider payload has an error; numeric conclusions must stay screening-only."
+  ],
+  "locked_data_supported": [],
+  "unsupported": []
+}

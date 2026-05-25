@@ -1,0 +1,8 @@
+{
+  "PDF_EXPORT_STATUS": "PASS",
+  "chinese_pdf_exists": true,
+  "chinese_pdf_expected": false,
+  "english_pdf_exists": true,
+  "english_pdf_expected": true,
+  "note": "Markdown and HTML remain authoritative if PDF export is unavailable."
+}

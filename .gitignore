@@ -17,6 +17,7 @@ research-rs/target/
 
 # Generated outputs
 reports/*
+research-rs/reports/
 !reports/.gitkeep
 !reports/README.md
 !reports/release_checks/

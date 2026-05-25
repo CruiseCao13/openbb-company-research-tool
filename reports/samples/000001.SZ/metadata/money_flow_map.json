@@ -1,0 +1,36 @@
+{
+  "chart_refs": [
+    "Figure_04_money_flow"
+  ],
+  "data_refs": [
+    "income_statement",
+    "cash_flow",
+    "balance_sheet"
+  ],
+  "schema_version": "v5.0.0",
+  "score": 82,
+  "sources": {
+    "asset_sales": "data_gap",
+    "debt_issuance": "data_gap",
+    "equity_issuance": "data_gap",
+    "financing": "data_gap",
+    "operating_cash_flow": "data_gap",
+    "revenue": "data_gap"
+  },
+  "status": "PASS",
+  "table_refs": [
+    "Table_2_money_flow_summary"
+  ],
+  "uses": {
+    "buybacks": "data_gap",
+    "capex": "data_gap",
+    "cost_of_revenue": "data_gap",
+    "debt_repayment": "data_gap",
+    "dividends": "data_gap",
+    "operating_losses": "not_available",
+    "rnd": "data_gap",
+    "working_capital": "data_gap"
+  },
+  "where_money_comes_from": "Money comes from operating revenue when available, operating cash flow if positive, and financing when operating cash is insufficient.",
+  "where_money_goes": "Money goes to operating costs, reinvestment, working capital, and financing obligations when present."
+}

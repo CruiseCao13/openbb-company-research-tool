@@ -1,0 +1,17 @@
+{
+  "ai_source": "local_mock",
+  "company_identity": "000001.SZ is best treated as Unknown / Data-Limited Screening based on the locked provider profile and financial context.",
+  "dashboard_digest": "c39dbffd54cc8985d91f45b1e7320d1f34b09dd6fcd86ef051a857726df99bfd",
+  "money_flow_digest": "75546fb0f3659f4f3317f7f6e2a3d78a2e9f28a89402a80cc6bac0ef86685e37",
+  "report_digest": "f9ee0c48757d6715df14c7097870b1abc330f5dcaefdbe7406b17b2aa6798277",
+  "report_status": "WARNING",
+  "research_frame": "Unknown / Data-Limited Screening",
+  "same_ai_source": true,
+  "same_chart_list": true,
+  "same_company_identity": true,
+  "same_money_flow_summary": true,
+  "same_provider_digest": true,
+  "same_report_status": true,
+  "same_research_frame": true,
+  "schema_version": "v5.0.0"
+}

@@ -1,0 +1,15 @@
+{
+  "chart_explanation_score": 88,
+  "chart_readability_score": 86,
+  "chart_relevance_score": 86,
+  "chart_to_delete": "None by default; charts are capped to the P0 evidence set.",
+  "missing_explanation": "None detected",
+  "most_useful_chart": "Figure 4. Money Flow / Cash Flow Bridge",
+  "potentially_misleading_chart": "No chart is allowed to imply a buy/sell decision or target price.",
+  "source_trace_score": 88,
+  "table_readability_score": 84,
+  "table_too_wide": "None detected",
+  "unit_consistency_score": 86,
+  "unvisualized_key_data": "See audit/data_usage_coverage_report.md",
+  "visual_polish_score": 82
+}
