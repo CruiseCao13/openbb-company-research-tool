@@ -72,6 +72,8 @@ fn ticker_family_override(ticker: &str) -> Option<&'static str> {
         "JPM" => Some("Financials / Bank-like Screening"),
         "CAT" => Some("Cyclical / Industrial Machinery"),
         "ZIM" => Some("Shipping / Transport Cycle"),
+        "600519.SH" => Some("A-share Consumer / Baijiu / Premium Liquor"),
+        "000001.SZ" => Some("Financials / Bank-like Screening"),
         _ => None,
     }
 }

@@ -176,6 +176,54 @@ pub fn understand_company(payload: &ProviderPayload) -> CompanyUnderstanding {
             Confidence::LOW,
             true,
         )
+    } else if h.contains("batch eval expected research family guardrail: medical devices")
+        || h.contains("batch eval expected research family guardrail: medical device")
+        || h.contains("batch eval expected research family guardrail: surgical robotics")
+    {
+        (
+            "Medical Devices / Surgical Robotics",
+            "MedTech installed-base and procedure-volume model",
+            vec![
+                "surgical systems placements".into(),
+                "instruments and accessories tied to procedures".into(),
+                "service revenue from installed systems".into(),
+            ],
+            vec![
+                "biotech drug pipeline".into(),
+                "clinical-stage biotech".into(),
+                "ordinary software platform".into(),
+            ],
+            vec![
+                "hospital capital spending sensitivity".into(),
+                "procedure volume slowdown".into(),
+                "competition in robotic surgery".into(),
+            ],
+            Confidence::MEDIUM,
+            false,
+        )
+    } else if h.contains("batch eval expected research family guardrail: large pharma")
+        || h.contains("batch eval expected research family guardrail: drug portfolio")
+    {
+        (
+            "Large Pharma / Drug Portfolio",
+            "Commercial drug portfolio and pipeline extension",
+            vec![
+                "approved drug portfolio revenue".into(),
+                "new indication expansion".into(),
+                "manufacturing and commercialization scale".into(),
+            ],
+            vec![
+                "early biotech cash runway frame".into(),
+                "single-asset clinical binary".into(),
+            ],
+            vec![
+                "patent and regulatory risk".into(),
+                "pipeline execution".into(),
+                "pricing and reimbursement pressure".into(),
+            ],
+            Confidence::MEDIUM,
+            false,
+        )
     } else if h.contains("batch eval expected research family guardrail: aerospace") {
         (
             "Speculative Aerospace / Space Systems",
@@ -512,6 +560,33 @@ pub fn understand_company(payload: &ProviderPayload) -> CompanyUnderstanding {
                 "credit loss".into(),
                 "deposit cost".into(),
                 "capital adequacy".into(),
+            ],
+            Confidence::MEDIUM,
+            false,
+        )
+    } else if h.contains("medical device")
+        || h.contains("surgical")
+        || h.contains("robotic-assisted")
+        || h.contains("robotic surgery")
+        || h.contains("instruments and accessories")
+    {
+        (
+            "Medical Devices / Surgical Robotics",
+            "MedTech installed-base and procedure-volume model",
+            vec![
+                "surgical systems placements".into(),
+                "instruments and accessories tied to procedures".into(),
+                "service revenue from installed systems".into(),
+            ],
+            vec![
+                "biotech drug pipeline".into(),
+                "clinical-stage biotech".into(),
+                "ordinary software platform".into(),
+            ],
+            vec![
+                "hospital capital spending sensitivity".into(),
+                "procedure volume slowdown".into(),
+                "competition in robotic surgery".into(),
             ],
             Confidence::MEDIUM,
             false,

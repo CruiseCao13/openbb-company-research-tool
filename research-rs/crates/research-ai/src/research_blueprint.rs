@@ -128,6 +128,45 @@ pub fn build_blueprint(
                 "Review capital ratios and asset quality.".into(),
             ],
         )
+    } else if lower.contains("medical devices")
+        || lower.contains("surgical robotics")
+        || lower.contains("medtech")
+    {
+        (
+            vec![
+                "installed surgical robotics base".into(),
+                "procedure volume".into(),
+                "instruments and accessories revenue".into(),
+                "system placements".into(),
+                "hospital capital spending sensitivity".into(),
+            ],
+            vec![
+                "biotech drug pipeline".into(),
+                "clinical-stage biotech cash runway".into(),
+                "ordinary SaaS growth logic".into(),
+            ],
+            vec![
+                "Are procedure volumes supporting recurring instrument revenue?".into(),
+                "Are system placements expanding the installed base?".into(),
+                "Is hospital capital spending constraining growth?".into(),
+            ],
+            vec![
+                "procedure slowdown".into(),
+                "hospital capex pressure".into(),
+                "robotic surgery competition".into(),
+            ],
+            "Use installed base, procedure volume, instruments/accessories mix, system placements, and hospital capex sensitivity. Do not use biotech pipeline or cash-runway framing as the core.".into(),
+            vec![
+                "procedure volume trend".into(),
+                "installed base and utilization".into(),
+                "system placement data".into(),
+            ],
+            vec![
+                "Check procedure growth and instruments/accessories revenue mix.".into(),
+                "Review system placement and installed-base disclosures.".into(),
+                "Compare hospital capital spending pressure with system demand.".into(),
+            ],
+        )
     } else if lower.contains("biotech") || lower.contains("pharma") {
         (
             vec!["pipeline stage".into(), "clinical milestones".into(), "cash runway".into(), "R&D burn".into(), "dilution risk".into()],

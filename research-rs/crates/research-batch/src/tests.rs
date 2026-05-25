@@ -1,4 +1,5 @@
 use crate::eval_set::{is_valid_ticker_symbol, load_eval_set};
+use crate::lint::{expected_family_conflict, lint_status};
 use crate::quality::{grade, score_report, QualityScores};
 use crate::training::TrainingRunOptions;
 use crate::training_case::{correction_case_path, TrainingCase};
@@ -82,6 +83,8 @@ fn training_loop_outputs_required_artifact_names() {
         "validator_improvement_suggestions.md",
         "training_cases_generated.jsonl",
         "regression_cases_generated.jsonl",
+        "external_correction_cases_generated.jsonl",
+        "negative_regression_cases_generated.jsonl",
         "iteration_log.md",
         "cost_report.md",
         "final_acceptance.md",
@@ -93,6 +96,36 @@ fn training_loop_outputs_required_artifact_names() {
             "training output missing {artifact}"
         );
     }
+}
+
+#[test]
+fn isrg_biotech_frame_is_wrong_framework_conflict() {
+    assert!(expected_family_conflict(
+        "Medical Devices / Surgical Robotics",
+        "Biotech / Pharma Research Frame"
+    ));
+    let status = research_core::types::ReportStatus {
+        schema_version: "v5.0.0".into(),
+        overall_status: "WARNING".into(),
+        provider_payload_valid: "PASS".into(),
+        company_understanding_present: "PASS".into(),
+        financial_interpretation_present: "PASS".into(),
+        research_blueprint_present: "PASS".into(),
+        ai_self_review_present: "PASS".into(),
+        money_flow_present: "PASS".into(),
+        human_review_required: true,
+        ai_mode: "compact".into(),
+        ai_calls: 0,
+        cache_hits: 0,
+        provider_status: "PASS".into(),
+        visual_lint_status: "PASS".into(),
+        pdf_export_status: "PASS".into(),
+    };
+    let expected = "Medical Devices / Surgical Robotics".to_string();
+    let lint = lint_status(&status, Some(&expected), "Biotech / Pharma Research Frame");
+    assert!(lint
+        .failed_checks
+        .contains(&"wrong_framework_conflict".into()));
 }
 
 #[test]

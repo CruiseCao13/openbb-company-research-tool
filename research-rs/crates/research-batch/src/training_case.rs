@@ -82,6 +82,21 @@ pub fn expected_features_for_ticker(ticker: &str, fallback: Vec<String>) -> Vec<
             "orderbook",
             "leverage",
         ],
+        "600519.SH" => &[
+            "A-share",
+            "RMB",
+            "baijiu or premium liquor demand",
+            "operating cash flow",
+            "inventory and receivables",
+        ],
+        "000001.SZ" => &[
+            "A-share bank",
+            "RMB",
+            "ROE",
+            "NIM",
+            "credit loss",
+            "capital ratio",
+        ],
         _ => return fallback,
     };
     features.iter().map(|item| (*item).to_string()).collect()

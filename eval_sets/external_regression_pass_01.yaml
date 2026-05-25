@@ -1,0 +1,101 @@
+name: external_regression_pass_01
+description: First gated external OpenAI regression training pass over eight hard framework cases.
+groups:
+  us_space_aerospace_smallcap:
+    - LUNR
+    - RKLB
+  us_platform_internet:
+    - GOOGL
+  us_industrial_machinery:
+    - CAT
+  us_medical_devices:
+    - ISRG
+  us_financials:
+    - JPM
+  cn_baijiu_consumer:
+    - 600519.SH
+  cn_banks:
+    - 000001.SZ
+rules:
+  LUNR:
+    allowed_frames:
+      - Space / Lunar Infrastructure
+      - Aerospace Services
+      - NASA-linked Project Execution
+      - Speculative Aerospace / Space Systems
+      - Project-Based Aerospace Services
+      - Unknown / Data-Limited Screening with Aerospace extension
+    must_not_contain:
+      - Telecom / Infrastructure Cash Flow
+      - wireless service revenue
+      - broadband / network revenue
+      - subscriber churn
+      - regulated telecom
+  RKLB:
+    allowed_frames:
+      - Space / Launch Services
+      - Aerospace Services
+      - Space Systems
+      - Speculative Aerospace / Space Systems
+      - Project-Based Aerospace Services
+      - Unknown / Data-Limited Screening with Aerospace extension
+    must_not_contain:
+      - Telecom / Infrastructure Cash Flow
+      - wireless service revenue
+      - broadband / network revenue
+      - subscriber churn
+      - bank
+      - insurance
+  GOOGL:
+    must_not_be:
+      - Financials
+      - Bank-like Screening
+      - Insurance-like Screening
+    must_contain:
+      - Platform Internet
+      - Digital Ads
+      - Cloud
+  CAT:
+    must_not_be:
+      - Insurance-like Screening
+      - Bank-like Screening
+    must_contain:
+      - Industrial Machinery
+      - Cyclical Industrial Cycle
+      - Construction / Mining Equipment
+  ISRG:
+    must_not_be:
+      - Biotech drug pipeline
+      - clinical-stage biotech
+      - cash runway as core biotech metric
+    must_contain:
+      - Medical Devices
+      - Surgical Robotics
+      - MedTech
+  JPM:
+    must_be:
+      - Financials / Bank-like Screening
+    must_not_be:
+      - Industrial FCF as core
+      - Net debt / EBITDA as core industrial metric
+      - Software / platform company
+  600519.SH:
+    must_not_be:
+      - US SEC filing-driven company
+      - 10-K / 10-Q as core source
+    must_contain:
+      - A-share
+      - RMB
+      - baijiu
+      - operating cash flow
+  000001.SZ:
+    must_not_be:
+      - industrial FCF as core
+      - net debt / EBITDA as core
+      - ordinary consumer company
+    must_contain:
+      - A-share bank
+      - RMB
+      - ROE
+      - NIM
+      - credit loss

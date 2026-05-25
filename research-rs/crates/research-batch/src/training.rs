@@ -104,6 +104,12 @@ fn read_text(path: &Path) -> String {
 }
 
 fn issue_type(review: &QualityReview, row: &MatrixRow) -> String {
+    if read_json(&row.run_folder.join("raw/provider_payload.json"))
+        .get("error")
+        .is_some_and(|value| !value.is_null())
+    {
+        return "provider_data_gap".into();
+    }
     let failed = format!(
         "{} {} {} {}",
         row.status,
@@ -128,7 +134,11 @@ fn issue_type(review: &QualityReview, row: &MatrixRow) -> String {
         "provider_data_gap"
     } else if failed.contains("language") || failed.contains("generic") {
         "generic_risk_language"
-    } else if review.grade == "WEAK" || review.grade == "FAIL" {
+    } else if review.grade == "WEAK"
+        || review.grade == "FAIL"
+        || review.human_review_required
+        || row.status == "WARNING"
+    {
         "weak_company_understanding"
     } else {
         "positive_case"
@@ -158,6 +168,22 @@ fn fix_target(issue: &str) -> String {
         _ => "prompt",
     }
     .to_string()
+}
+
+fn is_negative_regression_issue(issue: &str) -> bool {
+    matches!(
+        issue,
+        "wrong_profile"
+            | "wrong_framework"
+            | "hallucinated_revenue_engine"
+            | "unsupported_claim"
+            | "unsupported_numeric_claim"
+            | "report_status_false_pass"
+            | "self_review_failed"
+            | "self_review_failed_to_catch"
+            | "local_mock_mislabeled"
+            | "ai_provenance_missing"
+    )
 }
 
 fn description_keywords(description: &str) -> Vec<String> {
@@ -515,6 +541,22 @@ fn write_training_outputs(
         &training_root.join("training_cases_generated.jsonl"),
         &cases,
     )?;
+    let external_correction_cases = cases
+        .iter()
+        .filter(|case| case.ai_source == "external_openai" && case.issue_type != "positive_case")
+        .collect::<Vec<_>>();
+    let negative_regression_cases = cases
+        .iter()
+        .filter(|case| is_negative_regression_issue(&case.issue_type))
+        .collect::<Vec<_>>();
+    write_jsonl(
+        &training_root.join("external_correction_cases_generated.jsonl"),
+        &external_correction_cases,
+    )?;
+    write_jsonl(
+        &training_root.join("negative_regression_cases_generated.jsonl"),
+        &negative_regression_cases,
+    )?;
     write_jsonl(
         &training_root_dir()?
             .join("cases")
@@ -626,7 +668,7 @@ fn write_training_markdown(
     write_case_file(root, "weak_money_flow_cases.md", reviews, "money_flow")?;
     write_case_file(root, "weak_chart_table_cases.md", reviews, "chart")?;
     write_case_file(root, "unsupported_claim_cases.md", reviews, "unsupported")?;
-    write_case_file(root, "provider_failure_cases.md", reviews, "provider")?;
+    write_training_case_issue_file(root, "provider_failure_cases.md", cases, "provider")?;
     write_if_changed(
         &root.join("prompt_improvement_suggestions.md"),
         "# Prompt Improvement Suggestions\n\n- Add negative examples from `training_cases_generated.jsonl` before changing default prompt versions.\n- Keep provider identity and business description ahead of generic sector labels.\n- Require data-limited boundaries when revenue engines are inferred.\n",
@@ -696,12 +738,15 @@ fn write_training_markdown(
     write_if_changed(
         &root.join("final_acceptance.md"),
         &format!(
-            "# Final Acceptance\n\n| Gate | Status |\n|---|---|\n| Reports scored | {} |\n| Average quality >= threshold | {} |\n| External AI calls recorded | {} |\n| Training cases generated | {} |\n| Local/mock positives blocked | PASS |\n\nTRAINING_STAGE_READY = {}\n",
+            "# Final Acceptance\n\n| Gate | Status |\n|---|---|\n| Reports scored | {} |\n| Average quality >= threshold | {} |\n| External AI calls recorded | {} |\n| Training cases generated | {} |\n| Provider data gaps | {} |\n| Local/mock positives blocked | PASS |\n\nTRAINING_STAGE_READY = {}\n",
             reviews.len(),
             if avg >= options.quality_threshold as f64 { "PASS" } else { "WARNING" },
             external_calls,
             cases.len(),
-            avg >= options.quality_threshold as f64 && fail == 0
+            issue_counts.get("provider_data_gap").copied().unwrap_or(0),
+            avg >= options.quality_threshold as f64
+                && fail == 0
+                && issue_counts.get("provider_data_gap").copied().unwrap_or(0) == 0
         ),
     )?;
     write_training_dashboard(
@@ -737,6 +782,42 @@ fn write_case_file(root: &Path, name: &str, reviews: &[QualityReview], needle: &
                     .collect::<Vec<_>>()
                     .join("; "),
                 r.run_folder
+            )
+        })
+        .collect::<String>();
+    write_if_changed(
+        &root.join(name),
+        &format!(
+            "# {}\n\n{}",
+            name.trim_end_matches(".md").replace('_', " "),
+            if body.is_empty() {
+                "No cases detected.\n".to_string()
+            } else {
+                body
+            }
+        ),
+    )?;
+    Ok(())
+}
+
+fn write_training_case_issue_file(
+    root: &Path,
+    name: &str,
+    cases: &[TrainingCaseV5],
+    needle: &str,
+) -> Result<()> {
+    let body = cases
+        .iter()
+        .filter(|case| case.issue_type.contains(needle))
+        .map(|case| {
+            format!(
+                "## {} — {} ({})\n\nIssue type: {}\n\nWhy: {}\n\nRun ID: `{}`\n\n",
+                case.ticker,
+                case.severity,
+                case.fix_target,
+                case.issue_type,
+                case.why_bad,
+                case.run_id
             )
         })
         .collect::<String>();

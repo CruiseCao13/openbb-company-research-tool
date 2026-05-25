@@ -1,5 +1,5 @@
 use crate::eval_set::load_eval_set;
-use crate::lint::lint_status;
+use crate::lint::{expected_family_conflict, lint_status};
 use crate::training_case::{correction_case_path, expected_features_for_ticker, TrainingCase};
 use anyhow::Result;
 use chrono::Local;
@@ -162,6 +162,34 @@ pub fn run_batch(options: &BatchRunOptions) -> Result<PathBuf> {
             &mut blueprint,
             &mut review,
         );
+        if let Some(expected) = eval.expected_family.get(&ticker) {
+            if expected_family_conflict(expected, &understanding.correct_research_frame) {
+                ai_failures.push(format!(
+                    "wrong_framework_conflict: expected {expected}, got {}",
+                    understanding.correct_research_frame
+                ));
+                review.framework_fit_check = CheckStatus::FAIL;
+                review.human_review_required = true;
+                review.wrong_framework_risk.push(format!(
+                    "Expected {expected}; selected {}.",
+                    understanding.correct_research_frame
+                ));
+                for section in [
+                    "Company Identity",
+                    "Business Model",
+                    "Money Flow",
+                    "AI Research Blueprint",
+                ] {
+                    if !review
+                        .required_rewrite_sections
+                        .iter()
+                        .any(|existing| existing == section)
+                    {
+                        review.required_rewrite_sections.push(section.into());
+                    }
+                }
+            }
+        }
         ai_failures.extend(validate_ai_json(
             &understanding,
             &interpretation,
@@ -261,24 +289,31 @@ pub fn run_batch(options: &BatchRunOptions) -> Result<PathBuf> {
                 .unwrap_or_else(|| "Human review required".into());
             let expected_output_features =
                 expected_features_for_ticker(&ticker, blueprint.must_analyze.clone());
+            let issue_type = if payload.error.is_some() {
+                "provider_data_gap".to_string()
+            } else {
+                lint.failed_checks
+                    .first()
+                    .cloned()
+                    .unwrap_or_else(|| "warning".into())
+            };
+            let training_case_type = if payload.error.is_some() {
+                "provider_data_gap".to_string()
+            } else if understanding.ai_provenance.source == "external_openai" {
+                lint.failed_checks
+                    .first()
+                    .cloned()
+                    .unwrap_or_else(|| "external_ai_review_case".into())
+            } else {
+                "local_mock_case".into()
+            };
             let case = TrainingCase {
                 ticker: ticker.clone(),
                 initial_profile: understanding.correct_research_frame.clone(),
                 final_profile: understanding.correct_research_frame.clone(),
                 expected_family,
-                issue_type: lint
-                    .failed_checks
-                    .first()
-                    .cloned()
-                    .unwrap_or_else(|| "warning".into()),
-                training_case_type: if understanding.ai_provenance.source == "external_openai" {
-                    lint.failed_checks
-                        .first()
-                        .cloned()
-                        .unwrap_or_else(|| "external_ai_review_case".into())
-                } else {
-                    "local_mock_case".into()
-                },
+                issue_type,
+                training_case_type,
                 ai_source: understanding.ai_provenance.source.clone(),
                 wrong_output: understanding.correct_research_frame.clone(),
                 expected_output_features: expected_output_features.clone(),

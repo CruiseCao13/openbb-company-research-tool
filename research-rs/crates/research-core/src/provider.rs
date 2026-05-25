@@ -99,7 +99,12 @@ pub fn fetch_provider_payload(
     }
     let payload: ProviderPayload = read_json(out_path)?;
     write_json(out_path, &payload)?;
-    write_provider_status(ctx, out_path, false, 1, &stdout, &stderr, "PASS")?;
+    let status = if payload.error.is_some() {
+        "PROVIDER_ERROR"
+    } else {
+        "PASS"
+    };
+    write_provider_status(ctx, out_path, false, 1, &stdout, &stderr, status)?;
     Ok(payload)
 }
 

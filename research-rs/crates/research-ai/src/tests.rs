@@ -48,6 +48,33 @@ fn zim_like_payload_is_transport_not_biotech() {
         .any(|x| x.contains("biotech")));
 }
 
+#[test]
+fn isrg_like_payload_is_medtech_not_biotech() {
+    let payload = ProviderPayload {
+        ticker: "ISRG".to_string(),
+        company_profile: CompanyProfile {
+            name: "Intuitive Surgical, Inc.".to_string(),
+            sector: "Healthcare".to_string(),
+            industry: "Medical Devices".to_string(),
+            description: "Develops robotic-assisted surgical systems, instruments, accessories, and services for hospitals.".to_string(),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    let (understanding, _, blueprint, _, _, _) = run_local_compact_analyst(&payload);
+    assert!(understanding
+        .correct_research_frame
+        .contains("Medical Devices"));
+    assert!(!understanding
+        .correct_research_frame
+        .to_lowercase()
+        .contains("biotech"));
+    assert!(blueprint
+        .must_not_analyze_as_core
+        .iter()
+        .any(|item| item.to_lowercase().contains("biotech")));
+}
+
 fn lunr_payload() -> ProviderPayload {
     ProviderPayload {
         ticker: "LUNR".to_string(),

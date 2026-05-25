@@ -6,6 +6,47 @@ pub struct LintResult {
     pub warnings: Vec<String>,
 }
 
+pub fn expected_family_conflict(expected: &str, frame: &str) -> bool {
+    let lhs = expected.to_lowercase();
+    let rhs = frame.to_lowercase();
+    let rhs_has_any = |terms: &[&str]| terms.iter().any(|term| rhs.contains(term));
+
+    if lhs.contains("medical devices") || lhs.contains("surgical robotics") {
+        return rhs_has_any(&["biotech", "pharma", "drug pipeline", "clinical-stage"])
+            || !rhs_has_any(&["medical", "device", "surgical", "robot", "medtech"]);
+    }
+    if lhs.contains("space") || lhs.contains("aerospace") || lhs.contains("launch") {
+        return rhs_has_any(&["telecom", "wireless", "broadband", "bank", "insurance"])
+            || !rhs_has_any(&[
+                "space",
+                "aerospace",
+                "launch",
+                "lunar",
+                "project-based",
+                "data-limited",
+            ]);
+    }
+    if lhs.contains("financial") || lhs.contains("bank") {
+        return !rhs_has_any(&["financial", "bank"]);
+    }
+    if lhs.contains("platform internet") || lhs.contains("digital ads") {
+        return rhs_has_any(&["financial", "bank", "insurance"]);
+    }
+    if lhs.contains("industrial machinery") || lhs.contains("cyclical") {
+        return rhs_has_any(&["insurance", "bank", "biotech", "pharma"]);
+    }
+    if lhs.contains("shipping") || lhs.contains("transport") {
+        return rhs_has_any(&["biotech", "bank", "insurance"])
+            || !rhs_has_any(&["shipping", "transport", "cycle"]);
+    }
+    if lhs.contains("consumer") || lhs.contains("baijiu") {
+        return rhs_has_any(&["financial", "bank", "biotech", "semiconductor"]);
+    }
+
+    (lhs.contains("semiconductor") && !rhs.contains("semiconductor"))
+        || (lhs.contains("insurance") && !rhs.contains("insurance"))
+}
+
 pub fn lint_status(
     status: &ReportStatus,
     expected_family: Option<&String>,
@@ -17,17 +58,12 @@ pub fn lint_status(
         failed.push("report_status_fail".to_string());
     }
     if let Some(expected) = expected_family {
-        let lhs = expected.to_lowercase();
-        let rhs = frame.to_lowercase();
-        let framework_conflict =
-            (lhs.contains("financial") && !rhs.contains("financial") && !rhs.contains("bank"))
-                || (lhs.contains("semiconductor") && !rhs.contains("semiconductor"))
-                || (lhs.contains("shipping")
-                    && !rhs.contains("shipping")
-                    && !rhs.contains("transport"));
-        if framework_conflict {
+        if expected_family_conflict(expected, frame) {
             failed.push("wrong_framework_conflict".to_string());
-        } else if lhs.contains("biotech") && !rhs.contains("biotech") && !rhs.contains("pharma") {
+        } else if expected.to_lowercase().contains("biotech")
+            && !frame.to_lowercase().contains("biotech")
+            && !frame.to_lowercase().contains("pharma")
+        {
             warnings.push("framework_limited".to_string());
         }
     }
