@@ -125,7 +125,7 @@ def generate(payload_path: Path, chart_dir: Path) -> list[dict[str, Any]]:
         manifest.append(_write_gap(drawdown_file, 2, "Drawdown / Risk Path", "not enough valid price history"))
 
     fin_file = chart_dir / FIGURES[2][0]
-    revenue = _rows(payload, "income_statement", ["revenue"])
+    revenue = _rows(payload, "income_statement", ["revenue", "营业收入"])
     if revenue:
         x, y = zip(*revenue[:5])
         _save_line_chart(fin_file, f"Figure 3. {ticker} revenue trend", f"{ticker} | source: provider_payload.json | unit: {currency}", list(x), list(y), f"Revenue ({currency})")
@@ -134,7 +134,20 @@ def generate(payload_path: Path, chart_dir: Path) -> list[dict[str, Any]]:
         manifest.append(_write_gap(fin_file, 3, "Financial Trend", "revenue trend not available"))
 
     money_file = chart_dir / FIGURES[3][0]
-    cash = _rows(payload, "cash_flow", ["operating cash flow", "cash from operations", "capital expenditure", "capex"])
+    cash = _rows(
+        payload,
+        "cash_flow",
+        [
+            "operating cash flow",
+            "cash from operations",
+            "capital expenditure",
+            "capex",
+            "经营现金流",
+            "经营活动产生的现金流量净额",
+            "资本开支",
+            "购建固定资产",
+        ],
+    )
     if cash:
         x, y = zip(*cash[:6])
         _save_line_chart(money_file, f"Figure 4. {ticker} money-flow signals", f"{ticker} | source: provider_payload.json | unit: {currency}", list(x), list(y), f"Cash flow ({currency})", THEME["money"])

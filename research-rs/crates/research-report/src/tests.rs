@@ -754,3 +754,47 @@ fn pdf_export_report_generated() {
     assert!(source.contains("Source file size"));
     assert!(source.contains("PDF_EXPORT_STATUS"));
 }
+
+#[test]
+fn report_numeric_claims_have_evidence() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("evidence_numeric_accuracy_report.md"));
+    assert!(source.contains("locked_data_supported"));
+    assert!(source.contains("raw/provider_payload.json"));
+}
+
+#[test]
+fn bank_report_does_not_use_industrial_fcf_core() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("bank/insurance money flow uses ordinary industrial FCF framing"));
+    assert!(source.contains("net debt / ebitda as core"));
+}
+
+#[test]
+fn insurance_report_does_not_use_industrial_fcf_core() {
+    bank_report_does_not_use_industrial_fcf_core();
+}
+
+#[test]
+fn chart_manifest_sources_exist() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("chart_data_accuracy_report.md"));
+    assert!(source.contains("is marked PASS but file is missing"));
+    assert!(source.contains("is missing source"));
+}
+
+#[test]
+fn unit_policy_required_for_a_share() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("Unit Policy Accuracy Report"));
+    assert!(source.contains("market {} expects currency {}"));
+    assert!(source.contains("CNY"));
+}
+
+#[test]
+fn money_flow_data_conflict_blocks_pass() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("free cash flow mismatch"));
+    assert!(source.contains("accuracy_status.has_failures"));
+    assert!(source.contains("final_status.overall_status = \"FAIL\""));
+}

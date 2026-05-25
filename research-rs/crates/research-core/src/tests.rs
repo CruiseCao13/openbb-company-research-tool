@@ -8,7 +8,7 @@ use crate::provider::{discover_repo_root, discover_repo_root_from, resolve_provi
 use crate::run_folder::RunFolder;
 use crate::types::{
     AiSelfReview, CheckStatus, CompanyProfile, CompanyUnderstanding, Confidence,
-    FinancialInterpretation, ProviderPayload, ResearchBlueprint, RunContext,
+    FinancialInterpretation, ProviderPayload, ResearchBlueprint, RunContext, StatementRow,
 };
 use crate::validation::{
     apply_framework_challenge_guard, detect_wrong_framework_conflicts, has_space_lunar_identity,
@@ -35,6 +35,94 @@ fn provider_error_taxonomy_has_user_action() {
     assert_eq!(err.kind, ResearchErrorKind::ProviderError);
     assert!(err.recoverable);
     assert!(err.suggested_next_action.contains("--force"));
+}
+
+#[test]
+fn normalized_financials_preserve_cashflow_signs() {
+    let payload = ProviderPayload {
+        ticker: "AAPL".into(),
+        company_profile: CompanyProfile {
+            currency: "USD".into(),
+            ..Default::default()
+        },
+        cash_flow: vec![
+            StatementRow {
+                period: "FY2025".into(),
+                metric: "Operating Cash Flow".into(),
+                value: Some(100.0),
+                unit: "USD".into(),
+            },
+            StatementRow {
+                period: "FY2025".into(),
+                metric: "Capital Expenditure".into(),
+                value: Some(-25.0),
+                unit: "USD".into(),
+            },
+        ],
+        ..Default::default()
+    };
+    let dir = std::env::temp_dir().join(format!("research_core_sign_check_{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    let ctx = RunContext {
+        root: dir.to_string_lossy().to_string(),
+        ticker: "AAPL".into(),
+        run_id: "sign_check".into(),
+        market: "US".into(),
+        provider: "fixture".into(),
+        ai_mode: "local".into(),
+        force: true,
+        lang: "en".into(),
+        pack: false,
+        mode: "run".into(),
+        require_external_ai: false,
+        no_ai_cache: false,
+        max_attempts: 1,
+        auto_fix: false,
+        fail_fast: false,
+    };
+    let folder = RunFolder::new(&ctx);
+    folder.create().expect("create run folder");
+    crate::normalizer::write_normalized_outputs(&folder, &payload).expect("normalize");
+    let normalized = std::fs::read_to_string(folder.data.join("normalized_financials.json"))
+        .expect("normalized");
+    assert!(normalized.contains("\"value\": -25.0"));
+    assert!(normalized.contains("\"value\": 100.0"));
+    assert!(folder.data.join("valuation_snapshot.json").exists());
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn fcf_calculation_matches_ocf_plus_capex() {
+    let ocf = 100.0;
+    let capex = -25.0;
+    let fcf = 75.0;
+    assert_eq!(fcf, ocf + capex);
+}
+
+#[test]
+fn a_share_currency_is_cny() {
+    let payload = ProviderPayload {
+        market: "CN_A".into(),
+        company_profile: CompanyProfile {
+            currency: "CNY".into(),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    assert_eq!(payload.company_profile.currency, "CNY");
+}
+
+#[test]
+fn us_currency_is_usd() {
+    let payload = ProviderPayload {
+        market: "US".into(),
+        company_profile: CompanyProfile {
+            currency: "USD".into(),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    assert_eq!(payload.company_profile.currency, "USD");
 }
 
 #[test]

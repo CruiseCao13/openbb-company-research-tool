@@ -70,6 +70,10 @@ pub fn write_normalized_outputs(folder: &RunFolder, payload: &ProviderPayload) -
             .collect(),
     };
     write_json(&folder.data.join("normalized_financials.json"), &financials)?;
+    write_json(
+        &folder.data.join("valuation_snapshot.json"),
+        &financials.valuation_snapshot,
+    )?;
     write_json(&folder.data.join("normalized_price_history.json"), &prices)?;
     write_if_changed(
         &folder.audit.join("normalizer_report.md"),

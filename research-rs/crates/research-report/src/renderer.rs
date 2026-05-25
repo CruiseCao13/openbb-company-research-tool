@@ -68,7 +68,7 @@ pub fn render_run(input: RenderRunInput<'_>) -> Result<()> {
     write_table_plan(folder)?;
     write_section_source_map(folder, payload)?;
     write_money_flow_map(folder, payload, interpretation)?;
-    write_evidence_map(folder, understanding, interpretation, blueprint)?;
+    write_evidence_map(folder, payload, understanding, interpretation, blueprint)?;
     write_lunr_root_cause_report(
         folder,
         payload,
@@ -141,10 +141,24 @@ pub fn render_run(input: RenderRunInput<'_>) -> Result<()> {
         blueprint,
         status,
     )?;
+    let accuracy_status = write_core_data_accuracy_audits(
+        folder,
+        payload,
+        interpretation,
+        blueprint,
+        &primary_report,
+    )?;
     let pdf_status = write_pdf_export_report(folder, payload, lang)?;
     let mut final_status = status.clone();
     final_status.pdf_export_status = pdf_status.clone();
     if pdf_status == "WARNING" && final_status.overall_status == "PASS" {
+        final_status.overall_status = "WARNING".to_string();
+        final_status.human_review_required = true;
+    }
+    if accuracy_status.has_failures {
+        final_status.overall_status = "FAIL".to_string();
+        final_status.human_review_required = true;
+    } else if accuracy_status.has_warnings && final_status.overall_status == "PASS" {
         final_status.overall_status = "WARNING".to_string();
         final_status.human_review_required = true;
     }
@@ -402,7 +416,24 @@ fn write_data_inventory(
 fn metric_present(rows: &[StatementRow], needles: &[&str]) -> bool {
     rows.iter().any(|row| {
         let metric = row.metric.to_lowercase();
-        row.value.is_some() && needles.iter().any(|needle| metric.contains(needle))
+        row.value.is_some()
+            && needles
+                .iter()
+                .any(|needle| metric.contains(&needle.to_lowercase()))
+    })
+}
+
+fn metric_value(rows: &[StatementRow], needles: &[&str]) -> Option<f64> {
+    rows.iter().find_map(|row| {
+        let metric = row.metric.to_lowercase();
+        if needles
+            .iter()
+            .any(|needle| metric.contains(&needle.to_lowercase()))
+        {
+            row.value
+        } else {
+            None
+        }
     })
 }
 
@@ -804,10 +835,32 @@ fn write_table_plan(folder: &RunFolder) -> Result<()> {
 
 fn write_evidence_map(
     folder: &RunFolder,
+    payload: &ProviderPayload,
     understanding: &CompanyUnderstanding,
     interpretation: &FinancialInterpretation,
     blueprint: &ResearchBlueprint,
 ) -> Result<()> {
+    let locked_data_supported = payload
+        .income_statement
+        .iter()
+        .chain(payload.balance_sheet.iter())
+        .chain(payload.cash_flow.iter())
+        .filter_map(|row| {
+            row.value.map(|value| {
+                json!({
+                    "claim": format!("{} {} = {}", row.period, row.metric, value),
+                    "section": "Locked Data Appendix",
+                    "evidence_type": "locked_data",
+                    "source_file": "raw/provider_payload.json",
+                    "source_field": row.metric,
+                    "period": row.period,
+                    "unit": row.unit,
+                    "value": value,
+                    "unsupported": false
+                })
+            })
+        })
+        .collect::<Vec<_>>();
     let claims = vec![
         json!({
             "claim": understanding.company_identity,
@@ -842,7 +895,7 @@ fn write_evidence_map(
     ];
     let map = json!({
         "ai_provenance": blueprint.ai_provenance,
-        "locked_data_supported": [],
+        "locked_data_supported": locked_data_supported,
         "ai_interpretation": claims,
         "assumption": [],
         "data_gap": blueprint.data_gaps,
@@ -1061,6 +1114,313 @@ fn write_output_consistency(
         "# Output Consistency Report\n\nStatus: PASS\n\nMarkdown and dashboard are rendered from the same typed AI artifacts, report status, provider payload, and chart plan. PDF export status is recorded separately in `metadata/pdf_status.json` and `audit/pdf_export_report.md`.\n",
     )?;
     Ok(())
+}
+
+pub(crate) struct CoreDataAccuracyStatus {
+    pub has_failures: bool,
+    pub has_warnings: bool,
+}
+
+fn status_from_counts(failures: usize, warnings: usize) -> &'static str {
+    if failures > 0 {
+        "FAIL"
+    } else if warnings > 0 {
+        "WARNING"
+    } else {
+        "PASS"
+    }
+}
+
+fn report_numeric_claim_count(report: &str) -> usize {
+    report
+        .split_whitespace()
+        .filter(|token| {
+            let cleaned = token.trim_matches(|c: char| {
+                c == '#' || c == '|' || c == ':' || c == ',' || c == '.' || c == '(' || c == ')'
+            });
+            cleaned.chars().any(|c| c.is_ascii_digit())
+                && cleaned
+                    .chars()
+                    .any(|c| c.is_ascii_alphabetic() || c == '%' || c == '.')
+        })
+        .count()
+}
+
+fn expected_currency_for_market(market: &str) -> Option<&'static str> {
+    if market.eq_ignore_ascii_case("US") {
+        Some("USD")
+    } else if market.eq_ignore_ascii_case("CN_A") || market.eq_ignore_ascii_case("CN") {
+        Some("CNY")
+    } else {
+        None
+    }
+}
+
+fn currency_matches(expected: &str, actual: &str) -> bool {
+    actual.eq_ignore_ascii_case(expected)
+        || (expected == "CNY" && actual.eq_ignore_ascii_case("RMB"))
+}
+
+fn text_mentions_any(text: &str, needles: &[&str]) -> bool {
+    let lower = text.to_lowercase();
+    needles
+        .iter()
+        .any(|needle| lower.contains(&needle.to_lowercase()))
+}
+
+fn write_core_data_accuracy_audits(
+    folder: &RunFolder,
+    payload: &ProviderPayload,
+    interpretation: &FinancialInterpretation,
+    blueprint: &ResearchBlueprint,
+    report: &str,
+) -> Result<CoreDataAccuracyStatus> {
+    let mut failures = Vec::new();
+    let mut warnings = Vec::new();
+
+    let numeric_claim_count = report_numeric_claim_count(report);
+    let locked_numeric_count =
+        payload.income_statement.len() + payload.balance_sheet.len() + payload.cash_flow.len();
+    let evidence_status = if numeric_claim_count > 0 && locked_numeric_count == 0 {
+        failures.push(
+            "report contains numeric-looking claims but locked statement evidence is empty"
+                .to_string(),
+        );
+        "FAIL"
+    } else if numeric_claim_count > 0 && !folder.metadata.join("evidence_map.json").exists() {
+        failures.push(
+            "report contains numeric-looking claims but evidence_map.json is missing".to_string(),
+        );
+        "FAIL"
+    } else if numeric_claim_count > 0 {
+        "PASS"
+    } else {
+        warnings
+            .push("report contains no concrete numeric-looking claims to cross-check".to_string());
+        "WARNING"
+    };
+    write_if_changed(
+        &folder.audit.join("evidence_numeric_accuracy_report.md"),
+        &format!(
+            "# Evidence Numeric Accuracy Report\n\nStatus: {evidence_status}\n\n| Field | Value |\n|---|---:|\n| numeric_claim_count | {numeric_claim_count} |\n| locked_numeric_rows | {locked_numeric_count} |\n\n## Trace Policy\n\nEvery concrete number in the report must trace back to `raw/provider_payload.json`, `data/normalized_financials.json`, `data/valuation_snapshot.json`, `metadata/data_inventory.json`, or chart source metadata. Renderer-generated narrative must not introduce new numeric facts.\n\n## Findings\n\n{}\n",
+            if evidence_status == "PASS" {
+                "- Numeric-looking claims have locked statement evidence and `metadata/evidence_map.json` exists.\n".to_string()
+            } else {
+                failures
+                    .iter()
+                    .chain(warnings.iter())
+                    .map(|issue| format!("- {issue}\n"))
+                    .collect::<String>()
+            }
+        ),
+    )?;
+
+    let ocf = metric_value(
+        &payload.cash_flow,
+        &["operating cash flow", "cash from operations", "经营现金流"],
+    );
+    let capex = metric_value(
+        &payload.cash_flow,
+        &["capital expenditure", "capex", "资本开支", "购建固定资产"],
+    );
+    let fcf = metric_value(&payload.cash_flow, &["free cash flow", "fcf", "自由现金流"]);
+    let fcf_issue = match (ocf, capex, fcf) {
+        (Some(o), Some(c), Some(f)) => {
+            let expected = o + c;
+            let tolerance = expected.abs().max(f.abs()).max(1.0) * 0.02;
+            if (expected - f).abs() > tolerance {
+                Some(format!(
+                    "free cash flow mismatch: expected OCF + capex = {expected:.2}, provider/reported FCF = {f:.2}"
+                ))
+            } else {
+                None
+            }
+        }
+        _ => None,
+    };
+    if let Some(issue) = &fcf_issue {
+        failures.push(issue.clone());
+    }
+    let money_text = format!(
+        "{} {} {}",
+        interpretation.where_money_comes_from,
+        interpretation.where_money_goes,
+        interpretation.cash_flow_explanation
+    );
+    let generic_money_flow = text_mentions_any(
+        &money_text,
+        &[
+            "money comes from operating revenue when available",
+            "money goes to costs and reinvestment",
+            "cash flow is important",
+            "pay attention to cash flow",
+        ],
+    );
+    if generic_money_flow {
+        warnings.push(
+            "money flow uses generic phrasing instead of locked data or explicit data gaps"
+                .to_string(),
+        );
+    }
+    let frame_text = format!(
+        "{} {} {} {} {}",
+        blueprint.asset_profile,
+        blueprint.secondary_profile,
+        payload.company_profile.sector,
+        payload.company_profile.industry,
+        payload.company_profile.description
+    );
+    let bank_or_insurance = text_mentions_any(&frame_text, &["bank", "银行", "insurance", "保险"]);
+    if bank_or_insurance
+        && text_mentions_any(
+            &money_text,
+            &[
+                "industrial fcf",
+                "ordinary industrial",
+                "net debt / ebitda as core",
+            ],
+        )
+    {
+        failures.push("bank/insurance money flow uses ordinary industrial FCF framing".to_string());
+    }
+    let money_status = if failures.iter().any(|issue| {
+        issue.contains("free cash flow mismatch") || issue.contains("bank/insurance money flow")
+    }) {
+        "FAIL"
+    } else if generic_money_flow {
+        "WARNING"
+    } else {
+        "PASS"
+    };
+    write_if_changed(
+        &folder.audit.join("money_flow_accuracy_report.md"),
+        &format!(
+            "# Money Flow Accuracy Report\n\nStatus: {money_status}\n\n| Metric | Value |\n|---|---:|\n| operating cash flow | {} |\n| capex | {} |\n| free cash flow | {} |\n\n## Rules\n\n- FCF must equal operating cash flow plus capex when provider gives all three values and capex is stored as a cash outflow.\n- Banks and insurers must not be forced into ordinary industrial FCF framing.\n- Missing cash-flow evidence must be disclosed as a data gap instead of invented.\n\n## Findings\n\n{}\n",
+            ocf.map(|v| format!("{v:.2}")).unwrap_or_else(|| "missing".into()),
+            capex.map(|v| format!("{v:.2}")).unwrap_or_else(|| "missing".into()),
+            fcf.map(|v| format!("{v:.2}")).unwrap_or_else(|| "missing".into()),
+            if fcf_issue.is_none() && !generic_money_flow {
+                "- Money-flow text is not in conflict with the checked locked data.\n".to_string()
+            } else {
+                fcf_issue
+                    .iter()
+                    .map(|issue| format!("- {issue}\n"))
+                    .chain(if generic_money_flow {
+                        vec!["- Generic money-flow phrasing detected.\n".to_string()]
+                    } else {
+                        Vec::new()
+                    })
+                    .collect::<String>()
+            }
+        ),
+    )?;
+
+    let chart_manifest = folder.charts.join("chart_manifest.json");
+    let mut chart_failures = Vec::new();
+    let mut chart_warnings = Vec::new();
+    if chart_manifest.exists() {
+        let manifest_text = fs::read_to_string(&chart_manifest).unwrap_or_default();
+        match serde_json::from_str::<serde_json::Value>(&manifest_text) {
+            Ok(serde_json::Value::Array(items)) => {
+                for item in items {
+                    let status = item
+                        .get("status")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("UNKNOWN");
+                    let source = item.get("source").and_then(|v| v.as_str()).unwrap_or("");
+                    let file = item.get("file").and_then(|v| v.as_str()).unwrap_or("");
+                    if source.is_empty() {
+                        chart_warnings.push(format!("chart `{file}` is missing source"));
+                    }
+                    if status == "PASS" && !file.is_empty() && !folder.charts.join(file).exists() {
+                        chart_failures
+                            .push(format!("chart `{file}` is marked PASS but file is missing"));
+                    }
+                    if status == "PASS" && file.ends_with(".md") {
+                        chart_failures
+                            .push(format!("chart `{file}` is a data-gap card but marked PASS"));
+                    }
+                }
+            }
+            _ => chart_failures.push("chart_manifest.json is malformed".to_string()),
+        }
+    } else {
+        chart_warnings.push("chart_manifest.json is missing".to_string());
+    }
+    let chart_status = status_from_counts(chart_failures.len(), chart_warnings.len());
+    if chart_status == "FAIL" {
+        failures.extend(chart_failures.iter().cloned());
+    } else {
+        warnings.extend(chart_warnings.iter().cloned());
+    }
+    write_if_changed(
+        &folder.audit.join("chart_data_accuracy_report.md"),
+        &format!(
+            "# Chart Data Accuracy Report\n\nStatus: {chart_status}\n\n## Rules\n\n- Each chart must disclose a source.\n- A chart marked PASS must have an existing artifact.\n- Data-gap cards must not be mislabeled as generated charts.\n- Charts must not imply buy/sell/target-price conclusions.\n\n## Findings\n\n{}\n",
+            if chart_failures.is_empty() && chart_warnings.is_empty() {
+                "- Chart manifest and chart files are internally consistent.\n".to_string()
+            } else {
+                chart_failures
+                    .iter()
+                    .chain(chart_warnings.iter())
+                    .map(|issue| format!("- {issue}\n"))
+                    .collect::<String>()
+            }
+        ),
+    )?;
+
+    let mut unit_failures = Vec::new();
+    let mut unit_warnings = Vec::new();
+    if let Some(expected) = expected_currency_for_market(&payload.market) {
+        if !currency_matches(expected, &payload.company_profile.currency) {
+            unit_failures.push(format!(
+                "market {} expects currency {}, got {}",
+                payload.market, expected, payload.company_profile.currency
+            ));
+        }
+    } else {
+        unit_warnings.push(format!(
+            "no deterministic currency expectation for market {}",
+            payload.market
+        ));
+    }
+    if (payload.market.eq_ignore_ascii_case("CN_A") || payload.market.eq_ignore_ascii_case("CN"))
+        && payload.metadata.mock
+    {
+        unit_failures.push("A-share provider payload is marked mock=true".to_string());
+    }
+    let unit_status = status_from_counts(unit_failures.len(), unit_warnings.len());
+    if unit_status == "FAIL" {
+        failures.extend(unit_failures.iter().cloned());
+    } else {
+        warnings.extend(unit_warnings.iter().cloned());
+    }
+    write_if_changed(
+        &folder.audit.join("unit_policy_accuracy_report.md"),
+        &format!(
+            "# Unit Policy Accuracy Report\n\nStatus: {unit_status}\n\n| Field | Value |\n|---|---|\n| market | {} |\n| currency | {} |\n| provider | {} |\n| source | {} |\n| package_used | {} |\n| mock | {} |\n\n## Rules\n\n- US reports must use USD unless explicitly converted.\n- A-share reports must use CNY/RMB and disclose provider source/package/mock status.\n- Percentage, multiple, table, and chart units must remain aligned with locked data.\n\n## Findings\n\n{}\n",
+            payload.market,
+            payload.company_profile.currency,
+            payload.provider,
+            payload.metadata.source,
+            payload.metadata.package_used,
+            payload.metadata.mock,
+            if unit_failures.is_empty() && unit_warnings.is_empty() {
+                "- Unit policy matches market and provider metadata.\n".to_string()
+            } else {
+                unit_failures
+                    .iter()
+                    .chain(unit_warnings.iter())
+                    .map(|issue| format!("- {issue}\n"))
+                    .collect::<String>()
+            }
+        ),
+    )?;
+
+    Ok(CoreDataAccuracyStatus {
+        has_failures: !failures.is_empty(),
+        has_warnings: !warnings.is_empty(),
+    })
 }
 
 fn write_section_source_map(folder: &RunFolder, payload: &ProviderPayload) -> Result<()> {
