@@ -798,3 +798,11 @@ fn money_flow_data_conflict_blocks_pass() {
     assert!(source.contains("accuracy_status.has_failures"));
     assert!(source.contains("final_status.overall_status = \"FAIL\""));
 }
+
+#[test]
+fn money_flow_specificity_report_lists_issue() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("Generic money-flow phrasing detected"));
+    assert!(source.contains("money_flow_accuracy_report.md"));
+    assert!(source.contains("data_limited_specificity"));
+}

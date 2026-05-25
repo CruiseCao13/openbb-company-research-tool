@@ -1,10 +1,19 @@
 use crate::{run_ai_usage_gate, run_local_compact_analyst, AiRunOptions};
-use research_core::types::{AiUsage, CheckStatus, CompanyProfile, ProviderPayload};
+use research_core::types::{AiUsage, CheckStatus, CompanyProfile, ProviderPayload, StatementRow};
 use std::fs;
 use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 static ENV_LOCK: Mutex<()> = Mutex::new(());
+
+fn row(metric: &str, value: f64) -> StatementRow {
+    StatementRow {
+        period: "FY2025".into(),
+        metric: metric.into(),
+        value: Some(value),
+        unit: "USD".into(),
+    }
+}
 
 #[test]
 fn google_like_payload_is_not_financials() {
@@ -24,6 +33,190 @@ fn google_like_payload_is_not_financials() {
         .correct_research_frame
         .contains("Platform Internet"));
     assert!(!blueprint.asset_profile.contains("Financial"));
+}
+
+#[test]
+fn money_flow_local_fallback_not_generic() {
+    let payload = ProviderPayload {
+        ticker: "AAPL".to_string(),
+        company_profile: CompanyProfile {
+            name: "Apple Inc.".to_string(),
+            sector: "Technology".to_string(),
+            industry: "Consumer Electronics".to_string(),
+            description:
+                "Designs iPhone, Mac, services, and consumer technology ecosystem products."
+                    .to_string(),
+            ..Default::default()
+        },
+        income_statement: vec![
+            row("Total Revenue", 220_960_000_000.0),
+            row("Research and Development", 31_000_000_000.0),
+        ],
+        cash_flow: vec![
+            row("Operating Cash Flow", 111_482_000_000.0),
+            row("Capital Expenditure", -12_715_000_000.0),
+            row("Free Cash Flow", 98_767_000_000.0),
+        ],
+        ..Default::default()
+    };
+    let (_, interpretation, _, _, _, _) = run_local_compact_analyst(&payload);
+    let text = format!(
+        "{} {}",
+        interpretation.where_money_comes_from, interpretation.where_money_goes
+    )
+    .to_lowercase();
+    assert!(!text.contains("money comes from operating revenue when available"));
+    assert!(!text.contains("money goes to operating costs"));
+    assert!(text.contains("hardware-plus-services") || text.contains("ecosystem"));
+}
+
+#[test]
+fn money_flow_mentions_ocf_capex_fcf_when_available() {
+    let payload = ProviderPayload {
+        ticker: "GOOGL".to_string(),
+        company_profile: CompanyProfile {
+            name: "Alphabet Inc.".to_string(),
+            sector: "Communication Services".to_string(),
+            industry: "Internet Content & Information".to_string(),
+            description: "Google Search advertising, YouTube, cloud, and platform services."
+                .to_string(),
+            ..Default::default()
+        },
+        income_statement: vec![
+            row("Total Revenue", 162_535_000_000.0),
+            row("Research and Development", 49_000_000_000.0),
+        ],
+        cash_flow: vec![
+            row("Operating Cash Flow", 164_713_000_000.0),
+            row("Capital Expenditure", -91_447_000_000.0),
+            row("Free Cash Flow", 73_266_000_000.0),
+        ],
+        ..Default::default()
+    };
+    let (_, interpretation, _, _, _, _) = run_local_compact_analyst(&payload);
+    let text = format!(
+        "{} {} {}",
+        interpretation.cash_flow_explanation,
+        interpretation.where_money_comes_from,
+        interpretation.where_money_goes
+    )
+    .to_lowercase();
+    assert!(text.contains("operating cash flow"));
+    assert!(text.contains("capex") || text.contains("capital expenditure"));
+    assert!(text.contains("free cash flow"));
+}
+
+#[test]
+fn money_flow_bank_avoids_industrial_fcf_core() {
+    let payload = ProviderPayload {
+        ticker: "JPM".to_string(),
+        company_profile: CompanyProfile {
+            name: "JPMorgan Chase & Co.".to_string(),
+            sector: "Financial Services".to_string(),
+            industry: "Banks - Diversified".to_string(),
+            description: "Consumer banking, deposits, lending, markets, investment banking, and asset management.".to_string(),
+            ..Default::default()
+        },
+        income_statement: vec![row("Total Revenue", 181_847_000_000.0)],
+        cash_flow: vec![row("Operating Cash Flow", -147_782_000_000.0)],
+        ..Default::default()
+    };
+    let (_, interpretation, _, _, _, _) = run_local_compact_analyst(&payload);
+    let text = format!(
+        "{} {} {}",
+        interpretation.where_money_comes_from,
+        interpretation.where_money_goes,
+        interpretation.valuation_method_fit
+    )
+    .to_lowercase();
+    assert!(text.contains("net interest") || text.contains("deposits"));
+    assert!(text.contains("not the core") || text.contains("do not"));
+    assert!(!text.contains("industrial fcf as core"));
+}
+
+#[test]
+fn money_flow_space_company_mentions_cash_burn_or_financing_gap() {
+    let payload = ProviderPayload {
+        ticker: "RKLB".to_string(),
+        company_profile: CompanyProfile {
+            name: "Rocket Lab USA, Inc.".to_string(),
+            sector: "Industrials".to_string(),
+            industry: "Aerospace & Defense".to_string(),
+            description: "Provides launch services, spacecraft components, space systems, and mission services.".to_string(),
+            ..Default::default()
+        },
+        income_statement: vec![row("Total Revenue", 200_000_000.0)],
+        cash_flow: vec![row("Operating Cash Flow", -80_000_000.0), row("Capital Expenditure", -20_000_000.0)],
+        ..Default::default()
+    };
+    let (_, interpretation, _, _, _, _) = run_local_compact_analyst(&payload);
+    let text = format!(
+        "{} {} {}",
+        interpretation.cash_flow_explanation,
+        interpretation.where_money_comes_from,
+        interpretation.where_money_goes
+    )
+    .to_lowercase();
+    assert!(text.contains("financing") || text.contains("cash runway"));
+    assert!(text.contains("mission") || text.contains("space"));
+}
+
+#[test]
+fn money_flow_warning_when_required_fields_missing() {
+    let payload = ProviderPayload {
+        ticker: "AAPL".to_string(),
+        company_profile: CompanyProfile {
+            name: "Apple Inc.".to_string(),
+            sector: "Technology".to_string(),
+            industry: "Consumer Electronics".to_string(),
+            description: "Consumer technology ecosystem.".to_string(),
+            ..Default::default()
+        },
+        income_statement: vec![row("Total Revenue", 100.0)],
+        cash_flow: vec![],
+        ..Default::default()
+    };
+    let (_, interpretation, _, _, _, _) = run_local_compact_analyst(&payload);
+    let text = format!(
+        "{} {}",
+        interpretation.where_money_comes_from, interpretation.where_money_goes
+    )
+    .to_lowercase();
+    assert!(text.contains("missing from locked data"));
+}
+
+#[test]
+fn money_flow_a_share_consumer_mentions_inventory_or_receivables_when_available() {
+    let payload = ProviderPayload {
+        ticker: "600519.SH".to_string(),
+        market: "CN_A".to_string(),
+        company_profile: CompanyProfile {
+            name: "贵州茅台".to_string(),
+            sector: "食品饮料".to_string(),
+            industry: "白酒".to_string(),
+            description: "高端白酒、渠道、品牌和现金流。".to_string(),
+            currency: "CNY".to_string(),
+            ..Default::default()
+        },
+        income_statement: vec![
+            row("营业收入", 150_000_000_000.0),
+            row("归母净利润", 75_000_000_000.0),
+            row("毛利率", 90.0),
+        ],
+        balance_sheet: vec![
+            row("存货", 40_000_000_000.0),
+            row("应收账款", 1_000_000_000.0),
+        ],
+        cash_flow: vec![row("经营现金流", 80_000_000_000.0)],
+        ..Default::default()
+    };
+    let (_, interpretation, _, _, _, _) = run_local_compact_analyst(&payload);
+    let text = format!(
+        "{} {}",
+        interpretation.where_money_comes_from, interpretation.where_money_goes
+    );
+    assert!(text.contains("库存") || text.contains("应收"));
+    assert!(text.contains("经营现金流"));
 }
 
 #[test]

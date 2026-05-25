@@ -2,8 +2,17 @@ use research_core::types::*;
 
 fn latest_metric(rows: &[StatementRow], needles: &[&str]) -> Option<f64> {
     rows.iter()
-        .find(|r| needles.iter().any(|n| r.metric.to_lowercase().contains(n)))
+        .find(|r| {
+            let metric = r.metric.to_lowercase();
+            needles.iter().any(|n| metric.contains(&n.to_lowercase()))
+        })
         .and_then(|r| r.value)
+}
+
+fn value_or_gap(value: Option<f64>, label: &str) -> String {
+    value
+        .map(|v| format!("{label} is {:.1}", v))
+        .unwrap_or_else(|| format!("{label} is missing from locked data"))
 }
 
 pub fn interpret_financials(
@@ -29,6 +38,7 @@ pub fn interpret_financials(
         &["operating cash flow", "cash from operations", "经营现金"],
     );
     let capex = latest_metric(&payload.cash_flow, &["capital expenditure", "capex"]);
+    let fcf = latest_metric(&payload.cash_flow, &["free cash flow", "fcf", "自由现金流"]);
     let rnd = latest_metric(&payload.income_statement, &["research", "r&d"]);
     let debt = latest_metric(&payload.balance_sheet, &["debt", "有息负债", "负债合计"]);
     let parent_net_profit = latest_metric(&payload.income_statement, &["归母净利润"]);
@@ -290,6 +300,85 @@ pub fn interpret_financials(
         };
     }
 
+    let frame_specific_source = if frame_lower.contains("bank") {
+        format!(
+            "Money comes from bank economics: net interest income, fees, cards, deposits and lending activity. Locked data shows {}; industrial free-cash-flow yield is not the core money-source test for this company.",
+            value_or_gap(revenue, "revenue")
+        )
+    } else if frame_lower.contains("platform internet") || frame_lower.contains("digital ads") {
+        format!(
+            "Money comes from platform revenue streams such as ads, cloud, subscriptions, and operating cash conversion when supported by filings. Locked data shows {}, {}, and {}.",
+            value_or_gap(revenue, "revenue"),
+            value_or_gap(op_cf, "operating cash flow"),
+            value_or_gap(fcf, "free cash flow")
+        )
+    } else if frame_lower.contains("consumer technology") {
+        format!(
+            "Money comes from the hardware-plus-services ecosystem and operating cash conversion. Locked data shows {}, {}, and {}; buybacks or dividends should only be discussed where cash-flow and shareholder-return rows support them.",
+            value_or_gap(revenue, "revenue"),
+            value_or_gap(op_cf, "operating cash flow"),
+            value_or_gap(fcf, "free cash flow")
+        )
+    } else if frame_lower.contains("industrial machinery") || frame_lower.contains("cyclical") {
+        format!(
+            "Money comes from cyclical equipment, parts, services, and dealer/end-market demand. Locked data shows {}, {}, and {}; through-cycle quality depends on working capital, inventory/receivables, and equipment-cycle cash conversion.",
+            value_or_gap(revenue, "revenue"),
+            value_or_gap(op_cf, "operating cash flow"),
+            value_or_gap(fcf, "free cash flow")
+        )
+    } else if frame_lower.contains("medical devices") || frame_lower.contains("surgical robotics") {
+        format!(
+            "Money comes from surgical systems, instruments/accessories, services, procedure-linked volume, and operating cash conversion. Locked data shows {}, {}, and {}; procedure mix, R&D, SG&A, inventory and receivables remain the next checks.",
+            value_or_gap(revenue, "revenue"),
+            value_or_gap(op_cf, "operating cash flow"),
+            value_or_gap(fcf, "free cash flow")
+        )
+    } else {
+        format!(
+            "Money comes from the revenue engines implied by the {} frame and verified operating cash conversion. Locked data shows {}, {}, and {}; any missing source fields must remain data gaps.",
+            understanding.correct_research_frame,
+            value_or_gap(revenue, "revenue"),
+            value_or_gap(op_cf, "operating cash flow"),
+            value_or_gap(fcf, "free cash flow")
+        )
+    };
+    let frame_specific_uses = if frame_lower.contains("bank") {
+        format!(
+            "Money is absorbed by funding costs, credit losses/reserves, operating expense, capital requirements, dividends/buybacks where supported, and balance-sheet growth. Capex is not the core bank metric; locked data says {}.",
+            value_or_gap(capex, "capex")
+        )
+    } else if frame_lower.contains("platform internet") || frame_lower.contains("digital ads") {
+        format!(
+            "Money is absorbed by traffic acquisition/operating costs, R&D, AI/cloud infrastructure capex, working capital, taxes, and shareholder returns where supported. Locked data shows {} and {}.",
+            value_or_gap(capex, "capex"),
+            value_or_gap(rnd, "R&D")
+        )
+    } else if frame_lower.contains("consumer technology") {
+        format!(
+            "Money is absorbed by product costs, R&D, supply-chain working capital, capex, dividends/buybacks where supported, and financing obligations. Locked data shows {} and {}.",
+            value_or_gap(capex, "capex"),
+            value_or_gap(rnd, "R&D")
+        )
+    } else if frame_lower.contains("industrial machinery") || frame_lower.contains("cyclical") {
+        format!(
+            "Money is absorbed by manufacturing costs, dealer/channel working capital, inventory and receivables, capex, debt service, and cycle-sensitive reinvestment. Locked data shows {} and {}.",
+            value_or_gap(capex, "capex"),
+            value_or_gap(debt, "debt-like obligations")
+        )
+    } else if frame_lower.contains("medical devices") || frame_lower.contains("surgical robotics") {
+        format!(
+            "Money is absorbed by R&D, instruments/system manufacturing, SG&A, inventory/receivables, capex, and service infrastructure. Locked data shows {} and {}.",
+            value_or_gap(rnd, "R&D"),
+            value_or_gap(capex, "capex")
+        )
+    } else {
+        format!(
+            "Money is absorbed by costs, working capital, reinvestment, capex/R&D where relevant, and financing obligations. Locked data shows {} and {}; missing items should be checked next instead of inferred.",
+            value_or_gap(capex, "capex"),
+            value_or_gap(debt, "debt-like obligations")
+        )
+    };
+
     FinancialInterpretation {
         schema_version: SCHEMA_VERSION.to_string(),
         ai_provenance: AiProvenance::default(),
@@ -303,12 +392,8 @@ pub fn interpret_financials(
             (Some(cfo), None) => format!("Operating cash flow is {:.1}, but capex is not available. Free cash flow quality remains incomplete.", cfo),
             _ => "Cash flow data is incomplete; the report must flag cash generation limits instead of inferring quality.".into(),
         },
-        where_money_comes_from: "Money comes from operating revenue when available, operating cash flow if positive, and financing when operating cash is insufficient.".into(),
-        where_money_goes: format!(
-            "Money goes to operating costs, reinvestment, {}{} and financing obligations when present.",
-            if rnd.is_some() { "R&D, " } else { "" },
-            if capex.is_some() { "capex," } else { "working capital," }
-        ),
+        where_money_comes_from: frame_specific_source,
+        where_money_goes: frame_specific_uses,
         capex_or_rnd_pressure: if understanding.correct_research_frame.to_lowercase().contains("biotech") {
             "R&D burn and runway matter more than ordinary PE.".into()
         } else if understanding.correct_research_frame.to_lowercase().contains("semiconductor") {
