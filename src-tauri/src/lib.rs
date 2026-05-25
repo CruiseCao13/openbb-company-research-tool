@@ -4,6 +4,7 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use tauri::Manager;
 
 #[derive(Debug, Serialize)]
 pub struct StudioPing {
@@ -1964,6 +1965,27 @@ fn path_to_string(path: &Path) -> String {
 
 pub fn run() {
     tauri::Builder::default()
+        .setup(|app| {
+            let window = if let Some(window) = app.get_webview_window("main") {
+                window
+            } else {
+                tauri::WebviewWindowBuilder::new(
+                    app,
+                    "main",
+                    tauri::WebviewUrl::App("index.html".into()),
+                )
+                .title("v6 Tauri Research Studio")
+                .position(80.0, 80.0)
+                .inner_size(1280.0, 820.0)
+                .min_inner_size(1024.0, 720.0)
+                .visible(true)
+                .focused(true)
+                .build()?
+            };
+            window.show()?;
+            window.set_focus()?;
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             ping_studio,
             get_app_info,

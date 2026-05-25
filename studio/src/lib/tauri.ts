@@ -8,34 +8,48 @@ import type {
   TrainingRunSummary
 } from "../types/app";
 
+async function invokeCommand<T>(command: string, args?: Record<string, unknown>): Promise<T> {
+  if (
+    typeof invoke !== "function" ||
+    typeof window === "undefined" ||
+    !("__TAURI_INTERNALS__" in window)
+  ) {
+    throw new Error("__TAURI__ invoke unavailable in browser preview");
+  }
+  return invoke<T>(command, args);
+}
+
 export async function getAppInfo(): Promise<AppInfo> {
-  return invoke<AppInfo>("get_app_info");
+  return invokeCommand<AppInfo>("get_app_info");
 }
 
 export async function listRuns(): Promise<RunSummary[]> {
-  return invoke<RunSummary[]>("list_runs");
+  return invokeCommand<RunSummary[]>("list_runs");
 }
 
 export async function loadRunDetail(ticker: string, runId: string): Promise<RunDetail> {
-  return invoke<RunDetail>("load_run_detail", { ticker, runId });
+  return invokeCommand<RunDetail>("load_run_detail", { ticker, runId });
 }
 
 export async function openArtifact(path: string): Promise<ArtifactActionResult> {
-  return invoke<ArtifactActionResult>("open_artifact", { path });
+  return invokeCommand<ArtifactActionResult>("open_artifact", { path });
 }
 
 export async function revealInFolder(path: string): Promise<ArtifactActionResult> {
-  return invoke<ArtifactActionResult>("reveal_in_folder", { path });
+  return invokeCommand<ArtifactActionResult>("reveal_in_folder", { path });
 }
 
 export function artifactImageSrc(path: string): string {
+  if (typeof convertFileSrc !== "function") {
+    return "";
+  }
   return convertFileSrc(path);
 }
 
 export async function listTrainingRuns(): Promise<TrainingRunSummary[]> {
-  return invoke<TrainingRunSummary[]>("list_training_runs");
+  return invokeCommand<TrainingRunSummary[]>("list_training_runs");
 }
 
 export async function loadQualityMatrix(runId: string): Promise<QualityMatrix> {
-  return invoke<QualityMatrix>("load_quality_matrix", { runId });
+  return invokeCommand<QualityMatrix>("load_quality_matrix", { runId });
 }

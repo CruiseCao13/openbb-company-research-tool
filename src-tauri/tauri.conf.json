@@ -13,6 +13,9 @@
     "windows": [
       {
         "title": "v6 Tauri Research Studio",
+        "url": "index.html",
+        "x": 80,
+        "y": 80,
         "width": 1280,
         "height": 820,
         "minWidth": 1024,
@@ -24,7 +27,9 @@
     }
   },
   "bundle": {
-    "active": false,
-    "icon": []
+    "active": true,
+    "icon": [
+      "icons/icon.png"
+    ]
   }
 }
