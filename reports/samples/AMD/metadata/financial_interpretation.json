@@ -8,5 +8,20 @@
   "debt_and_financing": "Debt-like obligations appear in locked data around 3847000000.0; financing risk should be reviewed in filings.",
   "shareholder_return_quality": "Buybacks and dividends are interpretation topics only when the locked data and company frame support them.",
   "valuation_method_fit": "Valuation should fit AI Semiconductor / Data Center Growth Compounder. The report must not force PE, PS, or FCF yield when they do not explain the asset.",
-  "unsupported_due_to_missing_data": []
+  "unsupported_due_to_missing_data": [],
+  "ai_provenance": {
+    "source": "local_mock",
+    "external_ai_used": false,
+    "local_mock_used": true,
+    "cache_hit": false,
+    "new_external_ai_call": false,
+    "model": "local-compact-analyst-fallback",
+    "prompt_version": "financial_interpretation_v1",
+    "request_attempted": false,
+    "request_success": false,
+    "request_id": "",
+    "generated_at": "2026-05-25T00:00:00+08:00",
+    "input_digest": "ad630d3de6d4458e9eead752523f197004a3e638cee070c59eaed484c336b71f",
+    "output_digest": "ad630d3de6d4458e9eead752523f197004a3e638cee070c59eaed484c336b71f"
+  }
 }

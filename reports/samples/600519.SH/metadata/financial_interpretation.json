@@ -10,5 +10,20 @@
   "valuation_method_fit": "Valuation should fit Unknown / Data-Limited Screening. The report must not force PE, PS, or FCF yield when they do not explain the asset.",
   "unsupported_due_to_missing_data": [
     "Provider payload has an error; numeric conclusions must stay screening-only."
-  ]
+  ],
+  "ai_provenance": {
+    "source": "local_mock",
+    "external_ai_used": false,
+    "local_mock_used": true,
+    "cache_hit": false,
+    "new_external_ai_call": false,
+    "model": "local-compact-analyst-fallback",
+    "prompt_version": "financial_interpretation_v1",
+    "request_attempted": false,
+    "request_success": false,
+    "request_id": "",
+    "generated_at": "2026-05-25T00:00:00+08:00",
+    "input_digest": "6633f5698910d60ea3b3ab992ffb2dc954f1d71a82e9e4204a6e91a8d7ac312c",
+    "output_digest": "6633f5698910d60ea3b3ab992ffb2dc954f1d71a82e9e4204a6e91a8d7ac312c"
+  }
 }

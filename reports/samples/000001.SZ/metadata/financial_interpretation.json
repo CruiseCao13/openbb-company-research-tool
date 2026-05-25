@@ -11,9 +11,9 @@
     "request_attempted": false,
     "request_success": false,
     "request_id": "",
-    "generated_at": "2026-05-25T11:04:07.381032+08:00",
-    "input_digest": "4ef325f1eae7692af17eb8de46f96558cf8d14840dad64ce57df0d5f2200af32",
-    "output_digest": "886e7eff7d3c8d8731617dc9a9a03fb5efeaa9cd8ef62d41369629ea1bfe3e82"
+    "generated_at": "2026-05-25T00:00:00+08:00",
+    "input_digest": "c9d4ac021bc4e494460b0932fd27692e633ee3183440af420f791a7942b875ac",
+    "output_digest": "c9d4ac021bc4e494460b0932fd27692e633ee3183440af420f791a7942b875ac"
   },
   "revenue_explanation": "Revenue is not available in locked provider data; revenue quality cannot be treated as verified evidence.",
   "margin_explanation": "Margin interpretation must use the Unknown / Data-Limited Screening frame and avoid cross-industry shortcuts.",

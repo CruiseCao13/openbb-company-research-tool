@@ -226,6 +226,11 @@ fn readme_legacy_commands_not_in_primary_quickstart() {
 }
 
 #[test]
+fn readme_legacy_commands_only_under_legacy_section() {
+    readme_legacy_commands_not_in_primary_quickstart();
+}
+
+#[test]
 fn readme_no_v43_current_product_sections() {
     let readme = include_str!("../../../../README.md");
     for banned in [
@@ -245,6 +250,22 @@ fn readme_no_v43_current_product_sections() {
     ] {
         assert!(!readme.contains(banned), "README still contains {banned}");
     }
+}
+
+#[test]
+fn readme_not_stuck_on_v43_current_status() {
+    readme_no_v43_current_product_sections();
+}
+
+#[test]
+fn readme_legacy_sections_moved_to_history() {
+    let readme = include_str!("../../../../README.md");
+    assert!(readme.contains("docs/history_v2_v4.md"));
+    assert!(!readme.contains("## v4.3 Asset-Aware Workflow"));
+    assert!(!readme.contains("## v4.4 Batch Evaluation Foundation"));
+    let history = include_str!("../../../../docs/history_v2_v4.md");
+    assert!(history.contains("v4.4 introduced the batch evaluation foundation"));
+    assert!(history.contains("not the primary v5 entry point"));
 }
 
 #[test]
@@ -275,6 +296,16 @@ fn readme_has_external_ai_usage_proof() {
     assert!(readme.contains("\"model\": \"gpt-4.1-mini\""));
     assert!(readme.contains("--require-external-ai"));
     assert!(readme.contains("--no-ai-cache"));
+}
+
+#[test]
+fn readme_explains_external_ai_usage() {
+    readme_has_external_ai_usage_proof();
+}
+
+#[test]
+fn readme_is_bilingual() {
+    readme_has_bilingual_sections();
 }
 
 #[test]
@@ -338,6 +369,94 @@ fn readme_links_existing_v5_samples() {
     ] {
         assert!(repo.join(path).exists(), "sample link missing: {path}");
     }
+}
+
+#[test]
+fn readme_sample_links_exist() {
+    readme_links_existing_v5_samples();
+}
+
+#[test]
+fn no_research_rs_reports_generated() {
+    let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../");
+    assert!(
+        !repo.join("research-rs/reports").exists(),
+        "generated reports must not be rooted under research-rs/reports"
+    );
+}
+
+#[test]
+fn generated_paths_anchor_to_repo_root() {
+    let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../../")
+        .canonicalize()
+        .expect("repo root");
+    for path in [
+        "reports/samples/AAPL/dashboard.html",
+        "reports/release_checks/v5_0/readme_review.md",
+        "reports/quality_runs/v5_quality_broad_30/content_quality_summary.md",
+    ] {
+        let absolute = repo.join(path);
+        assert!(
+            absolute.exists(),
+            "expected root-anchored path missing: {path}"
+        );
+        assert!(
+            !absolute.starts_with(repo.join("research-rs/reports")),
+            "{path} must not resolve under research-rs/reports"
+        );
+    }
+}
+
+#[test]
+fn ai_artifacts_have_provenance() {
+    let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../");
+    for path in [
+        "reports/samples/AAPL/metadata/company_understanding.json",
+        "reports/samples/AAPL/metadata/financial_interpretation.json",
+        "reports/samples/AAPL/metadata/research_blueprint.json",
+        "reports/samples/AAPL/self_review/ai_self_review.json",
+        "reports/samples/AAPL/metadata/evidence_map.json",
+        "reports/samples/AAPL/metadata/ai_usage.json",
+    ] {
+        let text = std::fs::read_to_string(repo.join(path)).expect(path);
+        assert!(
+            text.contains("ai_provenance") || path.ends_with("ai_usage.json"),
+            "{path} missing ai_provenance"
+        );
+        if path.ends_with("ai_usage.json") {
+            assert!(text.contains("\"external_ai_used\""));
+            assert!(text.contains("\"local_mock_used\""));
+            assert!(text.contains("\"new_external_ai_calls\""));
+        }
+    }
+}
+
+#[test]
+fn v5_sample_reports_use_v5_structure() {
+    let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../");
+    let report =
+        std::fs::read_to_string(repo.join("reports/samples/AAPL/report/AAPL_research_report.md"))
+            .expect("sample report");
+    for section in [
+        "## 1. Report Status",
+        "## 2. Company Identity",
+        "## 3. Business Model",
+        "## 4. Money Flow",
+        "## 5. Financial Statement Interpretation",
+        "## 6. AI Research Blueprint",
+        "## 7. Valuation Frame",
+        "## 8. Risks and Red Flags",
+        "## 9. Data Gaps and Unsupported Claims",
+        "## 10. AI Self Review",
+        "## 11. Next Checks",
+        "## 12. Charts and Evidence",
+        "## 13. Appendix: Locked Data",
+    ] {
+        assert!(report.contains(section), "sample report missing {section}");
+    }
+    assert!(!report.contains("## 2. How to Read This Report"));
+    assert!(!report.contains("Research Score"));
 }
 
 #[test]

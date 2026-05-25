@@ -8,5 +8,20 @@
   "wrong_framework_risk": [],
   "required_rewrite_sections": [],
   "final_confidence": "MEDIUM",
-  "human_review_required": false
+  "human_review_required": false,
+  "ai_provenance": {
+    "source": "local_mock",
+    "external_ai_used": false,
+    "local_mock_used": true,
+    "cache_hit": false,
+    "new_external_ai_call": false,
+    "model": "local-compact-analyst-fallback",
+    "prompt_version": "self_review_v1",
+    "request_attempted": false,
+    "request_success": false,
+    "request_id": "",
+    "generated_at": "2026-05-25T00:00:00+08:00",
+    "input_digest": "dfa1bd62ccbfb3527d7241d1dc528371f84e10c8c66825e457b4849a72b068ef",
+    "output_digest": "dfa1bd62ccbfb3527d7241d1dc528371f84e10c8c66825e457b4849a72b068ef"
+  }
 }

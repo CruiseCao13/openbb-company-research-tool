@@ -1,4 +1,8 @@
-# Batch Evaluation Workflow
+# Legacy Python Batch Evaluation Workflow
+
+This document describes the pre-v5 Python batch workflow. It is retained for compatibility and historical comparison only.
+
+The current v5 batch entry point is `research-rs batch`; see [README.md](../README.md) for the product quick start and v5 sample gallery.
 
 v4.4 adds a batch evaluation foundation for cross-industry regression and local system-training cases.
 

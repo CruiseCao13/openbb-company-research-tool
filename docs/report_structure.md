@@ -1,4 +1,8 @@
-# Report Structure
+# Legacy Python Report Structure
+
+This document describes pre-v5 Python report structures. It is retained for compatibility, migration, and historical comparison only.
+
+The current v5 report structure is driven by AI provenance, typed artifacts, evidence maps, static dashboards, and `research-rs`; see [README.md](../README.md).
 
 ## v4.3 Asset-Aware Report Pack
 

@@ -1,24 +1,18 @@
-# CLI Usage
+# Legacy Python CLI Usage
 
-Primary command:
+This document describes the pre-v5 Python workflow. It is retained for compatibility and historical comparison only.
+
+The current v5 product entry point is `research-rs`; see [README.md](../README.md) for the primary quick start.
+
+## Legacy Commands
 
 ```bash
 openbb-research AAPL
-```
-
-Compatibility command:
-
-```bash
 cresearch AAPL
-```
-
-Module command:
-
-```bash
 .venv/bin/python -m openbb_company_research_tool AAPL
 ```
 
-## Common Examples
+## Legacy Examples
 
 ```bash
 openbb-research RKLB --both --full
@@ -30,9 +24,9 @@ openbb-research INTC --both --full --pack --run-id stress_intc_v43
 openbb-research pack reports/INTC/runs/stress_intc_v43
 ```
 
-## Defaults
+## Legacy Defaults
 
-v4.3 defaults:
+The v4.3 Python workflow used these defaults:
 
 - benchmark: `SPY`
 - start: `2023-01-01`
@@ -41,26 +35,10 @@ v4.3 defaults:
 - archive: enabled
 - rich terminal UI: enabled
 
-Use `--no-audit-data` to disable data audit output.
-
-## Packing a Run
-
-Use `--pack` during generation to create `TICKER_research_pack.zip` inside the run folder.
-
-Use the `pack` subcommand when the run already exists:
+## Legacy Packing
 
 ```bash
 openbb-research pack reports/TICKER/runs/RUN_ID
 ```
 
-The zip includes:
-
-- `README.md`
-- `report/`
-- `charts/`
-- `data/`
-- `audit/`
-- `ai/`
-- `dashboard/`
-- `metadata/`
-- `self_review/`
+For v5 packs, use `research-rs pack RUN_FOLDER`.

@@ -56,5 +56,20 @@
   "assumption": [],
   "data_gap": [],
   "locked_data_supported": [],
-  "unsupported": []
+  "unsupported": [],
+  "ai_provenance": {
+    "source": "local_mock",
+    "external_ai_used": false,
+    "local_mock_used": true,
+    "cache_hit": false,
+    "new_external_ai_call": false,
+    "model": "local-compact-analyst-fallback",
+    "prompt_version": "evidence_map_v1",
+    "request_attempted": false,
+    "request_success": false,
+    "request_id": "",
+    "generated_at": "2026-05-25T00:00:00+08:00",
+    "input_digest": "25bd3539d41cf7833bd94801d1b1869baa307a2b0404701f0f7eb78dc54d1afb",
+    "output_digest": "25bd3539d41cf7833bd94801d1b1869baa307a2b0404701f0f7eb78dc54d1afb"
+  }
 }

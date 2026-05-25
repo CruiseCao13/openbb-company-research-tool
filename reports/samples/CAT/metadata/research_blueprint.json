@@ -30,5 +30,20 @@
     "Start with identity, then money flow, then valuation fit, then unsupported claims."
   ],
   "confidence": "MEDIUM",
-  "human_review_required": false
+  "human_review_required": false,
+  "ai_provenance": {
+    "source": "local_mock",
+    "external_ai_used": false,
+    "local_mock_used": true,
+    "cache_hit": false,
+    "new_external_ai_call": false,
+    "model": "local-compact-analyst-fallback",
+    "prompt_version": "research_blueprint_v1",
+    "request_attempted": false,
+    "request_success": false,
+    "request_id": "",
+    "generated_at": "2026-05-25T00:00:00+08:00",
+    "input_digest": "7b9232d99693a8c3202699e5735da7b146de7c021e2ff622efb3dce00c0ee40f",
+    "output_digest": "7b9232d99693a8c3202699e5735da7b146de7c021e2ff622efb3dce00c0ee40f"
+  }
 }

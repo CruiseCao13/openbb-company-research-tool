@@ -22,5 +22,20 @@
     "buy/sell advice"
   ],
   "confidence": "LOW",
-  "human_review_required": true
+  "human_review_required": true,
+  "ai_provenance": {
+    "source": "local_mock",
+    "external_ai_used": false,
+    "local_mock_used": true,
+    "cache_hit": false,
+    "new_external_ai_call": false,
+    "model": "local-compact-analyst-fallback",
+    "prompt_version": "company_understanding_v1",
+    "request_attempted": false,
+    "request_success": false,
+    "request_id": "",
+    "generated_at": "2026-05-25T00:00:00+08:00",
+    "input_digest": "7ab5df040c7e0d66d8019712c7bd21cd42510d7aa69497c95b800f2d116152b0",
+    "output_digest": "7ab5df040c7e0d66d8019712c7bd21cd42510d7aa69497c95b800f2d116152b0"
+  }
 }

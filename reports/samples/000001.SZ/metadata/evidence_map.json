@@ -54,19 +54,19 @@
     }
   ],
   "ai_provenance": {
-    "cache_hit": false,
+    "source": "local_mock",
     "external_ai_used": false,
-    "generated_at": "2026-05-25T11:04:07.381179+08:00",
-    "input_digest": "a217f48e16d37d86e1cbb451fe48fd8504772dee938288ca3c1476a199109e20",
     "local_mock_used": true,
-    "model": "local-compact-analyst-fallback",
+    "cache_hit": false,
     "new_external_ai_call": false,
-    "output_digest": "c1f9e18fab201244c86bee07af0812ccc4e73f76611cf9c457c93888a8ee22a4",
-    "prompt_version": "research_blueprint_v1",
+    "model": "local-compact-analyst-fallback",
+    "prompt_version": "evidence_map_v1",
     "request_attempted": false,
-    "request_id": "",
     "request_success": false,
-    "source": "local_mock"
+    "request_id": "",
+    "generated_at": "2026-05-25T00:00:00+08:00",
+    "input_digest": "9f5cef22dee64f5af808722718c542ed7fd5dc8e40822f2c3f44140f95f942c1",
+    "output_digest": "9f5cef22dee64f5af808722718c542ed7fd5dc8e40822f2c3f44140f95f942c1"
   },
   "assumption": [],
   "data_gap": [
