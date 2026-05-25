@@ -2672,6 +2672,24 @@ select:focus-visible {
   font-size: 12px;
 }
 
+.landing-no-result {
+  display: grid;
+  gap: 3px;
+  border: 1px solid rgba(251, 146, 60, 0.2);
+  border-radius: 16px;
+  background: rgba(251, 146, 60, 0.075);
+  padding: 10px 12px;
+}
+
+.landing-no-result strong {
+  color: var(--warning);
+}
+
+.landing-no-result span {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
 .vascular-demo {
   position: absolute;
   inset: 0;

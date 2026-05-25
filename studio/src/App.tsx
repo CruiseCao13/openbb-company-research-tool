@@ -276,7 +276,8 @@ function LandingHero({
   onSetMarket,
   landingAnalysisMode,
   landingMarket,
-  landingSearch
+  landingSearch,
+  matchingRunsCount
 }: {
   onEnter: () => void;
   onLandingSearch: (value: string) => void;
@@ -287,6 +288,7 @@ function LandingHero({
   landingAnalysisMode: LandingAnalysisMode;
   landingMarket: LandingMarket;
   landingSearch: string;
+  matchingRunsCount: number;
 }): JSX.Element {
   const { t } = useTranslation();
 
@@ -345,6 +347,12 @@ function LandingHero({
           <button className="hero-cta" onClick={onOpenLatest} type="button">{t("loadLatest")}</button>
           <button className="hero-cta" onClick={onOpenMatrix} type="button">{t("viewMatrix")}</button>
         </div>
+        {landingSearch.trim().length > 0 && matchingRunsCount === 0 ? (
+          <div className="landing-no-result">
+            <strong>{t("noExistingRunFound")}</strong>
+            <span>{t("runLocalComingNext")}</span>
+          </div>
+        ) : null}
         <p>{t("localOnlyNotice")}</p>
       </form>
     </section>
@@ -1532,9 +1540,11 @@ export function App(): JSX.Element {
     const match = query ? runs.find((run) => `${run.ticker} ${run.run_id}`.toLowerCase().includes(query)) : selectedRun;
     if (match) {
       setSelectedRunKey(runKey(match));
+      setMode("research");
+      setDetailTab("summary");
+      return;
     }
-    setMode("research");
-    setDetailTab("summary");
+    setMode("landing");
   }
 
   useEffect(() => {
@@ -1747,6 +1757,7 @@ export function App(): JSX.Element {
             landingAnalysisMode={landingAnalysisMode}
             landingMarket={landingMarket}
             landingSearch={runSearch}
+            matchingRunsCount={filteredRuns.length}
             onEnter={enterStudio}
             onLandingSearch={setRunSearch}
             onOpenLatest={openLatestRun}
