@@ -16,4 +16,3 @@ Final status: PASS
 - Issue types: wrong_profile, hallucinated_revenue_engine, weak_money_flow, generic_chart_explanation, report_status_wrong, self_review_failed_to_catch
 - Source: historical failed external run `reports/LUNR/runs/api_verify_lunr_real`
 - External fixed run verified: False
-

@@ -1,5 +1,6 @@
 use crate::quality::{score_report, QualityReview};
 use crate::runner::{run_batch, BatchRunOptions};
+use crate::training_case::expected_features_for_ticker;
 use anyhow::Result;
 use chrono::Local;
 use research_core::io::{ensure_dir, write_if_changed, write_json};
@@ -235,6 +236,7 @@ fn training_case(row: &MatrixRow, review: &QualityReview, issue: &str) -> Traini
                 .collect()
         })
         .unwrap_or_else(|| vec!["company identity".into(), "money flow".into()]);
+    let must_contain = expected_features_for_ticker(&row.ticker, must_contain);
     let must_not_contain = blueprint
         .get("must_not_analyze_as_core")
         .and_then(|v| v.as_array())
@@ -514,6 +516,13 @@ fn write_training_outputs(
         &cases,
     )?;
     write_jsonl(
+        &training_root_dir()?
+            .join("cases")
+            .join("generated")
+            .join(format!("{}.jsonl", options.run_id)),
+        &cases,
+    )?;
+    write_jsonl(
         &training_root.join("regression_cases_generated.jsonl"),
         &cases,
     )?;
@@ -779,6 +788,7 @@ fn ensure_training_directories() -> Result<()> {
     for dir in [
         "datasets",
         "cases",
+        "cases/generated",
         "negative_cases",
         "positive_cases",
         "prompt_versions",

@@ -1,6 +1,12 @@
 schema_version: v5.0.0
 description: Issue taxonomy for v5 system-level AI research quality training.
 issue_types:
+  - issue_type: wrong_framework
+    severity: BLOCKER
+    fix_target: validator
+    training_use: negative
+    description: Research framework conflicts with provider identity, company description, or hard regression rule.
+    examples: ["LUNR or RKLB classified as telecom infrastructure"]
   - issue_type: wrong_profile
     severity: BLOCKER
     fix_target: validator
@@ -91,6 +97,18 @@ issue_types:
     training_use: regression
     description: Chinese or English reads like machine-translated generic prose.
     examples: []
+  - issue_type: generic_language
+    severity: MEDIUM
+    fix_target: language
+    training_use: regression
+    description: Report uses generic AI prose, empty transitions, vague growth language, or non-actionable next checks.
+    examples: []
+  - issue_type: data_gap_hidden
+    severity: HIGH
+    fix_target: validator
+    training_use: negative
+    description: Provider or normalized data gaps are hidden while the report presents conclusions as verified.
+    examples: []
   - issue_type: ai_provenance_missing
     severity: BLOCKER
     fix_target: validator
@@ -120,6 +138,12 @@ issue_types:
     fix_target: prompt
     training_use: regression
     description: AI self-review misses wrong frame, hallucinated revenue engine, or generic output.
+    examples: []
+  - issue_type: self_review_failed
+    severity: HIGH
+    fix_target: prompt
+    training_use: regression
+    description: Alias for self-review failing to catch a hard content issue or failing to request targeted rewrite.
     examples: []
   - issue_type: pdf_blank
     severity: HIGH

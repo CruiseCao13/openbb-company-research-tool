@@ -1,6 +1,6 @@
 use crate::eval_set::load_eval_set;
 use crate::lint::lint_status;
-use crate::training_case::TrainingCase;
+use crate::training_case::{correction_case_path, expected_features_for_ticker, TrainingCase};
 use anyhow::Result;
 use chrono::Local;
 use research_ai::{
@@ -259,6 +259,8 @@ pub fn run_batch(options: &BatchRunOptions) -> Result<PathBuf> {
             let expected_family = expected
                 .cloned()
                 .unwrap_or_else(|| "Human review required".into());
+            let expected_output_features =
+                expected_features_for_ticker(&ticker, blueprint.must_analyze.clone());
             let case = TrainingCase {
                 ticker: ticker.clone(),
                 initial_profile: understanding.correct_research_frame.clone(),
@@ -279,8 +281,8 @@ pub fn run_batch(options: &BatchRunOptions) -> Result<PathBuf> {
                 },
                 ai_source: understanding.ai_provenance.source.clone(),
                 wrong_output: understanding.correct_research_frame.clone(),
-                expected_output_features: blueprint.must_analyze.clone(),
-                must_contain: blueprint.must_analyze.clone(),
+                expected_output_features: expected_output_features.clone(),
+                must_contain: expected_output_features,
                 must_not_contain: blueprint.must_not_analyze_as_core.clone(),
                 data_refs_used: vec![
                     "provider_payload.json".into(),
@@ -296,9 +298,7 @@ pub fn run_batch(options: &BatchRunOptions) -> Result<PathBuf> {
                 .append(true)
                 .open(&case_path)?
                 .write_all(line.as_bytes())?;
-            let global_path = training_cases_dir()?
-                .join("corrections")
-                .join("v5_correction_cases.jsonl");
+            let global_path = correction_case_path(&training_cases_dir()?, &case)?;
             if let Some(parent) = global_path.parent() {
                 ensure_dir(parent)?;
             }
