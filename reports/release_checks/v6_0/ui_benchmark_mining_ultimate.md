@@ -29,6 +29,10 @@ This benchmark pass reviewed product and open-source UI references before the v6
 - Subtle scrollbar styling so scroll zones do not look like platform-default admin panes.
 - Desaturated technical badges with small status orbs so warnings/data gaps get attention without traffic-light blocks.
 - Settings/modal depth model: blurred overlay, high-radius glass sheet, smooth transform/opacity transitions.
+- Keyboard-first command palette pattern from terminal/admin workspaces: Cmd/Ctrl+K exposes run loading, matrix, settings, and artifact commands without turning the app into a generic command-center product.
+- Split-pane resize pattern from professional desktop tools: invisible hover gutters reveal a thin light line and persist rail widths instead of using heavy grey dividers.
+- Optional tactile feedback pattern from hardware-style consoles: very low-volume Web Audio click on deliberate high-value actions, user-controlled in settings and gesture-only.
+- Custom text selection and focus glow patterns so browser defaults do not break the black-gold visual system.
 
 ## Patterns Rejected
 
@@ -41,6 +45,8 @@ This benchmark pass reviewed product and open-source UI references before the v6
 - Loud traffic-light color blocks and hard neon fills.
 - Default browser tooltips, thick scrollbars, and abrupt blank loading states.
 - Whole-template imports, auth/user-management shells, or SaaS administration pages.
+- Loud or always-on sound effects, hover sounds, startup sounds, or notification-like beeps.
+- Heavy draggable split-pane libraries; a local pointer-event implementation is enough for the two-resizer layout.
 
 ## Code Copying
 
@@ -55,3 +61,6 @@ No benchmark source code was copied into the repository. The rebuild adapts desi
 - Loading states use dark liquid skeleton surfaces so switching runs does not collapse the layout.
 - Hover details use micro-glass inspectors and `data-tooltip` surfaces instead of native browser tooltips.
 - The matrix and research workspaces keep separate IA, with matrix staying a quality board rather than a run-detail widget.
+- The command menu is intentionally minimal and keyboard-first: it operates existing IPC-backed actions and does not invent new run execution.
+- Pane resizing uses CSS variables persisted in localStorage and keeps the visual divider nearly invisible until hover/drag.
+- Micro-click feedback is optional, off by default, low volume, generated locally, and fails silently if the runtime blocks audio.

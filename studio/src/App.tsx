@@ -1,6 +1,8 @@
-import { type CSSProperties, type PointerEvent, type ReactNode, useEffect, useMemo, useState } from "react";
+import { type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AppInfoCard } from "./components/AppInfoCard";
+import { playMicroClick } from "./components/AudioFeedback";
+import { CommandMenu, type CommandItem } from "./components/CommandMenu";
 import { InstrumentBoard } from "./components/InstrumentBoard";
 import { LandingExperience, exampleTickers, type LandingAnalysisMode, type LandingMarket } from "./components/LandingExperience";
 import { LogoMark } from "./components/LogoMark";
@@ -249,11 +251,13 @@ function SettingsCenter({
   onGlass,
   onLanguage,
   onMatrixDefault,
+  onMicroClickSound,
   onMotion,
   onStartLatest,
   onWarningsFirst,
   openMatrixByDefault,
   open,
+  microClickSound,
   startOnLatest,
   warningsFirst
 }: {
@@ -270,11 +274,13 @@ function SettingsCenter({
   onGlass: (value: StudioGlass) => void;
   onLanguage: (value: StudioLanguage) => void;
   onMatrixDefault: (value: boolean) => void;
+  onMicroClickSound: (value: boolean) => void;
   onMotion: (value: StudioMotion) => void;
   onStartLatest: (value: boolean) => void;
   onWarningsFirst: (value: boolean) => void;
   openMatrixByDefault: boolean;
   open: boolean;
+  microClickSound: boolean;
   startOnLatest: boolean;
   warningsFirst: boolean;
 }): JSX.Element | null {
@@ -369,6 +375,12 @@ function SettingsCenter({
             <label className="settings-toggle">
               <input checked={openMatrixByDefault} onChange={(event) => onMatrixDefault(event.target.checked)} type="checkbox" />
               <span>{openMatrixByDefault ? t("on") : t("off")}</span>
+            </label>
+          </SettingGroup>
+          <SettingGroup title={t("microClickSound")}>
+            <label className="settings-toggle">
+              <input checked={microClickSound} onChange={(event) => onMicroClickSound(event.target.checked)} type="checkbox" />
+              <span>{microClickSound ? t("on") : t("off")}</span>
             </label>
           </SettingGroup>
         </div>
@@ -576,7 +588,7 @@ function RunList({
   );
 }
 
-function PrimaryActionBar({ detail, onOpenCharts }: { detail: RunDetail | null; onOpenCharts: () => void }): JSX.Element {
+function PrimaryActionBar({ detail, microClickSound, onOpenCharts }: { detail: RunDetail | null; microClickSound: boolean; onOpenCharts: () => void }): JSX.Element {
   const { t } = useTranslation();
   const [message, setMessage] = useState<string>(t("chooseArtifact"));
   const [busyLabel, setBusyLabel] = useState<string | null>(null);
@@ -596,6 +608,7 @@ function PrimaryActionBar({ detail, onOpenCharts }: { detail: RunDetail | null; 
     if (!path) {
       return;
     }
+    playMicroClick(microClickSound);
     if (action === "tab") {
       onOpenCharts();
       setMessage(`${label} selected.`);
@@ -1104,17 +1117,25 @@ function AppShell({
   density,
   fontScale,
   glass,
+  insightWidth,
   mode,
-  motion
+  motion,
+  onInsightWidth,
+  onRailWidth,
+  railWidth
 }: {
   children: ReactNode;
   density: StudioDensity;
   fontScale: number;
   glass: StudioGlass;
+  insightWidth: number;
   mode: StudioMode;
   motion: StudioMotion;
+  onInsightWidth: (width: number) => void;
+  onRailWidth: (width: number) => void;
+  railWidth: number;
 }): JSX.Element {
-  function handlePointerMove(event: PointerEvent<HTMLElement>): void {
+  function handlePointerMove(event: ReactPointerEvent<HTMLElement>): void {
     if (motion === "off") {
       return;
     }
@@ -1124,6 +1145,26 @@ function AppShell({
     event.currentTarget.style.setProperty("--cursor-y", `${event.clientY}px`);
   }
 
+  function beginResize(kind: "rail" | "insight", event: ReactPointerEvent<HTMLButtonElement>): void {
+    event.preventDefault();
+    const updateWidth = (moveEvent: globalThis.PointerEvent): void => {
+      if (kind === "rail") {
+        onRailWidth(Math.min(320, Math.max(224, moveEvent.clientX)));
+      } else {
+        onInsightWidth(Math.min(430, Math.max(280, window.innerWidth - moveEvent.clientX)));
+      }
+    };
+    const stopResize = (): void => {
+      document.body.classList.remove("is-resizing-pane");
+      window.removeEventListener("pointermove", updateWidth);
+      window.removeEventListener("pointerup", stopResize);
+    };
+    document.body.classList.add("is-resizing-pane");
+    updateWidth(event.nativeEvent);
+    window.addEventListener("pointermove", updateWidth);
+    window.addEventListener("pointerup", stopResize);
+  }
+
   return (
     <main
       className={`studio-shell studio-shell--${mode}`}
@@ -1131,9 +1172,21 @@ function AppShell({
       data-glass={glass}
       data-motion={motion}
       onPointerMove={handlePointerMove}
-      style={{ "--studio-font-scale": fontScale } as CSSProperties}
+      style={{ "--insight-width": `${insightWidth}px`, "--rail-width": `${railWidth}px`, "--studio-font-scale": fontScale } as CSSProperties}
     >
       {children}
+      <button
+        aria-label="Resize navigation rail"
+        className="split-resizer split-resizer--rail"
+        onPointerDown={(event) => beginResize("rail", event)}
+        type="button"
+      />
+      <button
+        aria-label="Resize insight rail"
+        className="split-resizer split-resizer--insight"
+        onPointerDown={(event) => beginResize("insight", event)}
+        type="button"
+      />
     </main>
   );
 }
@@ -1154,17 +1207,22 @@ export function App(): JSX.Element {
   const [runDetailStatus, setRunDetailStatus] = useState<RunDetailStatus>("idle");
   const [runDetailError, setRunDetailError] = useState<string | null>(null);
   const [mode, setMode] = useState<StudioMode>("landing");
-  const [detailTab, setDetailTab] = useState<RunDetailTab>("charts");
+  const [detailTab, setDetailTab] = useState<RunDetailTab>("summary");
   const [language, setLanguage] = useState<StudioLanguage>("en");
   const [density, setDensity] = useState<StudioDensity>("comfortable");
   const [motion, setMotion] = useState<StudioMotion>("on");
   const [glass, setGlass] = useState<StudioGlass>("high");
   const [fontScale, setFontScale] = useState<number>(1);
+  const [microClickSound, setMicroClickSound] = useState<boolean>(false);
   const [warningsFirst, setWarningsFirst] = useState<boolean>(true);
   const [defaultLanding, setDefaultLanding] = useState<boolean>(true);
   const [startOnLatest, setStartOnLatest] = useState<boolean>(false);
   const [openMatrixByDefault, setOpenMatrixByDefault] = useState<boolean>(false);
   const [settingsOpen, setSettingsOpen] = useState<boolean>(false);
+  const [commandOpen, setCommandOpen] = useState<boolean>(false);
+  const [commandQuery, setCommandQuery] = useState<string>("");
+  const [railWidth, setRailWidth] = useState<number>(252);
+  const [insightWidth, setInsightWidth] = useState<number>(320);
   const [trainingRuns, setTrainingRuns] = useState<TrainingRunSummary[]>([]);
   const [trainingRunsStatus, setTrainingRunsStatus] = useState<TrainingRunsStatus>("idle");
   const [trainingRunsError, setTrainingRunsError] = useState<string | null>(null);
@@ -1196,9 +1254,12 @@ export function App(): JSX.Element {
         fontScale: number;
         glass: StudioGlass;
         language: StudioLanguage;
+        microClickSound: boolean;
         motion: StudioMotion;
         openMatrixByDefault: boolean;
+        railWidth: number;
         startOnLatest: boolean;
+        insightWidth: number;
         warningsFirst: boolean;
       }>;
       if (parsed.language === "en" || parsed.language === "zh") setLanguage(parsed.language);
@@ -1206,10 +1267,13 @@ export function App(): JSX.Element {
       if (parsed.motion === "on" || parsed.motion === "off") setMotion(parsed.motion);
       if (parsed.glass === "low" || parsed.glass === "medium" || parsed.glass === "high") setGlass(parsed.glass);
       if (typeof parsed.fontScale === "number") setFontScale(parsed.fontScale);
+      if (typeof parsed.microClickSound === "boolean") setMicroClickSound(parsed.microClickSound);
       if (typeof parsed.warningsFirst === "boolean") setWarningsFirst(parsed.warningsFirst);
       if (typeof parsed.defaultLanding === "boolean") setDefaultLanding(parsed.defaultLanding);
       if (typeof parsed.startOnLatest === "boolean") setStartOnLatest(parsed.startOnLatest);
       if (typeof parsed.openMatrixByDefault === "boolean") setOpenMatrixByDefault(parsed.openMatrixByDefault);
+      if (typeof parsed.railWidth === "number") setRailWidth(Math.min(320, Math.max(224, parsed.railWidth)));
+      if (typeof parsed.insightWidth === "number") setInsightWidth(Math.min(430, Math.max(280, parsed.insightWidth)));
     } catch {
       window.localStorage.removeItem("v6-studio-ui-settings");
     }
@@ -1224,15 +1288,19 @@ export function App(): JSX.Element {
         fontScale,
         glass,
         language,
+        microClickSound,
         motion,
         openMatrixByDefault,
+        railWidth,
         startOnLatest,
+        insightWidth,
         warningsFirst
       })
     );
-  }, [defaultLanding, density, fontScale, glass, language, motion, openMatrixByDefault, startOnLatest, warningsFirst]);
+  }, [defaultLanding, density, fontScale, glass, insightWidth, language, microClickSound, motion, openMatrixByDefault, railWidth, startOnLatest, warningsFirst]);
 
   function openLatestRun(): void {
+    playMicroClick(microClickSound);
     const query = runSearch.trim().toLowerCase();
     const latest =
       query.length > 0
@@ -1248,6 +1316,7 @@ export function App(): JSX.Element {
   }
 
   function enterStudio(): void {
+    playMicroClick(microClickSound);
     const query = runSearch.trim().toLowerCase();
     const match = query ? runs.find((run) => `${run.ticker} ${run.run_id}`.toLowerCase().includes(query)) : selectedRun;
     if (match) {
@@ -1413,9 +1482,161 @@ export function App(): JSX.Element {
 
   const warnings = collectWarnings(activeRunDetail);
   const dataGapCount = countDataGaps(activeRunDetail);
+  const commandItems = useMemo<CommandItem[]>(() => {
+    const runCommands = filteredRuns.slice(0, 8).map((run) => ({
+      detail: `${run.market ?? "market unknown"} / ${run.provider ?? "provider unknown"} / ${shortRunId(run.run_id)}`,
+      id: `run-${runKey(run)}`,
+      label: `Load ${run.ticker}`,
+      onRun: () => {
+        playMicroClick(microClickSound);
+        setSelectedRunKey(runKey(run));
+        setMode("research");
+        setDetailTab("summary");
+      }
+    }));
+    const artifactCommands: CommandItem[] = [
+      {
+        detail: activeRunDetail?.artifacts.markdown_report_path ? "Open the selected run report artifact." : "Report artifact missing for selected run.",
+        disabled: !activeRunDetail?.artifacts.markdown_report_path,
+        id: "open-report",
+        label: t("openReport"),
+        onRun: () => {
+          playMicroClick(microClickSound);
+          if (activeRunDetail?.artifacts.markdown_report_path) void openArtifact(activeRunDetail.artifacts.markdown_report_path);
+        }
+      },
+      {
+        detail: activeRunDetail?.artifacts.pdf_report_path ? "Open the selected run PDF artifact." : "PDF artifact missing for selected run.",
+        disabled: !activeRunDetail?.artifacts.pdf_report_path,
+        id: "open-pdf",
+        label: t("openPdf"),
+        onRun: () => {
+          playMicroClick(microClickSound);
+          if (activeRunDetail?.artifacts.pdf_report_path) void openArtifact(activeRunDetail.artifacts.pdf_report_path);
+        }
+      },
+      {
+        detail: activeRunDetail?.artifacts.dashboard_path ? "Open the selected run dashboard artifact." : "Dashboard artifact missing for selected run.",
+        disabled: !activeRunDetail?.artifacts.dashboard_path,
+        id: "open-dashboard",
+        label: t("openDashboard"),
+        onRun: () => {
+          playMicroClick(microClickSound);
+          if (activeRunDetail?.artifacts.dashboard_path) void openArtifact(activeRunDetail.artifacts.dashboard_path);
+        }
+      },
+      {
+        detail: activeRunDetail ? "Switch to the chart gallery for the selected run." : "Load a run before opening charts.",
+        disabled: !activeRunDetail,
+        id: "open-charts",
+        label: t("openCharts"),
+        onRun: () => {
+          playMicroClick(microClickSound);
+          setMode("research");
+          setDetailTab("charts");
+        }
+      },
+      {
+        detail: activeRunDetail ? "Switch to validator and audit trail surfaces." : "Load a run before opening audit.",
+        disabled: !activeRunDetail,
+        id: "open-audit",
+        label: t("openAudit"),
+        onRun: () => {
+          playMicroClick(microClickSound);
+          setMode("research");
+          setDetailTab("audit");
+        }
+      }
+    ];
+    return [
+      {
+        detail: "Open the visual landing and search console.",
+        id: "go-landing",
+        label: t("enterStudio"),
+        onRun: () => {
+          playMicroClick(microClickSound);
+          setMode("landing");
+        }
+      },
+      {
+        detail: runs.length > 0 ? "Open the newest discovered existing run." : "No existing runs loaded in this runtime.",
+        disabled: runs.length === 0,
+        id: "open-latest",
+        label: t("openLatestRun"),
+        onRun: openLatestRun
+      },
+      {
+        detail: "Open the separate quality board workspace.",
+        id: "open-matrix",
+        label: t("viewQualityMatrix"),
+        onRun: () => {
+          playMicroClick(microClickSound);
+          setMode("matrix");
+        }
+      },
+      {
+        detail: "Open the liquid-glass settings center.",
+        id: "open-settings",
+        label: t("settings"),
+        onRun: () => {
+          playMicroClick(microClickSound);
+          setSettingsOpen(true);
+        }
+      },
+      ...artifactCommands,
+      ...runCommands
+    ];
+  }, [activeRunDetail, filteredRuns, microClickSound, openLatestRun, runs.length, t]);
+
+  useEffect(() => {
+    function handleGlobalKeyDown(event: KeyboardEvent): void {
+      const target = event.target as HTMLElement | null;
+      const isTyping = target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.tagName === "SELECT";
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        playMicroClick(microClickSound);
+        setCommandOpen(true);
+        return;
+      }
+      if (isTyping || !event.shiftKey) {
+        return;
+      }
+      const key = event.key.toLowerCase();
+      if (key === "m") {
+        event.preventDefault();
+        playMicroClick(microClickSound);
+        setMode("matrix");
+      } else if (key === "r" && activeRunDetail?.artifacts.markdown_report_path) {
+        event.preventDefault();
+        playMicroClick(microClickSound);
+        void openArtifact(activeRunDetail.artifacts.markdown_report_path);
+      } else if (key === "p" && activeRunDetail?.artifacts.pdf_report_path) {
+        event.preventDefault();
+        playMicroClick(microClickSound);
+        void openArtifact(activeRunDetail.artifacts.pdf_report_path);
+      } else if (key === "d" && activeRunDetail?.artifacts.dashboard_path) {
+        event.preventDefault();
+        playMicroClick(microClickSound);
+        void openArtifact(activeRunDetail.artifacts.dashboard_path);
+      }
+    }
+
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, [activeRunDetail, microClickSound]);
 
   return (
-    <AppShell density={density} fontScale={fontScale} glass={glass} mode={mode} motion={motion}>
+    <AppShell
+      density={density}
+      fontScale={fontScale}
+      glass={glass}
+      insightWidth={insightWidth}
+      mode={mode}
+      motion={motion}
+      railWidth={railWidth}
+      onInsightWidth={setInsightWidth}
+      onRailWidth={setRailWidth}
+    >
       <Sidebar
         error={runsError}
         mode={mode}
@@ -1425,10 +1646,19 @@ export function App(): JSX.Element {
         selectedRunKey={selectedRunKey}
         showRunResults={mode !== "landing" || runSearch.trim().length > 0}
         totalRuns={runs.length}
-        onChangeMode={setMode}
-        onOpenSettings={() => setSettingsOpen(true)}
+        onChangeMode={(nextMode) => {
+          playMicroClick(microClickSound);
+          setMode(nextMode);
+        }}
+        onOpenSettings={() => {
+          playMicroClick(microClickSound);
+          setSettingsOpen(true);
+        }}
         onSearch={setRunSearch}
-        onSelectRun={(run) => setSelectedRunKey(runKey(run))}
+        onSelectRun={(run) => {
+          playMicroClick(microClickSound);
+          setSelectedRunKey(runKey(run));
+        }}
       />
 
       <section
@@ -1441,7 +1671,10 @@ export function App(): JSX.Element {
           mode={mode}
           motion={motion}
           quickSearch={runSearch}
-          onOpenSettings={() => setSettingsOpen(true)}
+          onOpenSettings={() => {
+            playMicroClick(microClickSound);
+            setSettingsOpen(true);
+          }}
           onQuickSearch={(value) => {
             setRunSearch(value);
             if (mode === "landing") {
@@ -1461,7 +1694,10 @@ export function App(): JSX.Element {
             onEnter={enterStudio}
             onLandingSearch={setRunSearch}
             onOpenLatest={openLatestRun}
-            onOpenMatrix={() => setMode("matrix")}
+            onOpenMatrix={() => {
+              playMicroClick(microClickSound);
+              setMode("matrix");
+            }}
             onSetAnalysisMode={setLandingAnalysisMode}
             onSetMarket={setLandingMarket}
           />
@@ -1472,7 +1708,7 @@ export function App(): JSX.Element {
               detailStatus={runDetailStatus}
               selectedRun={selectedRun}
             />
-            <PrimaryActionBar detail={activeRunDetail} onOpenCharts={() => setDetailTab("charts")} />
+            <PrimaryActionBar detail={activeRunDetail} microClickSound={microClickSound} onOpenCharts={() => setDetailTab("charts")} />
             <section className="hero-graph-stage" aria-label="Primary money flow visual">
               {runDetailStatus === "ready" && activeRunDetail ? (
                 <MoneyFlowSankey detail={activeRunDetail} />
@@ -1558,11 +1794,27 @@ export function App(): JSX.Element {
         onGlass={setGlass}
         onLanguage={setLanguage}
         onMatrixDefault={setOpenMatrixByDefault}
+        onMicroClickSound={setMicroClickSound}
         onMotion={setMotion}
         onStartLatest={setStartOnLatest}
         onWarningsFirst={setWarningsFirst}
         openMatrixByDefault={openMatrixByDefault}
+        microClickSound={microClickSound}
         startOnLatest={startOnLatest}
+      />
+      <CommandMenu
+        commands={commandItems}
+        emptyLabel={t("noCommandMatches")}
+        inputLabel={t("commandInput")}
+        onClose={() => {
+          setCommandOpen(false);
+          setCommandQuery("");
+        }}
+        onQueryChange={setCommandQuery}
+        open={commandOpen}
+        placeholder={t("commandPlaceholder")}
+        query={commandQuery}
+        title={t("commandMenu")}
       />
     </AppShell>
   );

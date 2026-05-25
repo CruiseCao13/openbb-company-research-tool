@@ -1521,7 +1521,7 @@ select:focus-visible {
 
 /* Productization pass: glass workspace, landing, settings, and chart-first layout. */
 .studio-shell {
-  grid-template-columns: var(--rail-width) minmax(0, 1fr) 300px;
+  grid-template-columns: var(--rail-width) minmax(0, 1fr) var(--insight-width, 320px);
   gap: 12px;
   padding-right: 12px;
   font-size: calc(13px * var(--studio-font-scale, 1));
@@ -3056,6 +3056,7 @@ select:focus-visible {
   --warning: rgba(251, 191, 36, 0.86);
   --fail: rgba(244, 63, 94, 0.78);
   --info: rgba(34, 211, 238, 0.86);
+  --brand-rgb: 34, 211, 238;
   --gold: rgba(251, 191, 36, 0.74);
   --shadow-deep: 0 24px 70px rgba(0, 0, 0, 0.38);
   --shadow-inset:
@@ -3953,6 +3954,206 @@ select:focus-visible {
 
 .sankey-link-group:hover .sankey-mini-inspector {
   filter: blur(0);
+}
+
+::selection {
+  background: rgba(var(--brand-rgb), 0.25);
+  color: #ffffff;
+  text-shadow: 0 0 4px rgba(var(--brand-rgb), 0.6);
+}
+
+.split-resizer {
+  position: absolute;
+  z-index: 35;
+  width: 8px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  cursor: col-resize;
+  opacity: 0;
+  transition:
+    opacity var(--duration-normal) var(--ease-liquid),
+    box-shadow var(--duration-normal) var(--ease-liquid);
+}
+
+.split-resizer::before {
+  position: absolute;
+  top: 18px;
+  bottom: 18px;
+  left: 3px;
+  width: 1px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, transparent, rgba(34, 211, 238, 0.48), rgba(251, 191, 36, 0.20), transparent);
+  content: "";
+  opacity: 0;
+  transition: opacity var(--duration-normal) var(--ease-liquid);
+}
+
+.split-resizer:hover,
+.split-resizer:focus-visible,
+.is-resizing-pane .split-resizer {
+  opacity: 1;
+  box-shadow: 0 0 34px rgba(34, 211, 238, 0.10);
+}
+
+.split-resizer:hover::before,
+.split-resizer:focus-visible::before,
+.is-resizing-pane .split-resizer::before {
+  opacity: 1;
+}
+
+.split-resizer--rail {
+  top: 10px;
+  bottom: 10px;
+  left: calc(var(--rail-width) - 4px);
+}
+
+.split-resizer--insight {
+  top: 10px;
+  right: calc(var(--insight-width, 320px) - 4px);
+  bottom: 10px;
+}
+
+.studio-shell--landing .split-resizer--insight,
+.studio-shell--matrix .split-resizer--insight,
+.studio-shell--settings .split-resizer--insight {
+  display: none;
+}
+
+.is-resizing-pane {
+  cursor: col-resize;
+  user-select: none;
+}
+
+.command-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: start center;
+  background: rgba(3, 7, 18, 0.42);
+  padding-top: 12vh;
+  backdrop-filter: blur(10px) brightness(62%);
+  animation: backdrop-fade var(--duration-normal) var(--ease-liquid) both;
+}
+
+.command-menu {
+  display: grid;
+  width: min(720px, calc(100vw - 44px));
+  max-height: min(680px, calc(100vh - 140px));
+  overflow: hidden;
+  gap: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(34, 211, 238, 0.10), transparent 30rem),
+    radial-gradient(circle at 84% 100%, rgba(251, 191, 36, 0.08), transparent 28rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.074), rgba(15, 23, 42, 0.58));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    inset 0 -1px 0 rgba(15, 23, 42, 0.48),
+    0 34px 90px rgba(0, 0, 0, 0.52);
+  padding: 18px;
+  backdrop-filter: blur(30px) saturate(160%);
+  animation: settings-float var(--duration-normal) var(--ease-liquid) both;
+}
+
+.command-menu__header,
+.command-menu__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.command-menu__close {
+  border: 1px solid rgba(255, 255, 255, 0.065);
+  background: rgba(255, 255, 255, 0.045);
+  color: rgba(203, 213, 225, 0.86);
+  padding: 7px 10px;
+}
+
+.command-menu__search {
+  display: grid;
+  gap: 8px;
+}
+
+.command-menu__search input {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.052), rgba(7, 10, 18, 0.50)),
+    rgba(7, 10, 18, 0.38);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.055),
+    0 0 38px rgba(34, 211, 238, 0.045);
+  color: rgba(248, 250, 252, 0.96);
+  padding: 14px 16px;
+}
+
+.command-menu__results {
+  display: grid;
+  max-height: 430px;
+  overflow: auto;
+  gap: 8px;
+}
+
+.command-menu__item {
+  border: 1px solid rgba(255, 255, 255, 0.038);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.028);
+  color: rgba(248, 250, 252, 0.94);
+  cursor: pointer;
+  padding: 12px 14px;
+  text-align: left;
+}
+
+.command-menu__item strong,
+.command-menu__item span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.command-menu__item span,
+.command-menu__empty {
+  color: rgba(148, 163, 184, 0.72);
+  font-family: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 11px;
+}
+
+.command-menu__item--active {
+  border-color: rgba(34, 211, 238, 0.18);
+  background:
+    linear-gradient(90deg, rgba(34, 211, 238, 0.09), rgba(251, 191, 36, 0.035)),
+    rgba(255, 255, 255, 0.038);
+  box-shadow:
+    inset 0 0 4px rgba(var(--brand-rgb), 0.24),
+    0 0 34px rgba(34, 211, 238, 0.08);
+}
+
+.command-menu__item:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.command-menu__empty {
+  border: 1px dashed rgba(255, 255, 255, 0.07);
+  border-radius: 18px;
+  padding: 18px;
+}
+
+.primary-action:active:not(:disabled),
+.artifact-button:active:not(:disabled),
+.hero-cta:active:not(:disabled),
+.topbar-chip:active:not(:disabled),
+.mode-switch__button:active:not(:disabled),
+.detail-tab:active:not(:disabled),
+.command-menu__item:active:not(:disabled) {
+  transform: scale(0.965);
+  transition-duration: 70ms;
 }
 
 .skeleton-crystal {
