@@ -136,9 +136,14 @@ pub struct DetailSelfReview {
 pub struct DetailChart {
     title: String,
     image_path: Option<String>,
+    image_exists: bool,
     source: Option<String>,
     status: Option<String>,
-    explanation: Option<String>,
+    why_selected: Option<String>,
+    what_to_look_at: Option<String>,
+    what_it_means: Option<String>,
+    what_not_to_overread: Option<String>,
+    next_check: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, PartialEq, Eq)]
@@ -800,27 +805,69 @@ fn build_detail_charts(chart_manifest: Option<&Value>, charts_dir: &Path) -> Vec
         .flatten()
         .enumerate()
         .map(|(index, chart)| {
-            let image_path = first_string(&[
+            let image_path_value = first_string(&[
                 json_pointer_string(chart, "/image_path"),
                 json_pointer_string(chart, "/path"),
                 json_pointer_string(chart, "/file"),
             ]);
+            let image_path = image_path_value
+                .as_deref()
+                .and_then(|path| safe_chart_image_path(charts_dir, path));
+            let image_exists = image_path.as_ref().is_some_and(|path| path.is_file());
             DetailChart {
                 title: first_string(&[
                     json_pointer_string(chart, "/title"),
                     json_pointer_string(chart, "/name"),
                 ])
                 .unwrap_or_else(|| format!("Chart {}", index + 1)),
-                image_path: image_path.map(|path| path_to_string(&charts_dir.join(path))),
+                image_path: image_path.map(|path| path_to_string(&path)),
+                image_exists,
                 source: json_pointer_string(chart, "/source"),
-                status: json_pointer_string(chart, "/status"),
-                explanation: first_string(&[
+                status: first_string(&[
+                    json_pointer_string(chart, "/status"),
+                    (!image_exists).then(|| "WARNING".to_string()),
+                ]),
+                why_selected: first_string(&[
+                    json_pointer_string(chart, "/why_selected"),
+                    json_pointer_string(chart, "/purpose"),
+                ]),
+                what_to_look_at: first_string(&[
+                    json_pointer_string(chart, "/what_to_look_at"),
+                    json_pointer_string(chart, "/how_to_read"),
+                ]),
+                what_it_means: first_string(&[
+                    json_pointer_string(chart, "/what_it_means"),
                     json_pointer_string(chart, "/explanation"),
                     json_pointer_string(chart, "/ai_explanation"),
                 ]),
+                what_not_to_overread: first_string(&[
+                    json_pointer_string(chart, "/what_not_to_overread"),
+                    json_pointer_string(chart, "/limitation"),
+                    json_pointer_string(chart, "/limitations"),
+                    json_pointer_string(chart, "/warning"),
+                ]),
+                next_check: json_pointer_string(chart, "/next_check"),
             }
         })
         .collect()
+}
+
+fn safe_chart_image_path(charts_dir: &Path, path: &str) -> Option<PathBuf> {
+    if path.trim().is_empty() {
+        return None;
+    }
+    let raw_path = PathBuf::from(path);
+    if raw_path.is_absolute()
+        || raw_path
+            .components()
+            .any(|component| matches!(component, std::path::Component::ParentDir))
+    {
+        return None;
+    }
+
+    let candidate = charts_dir.join(raw_path);
+    ensure_path_under(charts_dir, &candidate).ok()?;
+    Some(candidate)
 }
 
 fn build_detail_artifacts(run_path: &Path, ticker: &str) -> DetailArtifacts {
@@ -2311,6 +2358,125 @@ mod tests {
 
         assert!(!serialized.contains("REPORT_BODY_SHOULD_NOT_RETURN"));
         assert!(serialized.contains("AAPL_research_report.md"));
+    }
+
+    #[test]
+    fn load_run_detail_reads_chart_manifest() {
+        let temp_dir = TempDir::new().expect("temp dir");
+        let run_path = create_detail_fixture(temp_dir.path(), "AAPL", "charts");
+        write_required_detail_metadata(&run_path);
+        create_dir_all(run_path.join("charts")).expect("charts dir");
+        write(run_path.join("charts").join("price.png"), "png").expect("chart image");
+        write(
+            run_path.join("charts").join("chart_manifest.json"),
+            r#"{"charts":[{"title":"Price vs Benchmark","image_path":"price.png","source":"locked price history","status":"PASS","why_selected":"Checks price path","what_to_look_at":"relative return","what_it_means":"historical price path","what_not_to_overread":"not valuation proof","next_check":"compare drawdown"}]}"#,
+        )
+        .expect("chart manifest");
+
+        let detail =
+            load_run_detail_from_reports_root(&temp_dir.path().join("reports"), "AAPL", "charts")
+                .expect("detail");
+
+        assert_eq!(detail.charts.len(), 1);
+        assert_eq!(detail.charts[0].title, "Price vs Benchmark");
+        assert!(detail.charts[0].image_exists);
+        assert_eq!(
+            detail.charts[0].source.as_deref(),
+            Some("locked price history")
+        );
+        assert_eq!(
+            detail.charts[0].what_not_to_overread.as_deref(),
+            Some("not valuation proof")
+        );
+    }
+
+    #[test]
+    fn chart_grid_handles_missing_manifest() {
+        let temp_dir = TempDir::new().expect("temp dir");
+        let run_path = create_detail_fixture(temp_dir.path(), "CAT", "no_manifest");
+        write_required_detail_metadata(&run_path);
+        create_dir_all(run_path.join("charts")).expect("charts dir");
+
+        let detail = load_run_detail_from_reports_root(
+            &temp_dir.path().join("reports"),
+            "CAT",
+            "no_manifest",
+        )
+        .expect("detail");
+
+        assert!(detail.charts.is_empty());
+    }
+
+    #[test]
+    fn chart_grid_marks_missing_image() {
+        let temp_dir = TempDir::new().expect("temp dir");
+        let run_path = create_detail_fixture(temp_dir.path(), "RKLB", "missing_chart");
+        write_required_detail_metadata(&run_path);
+        create_dir_all(run_path.join("charts")).expect("charts dir");
+        write(
+            run_path.join("charts").join("chart_manifest.json"),
+            r#"[{"title":"Money Flow","image_path":"missing.png","source":"cash flow"}]"#,
+        )
+        .expect("chart manifest");
+
+        let detail = load_run_detail_from_reports_root(
+            &temp_dir.path().join("reports"),
+            "RKLB",
+            "missing_chart",
+        )
+        .expect("detail");
+
+        assert_eq!(detail.charts.len(), 1);
+        assert!(!detail.charts[0].image_exists);
+        assert_eq!(detail.charts[0].status.as_deref(), Some("WARNING"));
+    }
+
+    #[test]
+    fn chart_metadata_includes_source_or_warning() {
+        let temp_dir = TempDir::new().expect("temp dir");
+        let run_path = create_detail_fixture(temp_dir.path(), "GOOGL", "chart_warning");
+        write_required_detail_metadata(&run_path);
+        create_dir_all(run_path.join("charts")).expect("charts dir");
+        write(
+            run_path.join("charts").join("chart_manifest.json"),
+            r#"[{"title":"Missing Source","image_path":"missing.png"}]"#,
+        )
+        .expect("chart manifest");
+
+        let detail = load_run_detail_from_reports_root(
+            &temp_dir.path().join("reports"),
+            "GOOGL",
+            "chart_warning",
+        )
+        .expect("detail");
+
+        assert!(detail.charts[0].source.is_none());
+        assert_eq!(detail.charts[0].status.as_deref(), Some("WARNING"));
+    }
+
+    #[test]
+    fn chart_artifact_path_stays_under_reports() {
+        let temp_dir = TempDir::new().expect("temp dir");
+        let run_path = create_detail_fixture(temp_dir.path(), "AAPL", "chart_escape");
+        write_required_detail_metadata(&run_path);
+        create_dir_all(run_path.join("charts")).expect("charts dir");
+        write(
+            run_path.join("charts").join("chart_manifest.json"),
+            r#"[{"title":"Unsafe","image_path":"../outside.png","source":"bad"}]"#,
+        )
+        .expect("chart manifest");
+
+        let detail = load_run_detail_from_reports_root(
+            &temp_dir.path().join("reports"),
+            "AAPL",
+            "chart_escape",
+        )
+        .expect("detail");
+
+        assert_eq!(detail.charts.len(), 1);
+        assert!(detail.charts[0].image_path.is_none());
+        assert!(!detail.charts[0].image_exists);
+        assert_eq!(detail.charts[0].status.as_deref(), Some("WARNING"));
     }
 
     fn create_run_with_generated_at(

@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import type { AppInfo, ArtifactActionResult, RunDetail, RunSummary } from "../types/app";
 
 export async function getAppInfo(): Promise<AppInfo> {
@@ -19,4 +19,8 @@ export async function openArtifact(path: string): Promise<ArtifactActionResult> 
 
 export async function revealInFolder(path: string): Promise<ArtifactActionResult> {
   return invoke<ArtifactActionResult>("reveal_in_folder", { path });
+}
+
+export function artifactImageSrc(path: string): string {
+  return convertFileSrc(path);
 }

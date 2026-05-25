@@ -97,9 +97,14 @@ export type RunDetail = {
   charts: Array<{
     title: string;
     image_path: string | null;
+    image_exists: boolean;
     source: string | null;
     status: string | null;
-    explanation: string | null;
+    why_selected: string | null;
+    what_to_look_at: string | null;
+    what_it_means: string | null;
+    what_not_to_overread: string | null;
+    next_check: string | null;
   }>;
   artifacts: {
     markdown_report_path: string | null;

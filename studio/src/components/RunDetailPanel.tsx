@@ -1,5 +1,5 @@
 import { type ReactNode, useState } from "react";
-import { openArtifact, revealInFolder } from "../lib/tauri";
+import { artifactImageSrc, openArtifact, revealInFolder } from "../lib/tauri";
 import type { RunDetail, RunDetailStatus } from "../types/app";
 
 type DetailBadgeVariant = "PASS" | "WARNING" | "FAIL" | "DATA_GAP" | "EXTERNAL_AI" | "LOCAL_MOCK" | "UNKNOWN";
@@ -380,6 +380,87 @@ function AuditTrailPanel({ detail }: { detail: RunDetail }): JSX.Element {
   );
 }
 
+function chartLimitation(detail: RunDetail["charts"][number]): string {
+  return (
+    detail.what_not_to_overread ??
+    (detail.image_exists
+      ? "This chart is a visual aid only and does not create a buy/sell signal."
+      : "Chart image missing, manifest available.")
+  );
+}
+
+function ChartGrid({ detail }: { detail: RunDetail }): JSX.Element {
+  const [message, setMessage] = useState<string>("Chart grid uses existing artifacts only.");
+  const [isBusy, setIsBusy] = useState<string | null>(null);
+
+  async function handleOpen(title: string, imagePath: string | null): Promise<void> {
+    if (!imagePath) {
+      return;
+    }
+    setIsBusy(title);
+    setMessage(`Opening chart artifact: ${title}...`);
+    try {
+      const result = await openArtifact(imagePath);
+      setMessage(`${result.message}: ${result.path}`);
+    } catch (error: unknown) {
+      const text = error instanceof Error ? error.message : String(error);
+      const browserPreview = text.includes("__TAURI__")
+        ? "Tauri IPC is unavailable in browser preview. Chart opening requires the desktop runtime."
+        : text;
+      setMessage(`Chart action failed: ${browserPreview}`);
+    } finally {
+      setIsBusy(null);
+    }
+  }
+
+  if (detail.charts.length === 0) {
+    return (
+      <DetailSection badge="DATA_GAP" title="Chart Grid">
+        <p className="warning-copy">No chart manifest found for this run.</p>
+        <p className="detail-copy">The studio did not generate charts and will only display existing chart artifacts.</p>
+      </DetailSection>
+    );
+  }
+
+  return (
+    <DetailSection badge="UNKNOWN" title="Chart Grid">
+      <div className="chart-grid">
+        {detail.charts.map((chart) => (
+          <article className="chart-card" key={`${chart.title}-${chart.image_path ?? "missing"}`}>
+            <div className="chart-card__header">
+              <strong>{chart.title}</strong>
+              <StatusBadge variant={chart.image_exists ? statusToBadge(chart.status) : "WARNING"} />
+            </div>
+            {chart.image_exists && chart.image_path ? (
+              <img alt={`${chart.title} chart preview`} className="chart-preview" src={artifactImageSrc(chart.image_path)} />
+            ) : (
+              <div className="chart-missing">Chart image missing, manifest available.</div>
+            )}
+            <dl className="chart-facts">
+              <KeyValueRow label="Source" value={chart.source ?? "unknown"} />
+              <KeyValueRow label="Look at" value={chart.what_to_look_at ?? "not specified"} />
+              <KeyValueRow label="Means" value={chart.what_it_means ?? "not specified"} />
+              <KeyValueRow label="Do not overread" value={chartLimitation(chart)} />
+              <KeyValueRow label="Next check" value={chart.next_check ?? "not specified"} />
+            </dl>
+            {chart.why_selected ? <p className="detail-copy">{chart.why_selected}</p> : null}
+            <button
+              className="artifact-button chart-open-button"
+              disabled={!chart.image_exists || !chart.image_path || isBusy !== null}
+              onClick={() => void handleOpen(chart.title, chart.image_path)}
+              type="button"
+            >
+              <span>Open Chart</span>
+              <small>{chart.image_exists ? "open" : "missing"}</small>
+            </button>
+          </article>
+        ))}
+      </div>
+      <p className="artifact-message">{message}</p>
+    </DetailSection>
+  );
+}
+
 type ArtifactButtonConfig = {
   label: string;
   path: string | null;
@@ -473,6 +554,7 @@ export function RunDetailPanel({ detail, error, status }: RunDetailPanelProps): 
       <BlueprintCard detail={detail} />
       <DataGapsCard detail={detail} />
       <AuditTrailPanel detail={detail} />
+      <ChartGrid detail={detail} />
       <ArtifactLinksCard detail={detail} />
     </>
   );
