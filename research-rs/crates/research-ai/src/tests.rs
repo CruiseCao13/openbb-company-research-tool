@@ -49,6 +49,62 @@ fn zim_like_payload_is_transport_not_biotech() {
 }
 
 #[test]
+fn cat_like_payload_is_industrial_machinery_not_insurance() {
+    let payload = ProviderPayload {
+        ticker: "CAT".to_string(),
+        company_profile: CompanyProfile {
+            name: "Caterpillar Inc.".to_string(),
+            sector: "Industrials".to_string(),
+            industry: "Farm & Heavy Construction Machinery".to_string(),
+            description:
+                "Manufactures construction and mining equipment, diesel engines, turbines, and related parts and services."
+                    .to_string(),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    let (understanding, _, _, _, _, _) = run_local_compact_analyst(&payload);
+    assert!(understanding
+        .correct_research_frame
+        .contains("Industrial Machinery"));
+    assert!(!understanding
+        .correct_research_frame
+        .to_lowercase()
+        .contains("insurance"));
+    assert!(understanding
+        .not_this
+        .iter()
+        .any(|item| item.to_lowercase().contains("insurance")));
+}
+
+#[test]
+fn jpm_like_payload_is_bank_not_consumer_retail() {
+    let payload = ProviderPayload {
+        ticker: "JPM".to_string(),
+        company_profile: CompanyProfile {
+            name: "JPMorgan Chase & Co.".to_string(),
+            sector: "Financial Services".to_string(),
+            industry: "Banks - Diversified".to_string(),
+            description:
+                "Provides consumer banking, commercial banking, investment banking, markets, asset management, cards, deposits, and lending."
+                    .to_string(),
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    let (understanding, _, blueprint, _, _, _) = run_local_compact_analyst(&payload);
+    assert!(understanding.correct_research_frame.contains("Bank-like"));
+    assert!(!understanding
+        .correct_research_frame
+        .to_lowercase()
+        .contains("consumer / retail"));
+    assert!(blueprint
+        .must_not_analyze_as_core
+        .iter()
+        .any(|item| item.to_lowercase().contains("industrial")));
+}
+
+#[test]
 fn isrg_like_payload_is_medtech_not_biotech() {
     let payload = ProviderPayload {
         ticker: "ISRG".to_string(),
