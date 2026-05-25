@@ -3043,3 +3043,461 @@ select:focus-visible {
     min-height: 460px;
   }
 }
+
+/* Ultimate visual aesthetic addendum: premium deep-space liquid glass terminal. */
+:root {
+  --canvas: #090d16;
+  --surface: rgba(13, 18, 30, 0.42);
+  --surface-solid: #0b0f19;
+  --border: rgba(255, 255, 255, 0.035);
+  --text-main: rgba(248, 250, 252, 0.96);
+  --text-muted: rgba(148, 163, 184, 0.72);
+  --pass: rgba(52, 211, 153, 0.82);
+  --warning: rgba(251, 191, 36, 0.86);
+  --fail: rgba(244, 63, 94, 0.78);
+  --info: rgba(34, 211, 238, 0.86);
+  --gold: rgba(251, 191, 36, 0.74);
+  --shadow-deep: 0 24px 70px rgba(0, 0, 0, 0.38);
+  --shadow-inset:
+    inset 0 1px 0 rgba(255, 255, 255, 0.055),
+    inset 0 -1px 0 rgba(15, 23, 42, 0.42);
+}
+
+body {
+  background:
+    radial-gradient(circle at 50% 12%, rgba(34, 211, 238, 0.07), transparent 36rem),
+    radial-gradient(circle at 18% 12%, rgba(20, 184, 166, 0.10), transparent 32rem),
+    radial-gradient(circle at 82% 78%, rgba(245, 158, 11, 0.08), transparent 34rem),
+    linear-gradient(135deg, #090d16 0%, #0b0f19 45%, #070a12 100%);
+}
+
+body::before,
+body::after {
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  pointer-events: none;
+  content: "";
+}
+
+body::before {
+  opacity: 0.74;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.024) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.024) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(circle at 52% 44%, black, transparent 82%);
+}
+
+body::after {
+  opacity: 0.08;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.55) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 70% 20%, rgba(255, 255, 255, 0.42) 0 1px, transparent 1.6px),
+    radial-gradient(circle at 45% 80%, rgba(255, 255, 255, 0.34) 0 1px, transparent 1.7px);
+  background-size: 180px 180px, 260px 260px, 340px 340px;
+  mix-blend-mode: screen;
+}
+
+.studio-shell::before {
+  background:
+    radial-gradient(40rem circle at var(--cursor-x, var(--pointer-x, 50%)) var(--cursor-y, var(--pointer-y, 44%)), rgba(34, 211, 238, 0.115), transparent 58%),
+    radial-gradient(34rem circle at calc(var(--cursor-x, var(--pointer-x, 50%)) + 18rem) calc(var(--cursor-y, var(--pointer-y, 44%)) + 10rem), rgba(245, 158, 11, 0.055), transparent 62%),
+    radial-gradient(circle at 16% 10%, rgba(20, 184, 166, 0.08), transparent 30%),
+    radial-gradient(circle at 88% 84%, rgba(251, 191, 36, 0.05), transparent 34%);
+}
+
+.nav-rail,
+.studio-topbar,
+.workspace-hero,
+.artifact-dock,
+.detail-tabs,
+.hero-graph-stage,
+.chart-preview-strip,
+.diagnostics-drawer,
+.insight-card,
+.matrix-hero,
+.matrix-board,
+.matrix-inspector,
+.settings-center,
+.landing-hero,
+.sankey-panel,
+.gauge-dashboard,
+.gauge-dial,
+.app-info-card,
+.run-detail-card {
+  border-color: rgba(255, 255, 255, 0.035);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.058), rgba(15, 23, 42, 0.42)),
+    rgba(7, 10, 18, 0.42);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.055),
+    inset 0 -1px 0 rgba(15, 23, 42, 0.42),
+    0 24px 70px rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(24px) saturate(160%);
+}
+
+.nav-rail,
+.landing-hero,
+.hero-graph-stage {
+  border-radius: 28px;
+}
+
+.workspace-hero,
+.artifact-dock,
+.chart-preview-strip,
+.gauge-dashboard,
+.sankey-panel,
+.settings-center,
+.matrix-board {
+  border-radius: 26px;
+}
+
+.run-detail-card,
+.insight-card,
+.gauge-dial,
+.chart-strip-card,
+.chart-card,
+.matrix-summary-card,
+.matrix-inspector {
+  border-radius: 22px;
+}
+
+.eyebrow,
+.card-label,
+.mode-switch__button,
+.run-search,
+.rail-section-header,
+.run-list-item__run-id,
+.run-list-item__meta,
+.detail-tab,
+.primary-action,
+.artifact-message,
+.diagnostics-strip,
+.diagnostic-kv,
+.app-info-list,
+.ipc-state,
+.mono-label,
+.path-muted,
+.subsection-title {
+  color: rgba(148, 163, 184, 0.62);
+  font-family: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.metric-value,
+.detail-kv-grid dd,
+.self-review-grid dd,
+.app-info-list dd,
+.chart-facts dd,
+.matrix-summary-card strong,
+.workspace-hero__title-row h2 {
+  color: rgba(248, 250, 252, 0.96);
+  font-family: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.status-badge {
+  position: relative;
+  gap: 6px;
+  border-color: rgba(255, 255, 255, 0.04);
+  background: rgba(7, 10, 18, 0.36);
+  backdrop-filter: blur(14px) saturate(150%);
+}
+
+.status-badge::before {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+  box-shadow: 0 0 16px currentColor;
+  content: "";
+}
+
+.status-badge--pass,
+.status-badge--external_ai {
+  border-color: rgba(52, 211, 153, 0.22);
+  color: rgba(52, 211, 153, 0.82);
+}
+
+.status-badge--warning,
+.status-badge--data_gap,
+.status-badge--local_mock,
+.status-badge--human_review {
+  border-color: rgba(251, 191, 36, 0.28);
+  color: rgba(251, 191, 36, 0.86);
+  background:
+    linear-gradient(90deg, rgba(251, 191, 36, 0.09), rgba(7, 10, 18, 0.32)),
+    rgba(7, 10, 18, 0.36);
+}
+
+.status-badge--fail,
+.status-badge--provider_mock {
+  border-color: rgba(244, 63, 94, 0.32);
+  color: rgba(244, 63, 94, 0.78);
+  background:
+    linear-gradient(90deg, rgba(244, 63, 94, 0.09), rgba(7, 10, 18, 0.32)),
+    rgba(7, 10, 18, 0.36);
+}
+
+.status-badge--unknown,
+.status-badge--cached,
+.status-badge--skipped,
+.status-badge--cache {
+  border-color: rgba(148, 163, 184, 0.18);
+  color: rgba(148, 163, 184, 0.72);
+}
+
+.primary-action,
+.hero-cta,
+.mode-switch,
+.mode-switch__button,
+.detail-tab,
+.topbar-chip,
+.segmented-choice__button,
+.search-clear,
+.chart-strip-action,
+.example-ticker-strip button,
+.landing-search-console input,
+.landing-search-console select,
+.run-search input,
+.training-selector select {
+  border-color: rgba(255, 255, 255, 0.04);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(8, 13, 24, 0.42)),
+    rgba(7, 10, 18, 0.36);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 10px 32px rgba(0, 0, 0, 0.24);
+}
+
+.primary-action b {
+  border-color: rgba(34, 211, 238, 0.22);
+  color: rgba(34, 211, 238, 0.86);
+}
+
+.primary-action:first-child {
+  border-color: rgba(251, 191, 36, 0.28);
+  background:
+    linear-gradient(90deg, rgba(251, 191, 36, 0.115), rgba(34, 211, 238, 0.06), transparent),
+    rgba(7, 10, 18, 0.46);
+}
+
+.primary-action:hover:not(:disabled),
+.hero-cta:hover:not(:disabled),
+.chart-strip-action:hover,
+.example-ticker-strip button:hover {
+  border-color: rgba(34, 211, 238, 0.36);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 16px 46px rgba(34, 211, 238, 0.11);
+}
+
+.landing-hero__canvas {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(52, 211, 153, 0.13), transparent 28rem),
+    radial-gradient(circle at 68% 62%, rgba(34, 211, 238, 0.12), transparent 30rem),
+    radial-gradient(circle at 22% 18%, rgba(245, 158, 11, 0.06), transparent 22rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(9, 13, 22, 0.38));
+}
+
+.landing-hero h2 {
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.98), rgba(251, 191, 36, 0.72) 44%, rgba(148, 163, 184, 0.92));
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.sankey-panel--vascular {
+  border-color: rgba(255, 255, 255, 0.04);
+  background:
+    radial-gradient(circle at 38% 42%, rgba(52, 211, 153, 0.16), transparent 32rem),
+    radial-gradient(circle at 72% 62%, rgba(34, 211, 238, 0.13), transparent 30rem),
+    radial-gradient(circle at 24% 78%, rgba(245, 158, 11, 0.07), transparent 24rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.058), rgba(15, 23, 42, 0.42));
+}
+
+.sankey-link-group {
+  isolation: isolate;
+}
+
+.sankey-link {
+  stroke-opacity: 0.48;
+  stroke-dasharray: 20 30;
+  transition:
+    filter 180ms ease,
+    stroke-opacity 180ms ease,
+    stroke-width 180ms ease;
+}
+
+.sankey-link-highlight {
+  fill: none;
+  pointer-events: none;
+  stroke: rgba(248, 250, 252, 0.36);
+  stroke-linecap: round;
+  stroke-opacity: 0.42;
+  filter: blur(0.2px);
+  mix-blend-mode: screen;
+}
+
+.sankey-link-group:hover .sankey-link {
+  stroke-opacity: 0.86;
+  filter: url("#sankey-vascular-glow") drop-shadow(0 0 16px rgba(34, 211, 238, 0.28));
+}
+
+.sankey-mini-inspector {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(6px);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.sankey-link-group:hover .sankey-mini-inspector {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.sankey-mini-inspector__surface {
+  display: grid;
+  gap: 8px;
+  height: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(9, 13, 22, 0.72)),
+    rgba(7, 10, 18, 0.82);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 18px 48px rgba(0, 0, 0, 0.42);
+  color: var(--text-main);
+  padding: 12px;
+  backdrop-filter: blur(24px) saturate(160%);
+}
+
+.sankey-mini-inspector__surface strong {
+  color: rgba(248, 250, 252, 0.96);
+  font-family: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+}
+
+.sankey-mini-inspector__surface dl {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+}
+
+.sankey-mini-inspector__surface div {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.sankey-mini-inspector__surface dt {
+  color: rgba(148, 163, 184, 0.62);
+  font-family: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sankey-mini-inspector__surface dd {
+  margin: 0;
+  overflow: hidden;
+  color: rgba(248, 250, 252, 0.86);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sankey-mini-inspector__orb--inflow,
+.sankey-mini-inspector__orb--cash {
+  background: rgba(34, 211, 238, 0.86);
+}
+
+.sankey-mini-inspector__orb--reinvestment {
+  background: rgba(96, 165, 250, 0.72);
+}
+
+.sankey-mini-inspector__orb--risk {
+  background: rgba(251, 191, 36, 0.86);
+}
+
+.sankey-mini-inspector__orb--gap {
+  background: rgba(148, 163, 184, 0.72);
+}
+
+.sankey-node rect {
+  fill: rgba(9, 13, 22, 0.86);
+  stroke: rgba(34, 211, 238, 0.34);
+}
+
+.sankey-node--gap rect {
+  stroke: rgba(251, 191, 36, 0.36);
+}
+
+.gauge-dial {
+  background:
+    radial-gradient(circle at 50% 4%, rgba(255, 255, 255, 0.06), transparent 44%),
+    rgba(7, 10, 18, 0.34);
+}
+
+.gauge-dial__meter {
+  background:
+    radial-gradient(circle at center, rgba(9, 13, 22, 0.98) 0 55%, transparent 56%),
+    conic-gradient(var(--gauge-color) 0 226deg, rgba(148, 163, 184, 0.12) 226deg 360deg);
+  box-shadow:
+    inset 0 0 20px rgba(0, 0, 0, 0.42),
+    0 0 28px color-mix(in srgb, var(--gauge-color), transparent 70%);
+}
+
+.gauge-dial--good {
+  --gauge-color: rgba(52, 211, 153, 0.82);
+}
+
+.gauge-dial--warning {
+  --gauge-color: rgba(251, 191, 36, 0.86);
+}
+
+.gauge-dial--risk {
+  --gauge-color: rgba(244, 63, 94, 0.78);
+}
+
+.matrix-cell--good {
+  border-color: rgba(52, 211, 153, 0.28);
+  color: rgba(52, 211, 153, 0.82);
+}
+
+.matrix-cell--ok {
+  border-color: rgba(34, 211, 238, 0.28);
+  color: rgba(34, 211, 238, 0.86);
+}
+
+.matrix-cell--weak {
+  border-color: rgba(251, 191, 36, 0.32);
+  color: rgba(251, 191, 36, 0.86);
+}
+
+.matrix-cell--fail {
+  border-color: rgba(244, 63, 94, 0.32);
+  color: rgba(244, 63, 94, 0.78);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sankey-link,
+  .vascular-path,
+  .status-badge--warning,
+  .status-badge--fail,
+  .status-badge--data_gap,
+  .status-badge--human_review,
+  .status-badge--local_mock,
+  .status-badge--provider_mock {
+    animation: none !important;
+  }
+}

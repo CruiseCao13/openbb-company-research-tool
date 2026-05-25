@@ -1115,6 +1115,8 @@ function AppShell({
     }
     event.currentTarget.style.setProperty("--pointer-x", `${event.clientX}px`);
     event.currentTarget.style.setProperty("--pointer-y", `${event.clientY}px`);
+    event.currentTarget.style.setProperty("--cursor-x", `${event.clientX}px`);
+    event.currentTarget.style.setProperty("--cursor-y", `${event.clientY}px`);
   }
 
   return (

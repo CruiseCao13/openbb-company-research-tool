@@ -136,21 +136,21 @@ function buildMoneyFlowGraph(detail: RunDetail): SankeyGraph<SankeyNodeDatum, Sa
       {
         source: 1,
         target: 3,
-        value: debtText ? 1 : 0.45,
+        value: 1,
         label: compactText(debtText, "Financing pressure not specified."),
         kind: debtText ? "risk" : "cash"
       },
       {
         source: 1,
         target: 4,
-        value: detail.blueprint.data_gaps.length || detail.provider.missing_fields.length ? 0.75 : 0.25,
+        value: 1,
         label: compactText([...detail.blueprint.data_gaps, ...detail.provider.missing_fields].join("; "), "No explicit data gap reported."),
         kind: "gap"
       },
       {
         source: 3,
         target: 5,
-        value: detail.financial_interpretation.cash_flow_explanation ? 0.55 : 0.25,
+        value: 1,
         label: compactText(detail.financial_interpretation.cash_flow_explanation, "Shareholder return support is not specified."),
         kind: "cash"
       }
@@ -199,41 +199,68 @@ export function MoneyFlowSankey({ detail }: { detail: RunDetail }): JSX.Element 
           <defs>
             <filter id="sankey-vascular-glow" x="-30%" y="-30%" width="160%" height="160%">
               <feGaussianBlur stdDeviation="6" result="blur" />
+              <feDropShadow dx="0" dy="0" stdDeviation="8" floodColor="rgba(34, 211, 238, 0.28)" />
               <feMerge>
                 <feMergeNode in="blur" />
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
             <linearGradient id="sankey-link-gradient-inflow" x1="0%" x2="100%" y1="0%" y2="0%">
-              <stop offset="0%" stopColor="rgba(52, 211, 153, 0.22)" />
-              <stop offset="52%" stopColor="rgba(52, 211, 153, 0.9)" />
-              <stop offset="100%" stopColor="rgba(143, 211, 255, 0.62)" />
+              <stop offset="0%" stopColor="rgba(34, 211, 238, 0.24)" />
+              <stop offset="48%" stopColor="rgba(52, 211, 153, 0.86)" />
+              <stop offset="100%" stopColor="rgba(34, 211, 238, 0.66)" />
             </linearGradient>
             <linearGradient id="sankey-link-gradient-reinvestment" x1="0%" x2="100%" y1="0%" y2="0%">
-              <stop offset="0%" stopColor="rgba(143, 211, 255, 0.2)" />
-              <stop offset="58%" stopColor="rgba(96, 165, 250, 0.82)" />
+              <stop offset="0%" stopColor="rgba(34, 211, 238, 0.18)" />
+              <stop offset="58%" stopColor="rgba(96, 165, 250, 0.72)" />
               <stop offset="100%" stopColor="rgba(129, 140, 248, 0.42)" />
             </linearGradient>
             <linearGradient id="sankey-link-gradient-risk" x1="0%" x2="100%" y1="0%" y2="0%">
-              <stop offset="0%" stopColor="rgba(251, 146, 60, 0.25)" />
-              <stop offset="58%" stopColor="rgba(251, 146, 60, 0.85)" />
+              <stop offset="0%" stopColor="rgba(251, 191, 36, 0.28)" />
+              <stop offset="58%" stopColor="rgba(245, 158, 11, 0.78)" />
               <stop offset="100%" stopColor="rgba(244, 63, 94, 0.48)" />
             </linearGradient>
             <linearGradient id="sankey-link-gradient-gap" x1="0%" x2="100%" y1="0%" y2="0%">
               <stop offset="0%" stopColor="rgba(148, 163, 184, 0.14)" />
-              <stop offset="70%" stopColor="rgba(251, 146, 60, 0.48)" />
+              <stop offset="70%" stopColor="rgba(245, 158, 11, 0.42)" />
             </linearGradient>
           </defs>
-          {rendered.links.map((link, index) => (
-            <path
-              className={`sankey-link sankey-link--${link.kind}`}
-              d={path(link) ?? undefined}
-              key={`${link.index ?? index}-${link.label}`}
-              strokeWidth={Math.max(18, (link.width ?? 8) * 1.4)}
-            >
-              <title>{`${link.label}\n${t("qualitativeSankey")}`}</title>
-            </path>
-          ))}
+          {rendered.links.map((link, index) => {
+            const linkPosition = link as SankeyLinkDatum & { y0?: number; y1?: number; width?: number };
+            const sourceNode = typeof link.source === "object"
+              ? (link.source as SankeyNodeDatum & { x1?: number; y0?: number; y1?: number })
+              : null;
+            const targetNode = typeof link.target === "object"
+              ? (link.target as SankeyNodeDatum & { x0?: number; y0?: number; y1?: number })
+              : null;
+            const inspectorX = Math.min(width - 294, Math.max(28, ((sourceNode?.x1 ?? 80) + (targetNode?.x0 ?? width - 80)) / 2 - 134));
+            const inspectorY = Math.min(height - 140, Math.max(58, ((linkPosition.y0 ?? 160) + (linkPosition.y1 ?? 220)) / 2 - 62));
+            return (
+              <g className="sankey-link-group" key={`${link.index ?? index}-${link.label}`}>
+                <path
+                  className={`sankey-link sankey-link--${link.kind}`}
+                  d={path(link) ?? undefined}
+                  strokeWidth={Math.max(22, Math.min(34, (link.width ?? 18) * 1.2))}
+                />
+                <path
+                  className="sankey-link-highlight"
+                  d={path(link) ?? undefined}
+                  strokeWidth={Math.max(5, Math.min(9, (link.width ?? 18) * 0.32))}
+                />
+                <foreignObject className="sankey-mini-inspector" height="132" width="282" x={inspectorX} y={inspectorY}>
+                  <div className="sankey-mini-inspector__surface">
+                    <span className={`status-orb sankey-mini-inspector__orb sankey-mini-inspector__orb--${link.kind}`} />
+                    <strong>{link.kind === "gap" ? "Data gap flow" : link.kind === "risk" ? "Pressure flow" : link.kind === "reinvestment" ? "Reinvestment flow" : "Cash flow"}</strong>
+                    <dl>
+                      <div><dt>{t("source")}</dt><dd>RunDetail money-flow fields</dd></div>
+                      <div><dt>{t("limitation")}</dt><dd>{t("qualitativeSankey")}</dd></div>
+                      <div><dt>{t("nextCheck")}</dt><dd>{link.label}</dd></div>
+                    </dl>
+                  </div>
+                </foreignObject>
+              </g>
+            );
+          })}
           {rendered.nodes.map((node) => (
             <g className={`sankey-node sankey-node--${node.kind}`} key={node.name}>
               <rect height={(node.y1 ?? 0) - (node.y0 ?? 0)} rx="13" width={(node.x1 ?? 0) - (node.x0 ?? 0)} x={node.x0} y={node.y0} />
