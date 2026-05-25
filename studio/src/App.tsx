@@ -199,7 +199,15 @@ function Sidebar({
   );
 }
 
-function TopStatusStrip({ ipcMessage }: { ipcMessage: string }): JSX.Element {
+function TopStatusStrip({
+  detailStatus,
+  ipcMessage,
+  selectedRun
+}: {
+  detailStatus: RunDetailStatus;
+  ipcMessage: string;
+  selectedRun: RunSummary | null;
+}): JSX.Element {
   return (
     <header className="top-status-strip" aria-label="Studio status">
       <div className="status-cluster">
@@ -207,7 +215,8 @@ function TopStatusStrip({ ipcMessage }: { ipcMessage: string }): JSX.Element {
         <span>Studio shell ready</span>
       </div>
       <span>No external API used</span>
-      <span>No run loaded</span>
+      <span>{selectedRun ? `${selectedRun.ticker} / ${selectedRun.run_id}` : "No run loaded"}</span>
+      <StatusBadge variant={detailStatus === "ready" ? statusToBadge(selectedRun?.status ?? null) : "UNKNOWN"} />
       <span className="ipc-readout">{ipcMessage}</span>
     </header>
   );
@@ -568,22 +577,22 @@ export function App(): JSX.Element {
       />
 
       <section className="workspace" aria-label="Research run detail">
-        <TopStatusStrip ipcMessage={ipcMessage} />
+        <TopStatusStrip detailStatus={runDetailStatus} ipcMessage={ipcMessage} selectedRun={selectedRun} />
 
         <header className="workspace-header">
           <div>
-            <p className="eyebrow">Static placeholder layout</p>
+            <p className="eyebrow">Run intelligence workspace</p>
             <h2>Research Run Detail</h2>
             <p>Select a run to inspect locked data, AI provenance, validator logs, and report artifacts.</p>
           </div>
         </header>
 
-        <section className="card-grid" aria-label="Placeholder detail cards">
+        <section className="card-grid" aria-label="Research detail cards">
           <AppInfoCard appInfo={appInfo} error={appInfoError} status={appInfoStatus} />
           <RunDetailPanel detail={activeRunDetail} error={runDetailError} status={runDetailStatus} />
-          {placeholderCards.map((card, index) => (
-            <ResearchCard card={card} key={card.title} wide={index >= 3} />
-          ))}
+          {runDetailStatus === "idle" || runDetailStatus === "loading"
+            ? placeholderCards.map((card, index) => <ResearchCard card={card} key={card.title} wide={index >= 3} />)
+            : null}
         </section>
 
         <BottomProvenanceBar detail={activeRunDetail} status={runDetailStatus} />
