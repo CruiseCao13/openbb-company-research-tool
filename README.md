@@ -3,24 +3,28 @@
 
 Rust 驱动、AI 主导的公司研究引擎。
 
+An AI-led company research assistant, not a stock picker.
+
 ## English Product Overview
 
-OpenBB Company Research Tool v5.0 is an AI-led company research engine. It helps users understand what a company is, how it makes money, where cash comes from and goes, what the locked data can support, and what still needs manual verification.
+OpenBB Company Research Tool v5.0 helps users understand what a company is, how it makes money, where cash comes from and goes, what the data supports, and what still needs manual verification.
 
-The system is not a stock picker. It does not give buy/sell/hold recommendations, target prices, or short-term trading signals.
+It does not produce buy/sell/hold recommendations, target prices, or trading signals.
 
 ### Why v5 Exists
 
-Earlier automated reports could look polished while choosing the wrong company frame too early. v5 changes the order of authority:
+Earlier Python workflows were useful, but the main report path was too rule/template driven: data was classified first, a template report was assembled, and AI was used late in the process.
+
+v5 changes the order of authority:
 
 ```text
-Earlier Python workflows: Data -> Rule-based profile -> Template report -> AI patch
-v5 Rust workflow: Data -> Locked numbers -> AI company understanding -> AI research blueprint -> Validator -> Report -> AI self-review -> Batch eval
+Earlier workflow: Data -> Rule/template profile -> Template report -> AI patch
+v5 workflow: Data -> Locked numbers -> AI company understanding -> AI research blueprint -> Validator -> Report -> AI self-review
 ```
 
-The core rule is simple: understand the company before writing the report.
+The point is simple: the system must understand the company before writing the report.
 
-### v5 Architecture
+### Architecture
 
 ```mermaid
 flowchart LR
@@ -28,35 +32,37 @@ flowchart LR
   B --> C["AI Company Understanding"]
   C --> D["AI Research Blueprint"]
   D --> E["Validator"]
-  E --> F["Markdown + Dashboard + PDF"]
+  E --> F["Report + Dashboard + PDF"]
   F --> G["AI Self Review"]
-  G --> H["Batch Eval + Training Cases"]
+  G --> H["Quality Checks + Regression Cases"]
 ```
 
 ### Responsibility Split
 
 | Layer | Responsibility |
-|---|---|
-| Rust | CLI, pipeline orchestration, cache, validation, batch runner, report/dashboard rendering, pack builder |
-| Python | OpenBB provider, AKShare provider, Tushare provider, Baostock provider |
-| AI | company understanding, financial interpretation, money flow, research blueprint, self-review, chart/table explanation |
-| Validator | locked-data boundary, unsupported claims, forbidden advice, visual lint, content quality gate |
+| --- | --- |
+| Rust | CLI, pipeline orchestration, cache, validation, batch runner, report/dashboard rendering, pack building |
+| Python | OpenBB/yfinance bridge, AKShare provider, Tushare path, Baostock path |
+| AI | company understanding, financial interpretation, money flow, research blueprint, chart/table explanation, self-review |
+| Validator | locked-data boundary, unsupported claims, forbidden advice, AI provenance, visual lint, quality gate |
 
-Templates only structure the surface. They do not decide the thesis, company identity, valuation frame, or risks.
+Templates only organize the surface. They do not invent the company identity, thesis, valuation frame, risks, or next checks.
 
 ## 中文产品说明
 
 OpenBB Company Research Tool v5.0 是一个 AI 主导的公司研究引擎。它帮助用户理解：公司是什么、靠什么赚钱、钱从哪里来又去了哪里、当前数据能支持什么判断、还有哪些内容必须人工核查。
 
-它不是荐股系统，不提供买入、卖出、持有建议，不给目标价，也不预测短期股价。
+它不是荐股工具，不给买入、卖出、持有建议，不给目标价，也不预测短期股价。
 
 ### 为什么需要 v5
 
-旧版自动报告最大的问题不是格式，而是太早套框架。公司还没认清，报告已经开始写。v5 的核心变化是把 AI 的公司理解前置：
+旧版 Python 流程能生成结构化报告，但主链路还是偏规则和模板：先分类，再套报告，AI 往往只是在后面补一层解释。这样容易出现一个危险结果：报告看起来完整，但公司框架可能从一开始就是错的。
+
+v5 把顺序改掉：
 
 ```text
-旧 Python 流程：数据 -> 规则分类 -> 模板报告 -> AI 补丁
-v5 Rust 流程：数据 -> 锁定数字 -> AI 理解公司 -> AI 研究蓝图 -> Validator -> 报告 -> AI 自检 -> 批量评估
+旧流程：数据 -> 规则/模板分类 -> 模板报告 -> AI 补丁
+v5：数据 -> 锁定数字 -> AI 理解公司 -> AI 研究蓝图 -> Validator -> 报告 -> AI 自检
 ```
 
 一句话：先认清公司，再写报告。
@@ -64,13 +70,13 @@ v5 Rust 流程：数据 -> 锁定数字 -> AI 理解公司 -> AI 研究蓝图 ->
 ### v5 分工
 
 | 层 | 负责什么 |
-|---|---|
+| --- | --- |
 | Rust | CLI、流程编排、缓存、校验、批量、报告/dashboard 渲染、打包 |
-| Python | OpenBB、AKShare、Tushare、Baostock 数据适配 |
-| AI | 公司理解、财报解释、资金流、研究蓝图、自我复核、图表/表格解释 |
-| Validator | 锁定数据边界、unsupported claims、禁止投资建议、visual lint、内容质量闸门 |
+| Python | OpenBB/yfinance、AKShare、Tushare、Baostock 数据适配 |
+| AI | 公司理解、财报解释、资金流、研究蓝图、图表/表格解释、自我复核 |
+| Validator | 锁定数据边界、unsupported claims、禁止投资建议、AI 来源证明、visual lint、质量闸门 |
 
-模板只负责展示格式，不负责判断公司是什么，也不负责生成结论。
+模板只负责排版和结构，不负责替 AI 发明结论。
 
 ## Quick Start
 
@@ -78,55 +84,46 @@ Primary entry point: `research-rs`.
 
 ```bash
 source "$HOME/.cargo/env"
-cd research-rs
-cargo run -p research-rs -- --help
+cargo run --manifest-path research-rs/Cargo.toml -p research-rs -- --help
 ```
 
 Run AAPL with local fallback analysis:
 
 ```bash
-cargo run -p research-rs -- run AAPL --ai local --run-id demo_aapl_local
+cargo run --manifest-path research-rs/Cargo.toml -p research-rs -- run AAPL \
+  --ai local \
+  --run-id demo_aapl_local
 ```
 
-Run AAPL with a real OpenAI API call:
+Run RKLB with a real OpenAI API call:
 
 ```bash
-OPENAI_API_KEY="your_key" cargo run -p research-rs -- run AAPL \
+cargo run --manifest-path research-rs/Cargo.toml -p research-rs -- run RKLB \
   --ai compact \
   --require-external-ai \
   --no-ai-cache \
-  --run-id demo_aapl_external
+  --run-id demo_rklb_external
 ```
 
 Run a China A-share company:
 
 ```bash
-cargo run -p research-rs -- run 600519.SH \
+cargo run --manifest-path research-rs/Cargo.toml -p research-rs -- run 600519.SH \
   --market cn \
   --provider akshare \
   --ai local \
   --run-id demo_600519
 ```
 
-Run the broad 30 probe:
-
-```bash
-cargo run -p research-rs -- batch ../eval_sets/broad_30_probe.yaml \
-  --mode batch \
-  --workers 2 \
-  --ai local \
-  --run-id demo_broad_30
-```
-
 ## How to Verify Real OpenAI API Usage
 
-Do not infer AI usage from polished writing. Check the run artifact:
+Do not infer real AI usage from polished writing. Check the run artifact:
 
 ```text
 reports/TICKER/runs/RUN_ID/metadata/ai_usage.json
 ```
 
-Required fields:
+The key fields are:
 
 - `external_ai_used`
 - `local_mock_used`
@@ -135,7 +132,7 @@ Required fields:
 - `model`
 - `tasks`
 
-Example from a real external run:
+Example from a verified external run:
 
 ```json
 {
@@ -147,54 +144,54 @@ Example from a real external run:
 }
 ```
 
-If `external_ai_used=false`, the output is not a full external OpenAI analysis. It may be local fallback, skipped AI, or cache-only output. Reports and dashboards must surface that boundary.
+If `external_ai_used=false`, the report is not a full external OpenAI analysis. It may be local fallback, skipped AI, or cache-only output. Reports and dashboards must show that boundary.
 
-## Supported Markets
+## v5 Sample Gallery
 
-| Market | Providers | Ticker examples | Notes |
-|---|---|---|---|
-| US / Global | OpenBB bridge, optional fallback | `AAPL`, `GOOGL`, `CAT`, `AMD` | Coverage depends on local provider availability. |
-| China A-share | AKShare first, Tushare if `TUSHARE_TOKEN` exists, Baostock fallback | `600519.SH`, `000001.SZ`, `300750.SZ` | A-share fields can be incomplete; reports must downgrade honestly. |
+Samples are product-surface examples, not investment recommendations. Always inspect each sample's `metadata/ai_usage.json` before treating it as external AI analysis.
+
+| Company | Market | AI Source Label | Report | Dashboard | AI Usage | Company Understanding | Blueprint | Self Review |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| AAPL | US | local fallback sample | [report](reports/samples/AAPL/report/AAPL_research_report.md) | [dashboard](reports/samples/AAPL/dashboard.html) | [ai_usage](reports/samples/AAPL/metadata/ai_usage.json) | [company_understanding](reports/samples/AAPL/metadata/company_understanding.json) | [blueprint](reports/samples/AAPL/metadata/research_blueprint.json) | [self_review](reports/samples/AAPL/self_review/ai_self_review.md) |
+| RKLB | US | external OpenAI run | [report](reports/RKLB/runs/manual_verify_rklb_real/report/RKLB_research_report.md) | [dashboard](reports/RKLB/runs/manual_verify_rklb_real/dashboard.html) | [ai_usage](reports/RKLB/runs/manual_verify_rklb_real/metadata/ai_usage.json) | [company_understanding](reports/RKLB/runs/manual_verify_rklb_real/metadata/company_understanding.json) | [blueprint](reports/RKLB/runs/manual_verify_rklb_real/metadata/research_blueprint.json) | [self_review](reports/RKLB/runs/manual_verify_rklb_real/self_review/ai_self_review.md) |
+| GOOGL | US | local fallback sample | [report](reports/samples/GOOGL/report/GOOGL_research_report.md) | [dashboard](reports/samples/GOOGL/dashboard.html) | [ai_usage](reports/samples/GOOGL/metadata/ai_usage.json) | [company_understanding](reports/samples/GOOGL/metadata/company_understanding.json) | [blueprint](reports/samples/GOOGL/metadata/research_blueprint.json) | [self_review](reports/samples/GOOGL/self_review/ai_self_review.md) |
+| CAT | US | local fallback sample | [report](reports/samples/CAT/report/CAT_research_report.md) | [dashboard](reports/samples/CAT/dashboard.html) | [ai_usage](reports/samples/CAT/metadata/ai_usage.json) | [company_understanding](reports/samples/CAT/metadata/company_understanding.json) | [blueprint](reports/samples/CAT/metadata/research_blueprint.json) | [self_review](reports/samples/CAT/self_review/ai_self_review.md) |
+| AMD | US | local fallback sample | [report](reports/samples/AMD/report/AMD_research_report.md) | [dashboard](reports/samples/AMD/dashboard.html) | [ai_usage](reports/samples/AMD/metadata/ai_usage.json) | [company_understanding](reports/samples/AMD/metadata/company_understanding.json) | [blueprint](reports/samples/AMD/metadata/research_blueprint.json) | [self_review](reports/samples/AMD/self_review/ai_self_review.md) |
+| 600519.SH | CN A-share | local fallback sample | [report](reports/samples/600519.SH/report/600519.SH_research_report.md) | [dashboard](reports/samples/600519.SH/dashboard.html) | [ai_usage](reports/samples/600519.SH/metadata/ai_usage.json) | [company_understanding](reports/samples/600519.SH/metadata/company_understanding.json) | [blueprint](reports/samples/600519.SH/metadata/research_blueprint.json) | [self_review](reports/samples/600519.SH/self_review/ai_self_review.md) |
+| 000001.SZ | CN A-share | local fallback sample | [report](reports/samples/000001.SZ/report/000001.SZ_research_report.md) | [dashboard](reports/samples/000001.SZ/dashboard.html) | [ai_usage](reports/samples/000001.SZ/metadata/ai_usage.json) | [company_understanding](reports/samples/000001.SZ/metadata/company_understanding.json) | [blueprint](reports/samples/000001.SZ/metadata/research_blueprint.json) | [self_review](reports/samples/000001.SZ/self_review/ai_self_review.md) |
+
+Sample gallery index:
+
+```text
+reports/samples/index.html
+```
 
 ## Output Structure
 
 ```text
-reports/AAPL/runs/RUN_ID/
-  README.md
+reports/TICKER/runs/RUN_ID/
   report/
-    AAPL_research_report.md
-    AAPL_research_report_cn.md
-    AAPL_research_report.pdf
   dashboard.html
-  raw/
-    provider_payload.json
   metadata/
-    company_understanding.json
-    financial_interpretation.json
-    research_blueprint.json
-    ai_usage.json
-    evidence_map.json
-    product_quality_score.json
-    report_status.json
   ai/
-    prompts/
-    responses/
-    cache_info.json
   audit/
-    validator_report.md
-    visual_lint_report.md
-    data_inventory_report.md
-    chart_table_quality_report.md
   self_review/
-    ai_self_review.json
-    ai_self_review.md
   charts/
-  pack/
+  raw/
 ```
 
-Start with the Markdown report, then inspect `dashboard.html`, `metadata/ai_usage.json`, `metadata/research_blueprint.json`, `self_review/ai_self_review.md`, and `audit/validator_report.md`.
+Useful first files:
 
-## Report Sections
+- `report/*_research_report.md`
+- `dashboard.html`
+- `metadata/ai_usage.json`
+- `metadata/company_understanding.json`
+- `metadata/research_blueprint.json`
+- `metadata/evidence_map.json`
+- `audit/validator_report.md`
+- `self_review/ai_self_review.md`
+
+## Report Structure
 
 1. Report Status
 2. Company Identity
@@ -207,99 +204,69 @@ Start with the Markdown report, then inspect `dashboard.html`, `metadata/ai_usag
 9. Data Gaps
 10. AI Self Review
 11. Next Checks
-12. Appendix: Locked Data
-
-## v5 Sample Gallery
-
-Samples are checked in under `reports/samples/`. They are product-surface examples, not investment recommendations. Always inspect `metadata/ai_usage.json` to see whether the sample used external OpenAI or local fallback.
-
-| Company | Market | AI Source Label | Report | Dashboard | AI Usage | Company Understanding | Blueprint | Self Review |
-|---|---|---|---|---|---|---|---|---|
-| AAPL | US | local fallback sample | [report](reports/samples/AAPL/report/AAPL_research_report.md) | [dashboard](reports/samples/AAPL/dashboard.html) | [ai_usage](reports/samples/AAPL/metadata/ai_usage.json) | [company_understanding](reports/samples/AAPL/metadata/company_understanding.json) | [blueprint](reports/samples/AAPL/metadata/research_blueprint.json) | [self_review](reports/samples/AAPL/self_review/ai_self_review.md) |
-| GOOGL | US | local fallback sample | [report](reports/samples/GOOGL/report/GOOGL_research_report.md) | [dashboard](reports/samples/GOOGL/dashboard.html) | [ai_usage](reports/samples/GOOGL/metadata/ai_usage.json) | [company_understanding](reports/samples/GOOGL/metadata/company_understanding.json) | [blueprint](reports/samples/GOOGL/metadata/research_blueprint.json) | [self_review](reports/samples/GOOGL/self_review/ai_self_review.md) |
-| CAT | US | local fallback sample | [report](reports/samples/CAT/report/CAT_research_report.md) | [dashboard](reports/samples/CAT/dashboard.html) | [ai_usage](reports/samples/CAT/metadata/ai_usage.json) | [company_understanding](reports/samples/CAT/metadata/company_understanding.json) | [blueprint](reports/samples/CAT/metadata/research_blueprint.json) | [self_review](reports/samples/CAT/self_review/ai_self_review.md) |
-| AMD | US | local fallback sample | [report](reports/samples/AMD/report/AMD_research_report.md) | [dashboard](reports/samples/AMD/dashboard.html) | [ai_usage](reports/samples/AMD/metadata/ai_usage.json) | [company_understanding](reports/samples/AMD/metadata/company_understanding.json) | [blueprint](reports/samples/AMD/metadata/research_blueprint.json) | [self_review](reports/samples/AMD/self_review/ai_self_review.md) |
-| 600519.SH | CN A-share | local fallback sample | [report](reports/samples/600519.SH/report/600519.SH_research_report.md) | [dashboard](reports/samples/600519.SH/dashboard.html) | [ai_usage](reports/samples/600519.SH/metadata/ai_usage.json) | [company_understanding](reports/samples/600519.SH/metadata/company_understanding.json) | [blueprint](reports/samples/600519.SH/metadata/research_blueprint.json) | [self_review](reports/samples/600519.SH/self_review/ai_self_review.md) |
-| 000001.SZ | CN A-share | local fallback sample | [report](reports/samples/000001.SZ/report/000001.SZ_research_report.md) | [dashboard](reports/samples/000001.SZ/dashboard.html) | [ai_usage](reports/samples/000001.SZ/metadata/ai_usage.json) | [company_understanding](reports/samples/000001.SZ/metadata/company_understanding.json) | [blueprint](reports/samples/000001.SZ/metadata/research_blueprint.json) | [self_review](reports/samples/000001.SZ/self_review/ai_self_review.md) |
-
-Generate or refresh the sample gallery index:
-
-```bash
-cargo run -p research-rs --manifest-path research-rs/Cargo.toml -- samples
-open reports/samples/index.html
-```
+12. Appendix
 
 ## Dashboard, PDF, and Charts
 
-Each standard run attempts to produce:
+Standard runs attempt to produce a Markdown report, static `dashboard.html`, PDF export when local tooling is available, core charts or data-gap cards, chart explanations, table explanations, and visual lint reports.
 
-- Markdown report
-- static `dashboard.html`
-- PDF export when local tooling is available
-- core charts or data-gap cards
-- chart explanation blocks
-- table explanation blocks
-- `audit/visual_lint_report.md`
+Current limitations are explicit:
 
-The dashboard is a research surface, not a file index. It shows report status, AI source, company identity, money flow, research blueprint, data gaps, quality score, charts, and audit links.
+- PDF may be unavailable if local export tooling is missing.
+- PDF status must not pass if the output is blank or missing.
+- Charts must answer a research question; missing data should become a data-gap card.
+- Dashboard is meant to be a product surface, not just a list of files.
 
-## Content Quality Evaluation
+## Quality System
 
-v5 generates quality artifacts so users can check whether the report has research value:
+v5 treats quality as an artifact, not a vibe. Runs may include:
 
-- `metadata/product_quality_score.json`
+- AI provenance in AI JSON outputs
+- `metadata/ai_usage.json`
 - `metadata/evidence_map.json`
 - `metadata/data_inventory.json`
 - `audit/data_inventory_report.md`
 - `audit/visual_lint_report.md`
-- `audit/language_naturalness_report.md`
-- `metadata/language_quality_score.json`
 - `audit/chart_table_quality_report.md`
-- `self_review/ai_self_review.md`
-- batch-level `training_cases_generated.jsonl`
+- content quality summaries
+- training cases
+- regression hard cases
 
-Quality checks are meant to catch polished but weak reports, unsupported claims, missing money-flow analysis, chart/table issues, generic AI prose, translationese, vague next checks, and local fallback boundaries.
+The quality layer is designed to catch polished but weak reports: wrong company frame, hallucinated revenue engines, missing money-flow analysis, unsupported numeric claims, generic chart explanations, vague next checks, and local fallback being mistaken for external AI.
 
-v5 reports are designed to avoid generic AI prose. English reports should read like clear research memos. Chinese reports are not line-by-line translations of English; they are organized from the same locked data, evidence map, and research blueprint in natural Chinese.
+## Supported Markets
 
-## AI and Credit Control
+| Market | Path | Notes |
+| --- | --- | --- |
+| US | OpenBB/yfinance bridge | Coverage depends on local provider availability and upstream fields. |
+| China A-share | AKShare, Tushare path, Baostock path | Supports tickers such as `600519.SH`, `000001.SZ`, and `300750.SZ`; provider coverage and field completeness can vary. |
 
-v5 is designed to avoid wasting tokens:
-
-- compact payloads instead of full raw-data dumps
-- AI response cache
-- `--no-ai-cache` for forced fresh calls
-- `--require-external-ai` for hard external API verification
-- local fallback when external AI is not required
-- provenance in each AI artifact
-
-External AI is never assumed. It must be proven by `metadata/ai_usage.json`.
-
-## Legacy Python Workflow
-
-Earlier v2-v4 Python workflows remain available for compatibility; see [docs/history_v2_v4.md](docs/history_v2_v4.md). Legacy commands such as `openbb-research`, `cresearch`, and `python scripts/company_research_tool.py` are not the v5 primary entry point.
+A-share reports should use the correct accounting context: RMB units, operating revenue, net profit attributable to parent, adjusted net profit where available, operating cash flow, monetary cash, interest-bearing debt, receivables, inventory, R&D expense, asset-liability ratio, and ROE.
 
 ## Limitations
 
-- This is not investment advice.
-- No buy/sell/hold recommendation is produced.
-- No target price is produced.
-- Provider coverage may be incomplete, especially across A-share fields and industry KPIs.
-- AI may be wrong even when the API call succeeds.
+- Not investment advice.
+- No buy/sell/hold recommendation.
+- No target price.
+- Provider coverage may be incomplete.
+- AI may be wrong even when the external API call succeeds.
+- Human review is required for serious decisions.
 - local/mock fallback is not full external AI analysis.
-- Serious decisions require human review and independent source checks.
-- PDF export depends on local tooling and may be marked unavailable or warning.
+- Cache hits are not new external API calls.
+- A-share coverage depends on provider availability and field quality.
 
 ## Roadmap
 
 | Stage | Scope |
-|---|---|
-| v5.0 | Rust pipeline, OpenBB + A-share provider bridge, AI-led reports, static dashboard, PDF export, visual/content lint, broad_30 validation |
-| v5.1 | Streamlit internal workbench, research portfolio notebook, advanced charts |
-| v5.2 | React dashboard, broader markets, real-time quote context |
+| --- | --- |
+| v5 alpha | Rust pipeline, provider bridge, AI-led reports, static dashboard, PDF status, visual/content lint, hard regression cases |
+| v5.1 | Streamlit workbench, portfolio research notebook, advanced charts |
+| v5.2 | React dashboard, more markets, richer quote context |
 | P3 deferred | real trading, broker execution, automatic order placement |
 
-Real trading, broker execution, and automatic order placement are intentionally deferred.
+## Legacy
+
+Earlier v2-v4 Python workflows remain available for compatibility. See [docs/history_v2_v4.md](docs/history_v2_v4.md).
 
 ## 免责声明
 

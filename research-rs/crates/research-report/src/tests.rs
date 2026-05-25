@@ -197,33 +197,29 @@ fn readme_primary_quickstart_uses_research_rs() {
     let readme = include_str!("../../../../README.md");
     assert!(readme.contains("Primary entry point: `research-rs`."));
     assert!(readme.contains("source \"$HOME/.cargo/env\""));
-    assert!(readme.contains("cd research-rs"));
-    assert!(readme.contains("cargo run -p research-rs -- --help"));
-    assert!(
-        readme.contains("cargo run -p research-rs -- run AAPL --ai local --run-id demo_aapl_local")
-    );
+    assert!(readme
+        .contains("cargo run --manifest-path research-rs/Cargo.toml -p research-rs -- --help"));
+    assert!(readme
+        .contains("cargo run --manifest-path research-rs/Cargo.toml -p research-rs -- run AAPL"));
     assert!(readme.contains("--require-external-ai"));
     assert!(readme.contains("--no-ai-cache"));
-    assert!(readme.contains("cargo run -p research-rs -- run 600519.SH"));
+    assert!(readme.contains(
+        "cargo run --manifest-path research-rs/Cargo.toml -p research-rs -- run 600519.SH"
+    ));
 }
 
 #[test]
 fn readme_legacy_commands_not_in_primary_quickstart() {
     let readme = include_str!("../../../../README.md");
-    let quick_start = readme
-        .split("## How to Verify Real OpenAI API Usage")
-        .next()
-        .unwrap();
-    assert!(!quick_start.contains("openbb-research"));
-    assert!(!quick_start.contains("cresearch"));
-    assert!(!quick_start.contains("python scripts/company_research_tool.py"));
+    assert!(!readme.contains("openbb-research"));
+    assert!(!readme.contains("cresearch"));
+    assert!(!readme.contains("python scripts/company_research_tool.py"));
     let legacy = readme
-        .split("## Legacy Python Workflow")
+        .split("## Legacy")
         .nth(1)
         .expect("legacy section should exist");
-    assert!(legacy.contains("openbb-research"));
-    assert!(legacy.contains("cresearch"));
-    assert!(legacy.contains("python scripts/company_research_tool.py"));
+    assert!(legacy.contains("docs/history_v2_v4.md"));
+    assert!(legacy.contains("Earlier v2-v4 Python workflows remain available for compatibility"));
 }
 
 #[test]
@@ -248,6 +244,9 @@ fn readme_no_v43_current_product_sections() {
         "Current Status",
         "v4.3 Status Note",
         "asset-aware report routing",
+        "openbb-research",
+        "cresearch",
+        "company_research_tool.py",
     ] {
         assert!(!readme.contains(banned), "README still contains {banned}");
     }
@@ -255,6 +254,19 @@ fn readme_no_v43_current_product_sections() {
 
 #[test]
 fn readme_not_stuck_on_v43_current_status() {
+    readme_no_v43_current_product_sections();
+}
+
+#[test]
+fn readme_current_product_is_v5() {
+    let readme = include_str!("../../../../README.md");
+    assert!(readme.starts_with("# OpenBB Company Research Tool v5.0"));
+    assert!(readme.contains("Rust-Powered AI-Led Company Research Engine"));
+    assert!(readme.contains("An AI-led company research assistant, not a stock picker."));
+}
+
+#[test]
+fn readme_no_v43_current_body() {
     readme_no_v43_current_product_sections();
 }
 
@@ -267,6 +279,12 @@ fn readme_legacy_sections_moved_to_history() {
     let history = include_str!("../../../../docs/history_v2_v4.md");
     assert!(history.contains("v4.4 introduced the batch evaluation foundation"));
     assert!(history.contains("not the primary v5 entry point"));
+}
+
+#[test]
+fn docs_history_v2_v4_exists() {
+    let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../");
+    assert!(repo.join("docs/history_v2_v4.md").exists());
 }
 
 #[test]
