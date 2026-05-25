@@ -89,12 +89,8 @@ a {{ color: #8fd3ff; }}
         ai_source = understanding.ai_provenance.source,
         external_ai_used = understanding.ai_provenance.external_ai_used,
         local_mock_used = understanding.ai_provenance.local_mock_used,
-        new_external_ai_calls = if understanding.ai_provenance.new_external_ai_call {
-            1
-        } else {
-            0
-        },
-        ai_cache_hit = understanding.ai_provenance.cache_hit,
+        new_external_ai_calls = status.ai_calls,
+        ai_cache_hit = status.cache_hits > 0,
         ai_model = understanding.ai_provenance.model,
         prompt_version = understanding.ai_provenance.prompt_version,
         local_warning = if understanding.ai_provenance.local_mock_used {
