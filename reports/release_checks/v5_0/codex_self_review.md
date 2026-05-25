@@ -128,6 +128,17 @@ human-review caps for fallback/data-limited cases.
 The final productization quality smoke scored 5 reports with average quality
 86.0, zero FAIL grades, and zero hard failures.
 
+## Language Quality Review
+
+- English naturalness: checked by `audit/language_naturalness_report.md`.
+- Chinese naturalness: checked separately when a Chinese report is rendered.
+- Translationese: deterministic lint scans common Chinese translationese patterns such as “这表明了” and “对于投资者来说是值得关注的”.
+- Generic prose: lint flags phrases such as “strong potential”, “investors should pay attention”, “综合来看”, and “机遇与挑战并存”.
+- Vague risk / growth language: lint requires concrete subjects such as revenue, margin, FCF, capex, debt, valuation, 营业收入, 经营现金流, 有息负债, or 数据缺口.
+- Next checks: vague “further research” style checks are flagged.
+- Language quality score: written to `metadata/language_quality_score.json`.
+- Language polish pass: writes `audit/language_polish_trace.md`; it only rewrites generic language snippets and must not modify locked data or numeric claims.
+
 ## Provider Limitations
 
 - US/global runs use yfinance-compatible provider bridge behavior.

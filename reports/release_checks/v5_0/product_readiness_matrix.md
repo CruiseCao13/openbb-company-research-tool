@@ -13,6 +13,7 @@ Generated: 2026-05-25 Asia/Singapore
 | Dashboard | PASS | visual_artifact_audit.md |  |
 | PDF | WARNING | pdf_audit.md | Some samples lack pdf_export_report.md despite PDF files |
 | Content Quality | WARNING | content_quality_audit.md | Product quality score overstates data-limited A-share runs |
+| Language Quality | PASS | language_quality_audit.md |  |
 | Batch | PASS | batch_reliability_audit.md |  |
 | Cache | WARNING | cache_correctness_audit.md | Payload mutation invalidation not end-to-end audited |
 | Security | WARNING | security_privacy_audit.md | Local paths appear in release evidence |

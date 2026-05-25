@@ -1,4 +1,7 @@
 use crate::dashboard::render_company_dashboard;
+use crate::language::{
+    language_lint, language_naturalness_markdown, language_polish, language_polish_trace_markdown,
+};
 use crate::markdown::{render_report, render_report_zh, render_self_review_md};
 use anyhow::Result;
 use research_core::cache::digest_str;
@@ -70,7 +73,8 @@ pub fn render_run(input: RenderRunInput<'_>) -> Result<()> {
         &folder.self_review.join("ai_self_review.md"),
         &render_self_review_md(review),
     )?;
-    let report = render_report(
+    let mut language_traces = Vec::new();
+    let raw_report = render_report(
         payload,
         understanding,
         interpretation,
@@ -78,6 +82,8 @@ pub fn render_run(input: RenderRunInput<'_>) -> Result<()> {
         review,
         status,
     );
+    let (report, trace) = language_polish(&raw_report, "en");
+    language_traces.extend(trace);
     let english_report_path = folder
         .report
         .join(format!("{}_research_report.md", payload.ticker));
@@ -95,7 +101,7 @@ pub fn render_run(input: RenderRunInput<'_>) -> Result<()> {
         )?;
     }
     if lang == "zh" || lang == "both" {
-        let zh_report = render_report_zh(
+        let raw_zh_report = render_report_zh(
             payload,
             understanding,
             interpretation,
@@ -103,6 +109,8 @@ pub fn render_run(input: RenderRunInput<'_>) -> Result<()> {
             review,
             status,
         );
+        let (zh_report, trace) = language_polish(&raw_zh_report, "zh");
+        language_traces.extend(trace);
         if lang == "zh" {
             primary_report = zh_report.clone();
         }
@@ -132,9 +140,22 @@ pub fn render_run(input: RenderRunInput<'_>) -> Result<()> {
         final_status.overall_status = "WARNING".to_string();
         final_status.human_review_required = true;
     }
+    let language_for_status = if lang == "zh" { "zh" } else { "en" };
+    let language_status = language_lint(&primary_report, language_for_status).score;
+    if language_status.presentation_status == "FAIL" {
+        final_status.overall_status = "FAIL".to_string();
+        final_status.visual_lint_status = "FAIL".to_string();
+        final_status.human_review_required = true;
+    } else if language_status.presentation_status == "WARNING"
+        && final_status.overall_status == "PASS"
+    {
+        final_status.overall_status = "WARNING".to_string();
+        final_status.human_review_required = true;
+    }
     write_json(&folder.metadata.join("report_status.json"), &final_status)?;
     write_repro_manifest(folder, payload, &final_status)?;
     write_chart_table_quality(folder, &primary_report)?;
+    write_language_quality(folder, &primary_report, lang, &language_traces)?;
     write_if_changed(
         &folder.audit.join("provider_validation.md"),
         "# Provider Validation\n\nProvider payload was parsed into the v5 locked-data schema.\n",
@@ -1022,6 +1043,29 @@ fn write_chart_table_quality(folder: &RunFolder, report: &str) -> Result<()> {
     write_json(
         &folder.metadata.join("product_quality_score.json"),
         &product_quality,
+    )?;
+    Ok(())
+}
+
+fn write_language_quality(
+    folder: &RunFolder,
+    report: &str,
+    lang: &str,
+    traces: &[crate::language::LanguagePolishTraceEntry],
+) -> Result<()> {
+    let language = if lang == "zh" { "zh" } else { "en" };
+    let result = language_lint(report, language);
+    write_json(
+        &folder.metadata.join("language_quality_score.json"),
+        &result.score,
+    )?;
+    write_if_changed(
+        &folder.audit.join("language_naturalness_report.md"),
+        &language_naturalness_markdown(&result),
+    )?;
+    write_if_changed(
+        &folder.audit.join("language_polish_trace.md"),
+        &language_polish_trace_markdown(traces),
     )?;
     Ok(())
 }

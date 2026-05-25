@@ -252,11 +252,15 @@ v5 generates quality artifacts so users can check whether the report has researc
 - `metadata/data_inventory.json`
 - `audit/data_inventory_report.md`
 - `audit/visual_lint_report.md`
+- `audit/language_naturalness_report.md`
+- `metadata/language_quality_score.json`
 - `audit/chart_table_quality_report.md`
 - `self_review/ai_self_review.md`
 - batch-level `training_cases_generated.jsonl`
 
-Quality checks are meant to catch polished but weak reports, unsupported claims, missing money-flow analysis, chart/table issues, and local fallback boundaries.
+Quality checks are meant to catch polished but weak reports, unsupported claims, missing money-flow analysis, chart/table issues, generic AI prose, translationese, vague next checks, and local fallback boundaries.
+
+v5 reports are designed to avoid generic AI prose. English reports should read like clear research memos. Chinese reports are not line-by-line translations of English; they are organized from the same locked data, evidence map, and research blueprint in natural Chinese.
 
 ## AI and Credit Control
 

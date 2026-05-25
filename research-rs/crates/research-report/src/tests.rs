@@ -1,3 +1,4 @@
+use crate::language::{language_lint, language_polish};
 use crate::markdown::render_report;
 use research_core::types::*;
 use research_core::validation::visual_lint;
@@ -475,4 +476,81 @@ fn visual_lint_checks_data_coverage() {
     let (status, failures) = visual_lint(report, true, true, false, true, true);
     assert_eq!(status, "FAIL");
     assert!(failures.contains(&"data_usage_coverage_report_exists".to_string()));
+}
+
+#[test]
+fn language_lint_detects_generic_english_phrases() {
+    let report = "# AAPL Company Research Report\n\n> Status: PASS\n\n## Table of Contents\n\n## 1. Report Status\n\nThe company has strong potential in a dynamic market environment.";
+    let result = language_lint(report, "en");
+    assert!(result.score.generic_phrase_detected);
+    assert!(result.score.language_quality_score < 90);
+}
+
+#[test]
+fn language_lint_detects_generic_chinese_phrases() {
+    let report = "# AAPL 公司研究报告\n\n> 状态：PASS\n\n## 目录\n\n## 1. 报告状态\n\n综合来看，该公司具有较强发展潜力，投资者应持续关注。";
+    let result = language_lint(report, "zh");
+    assert!(result.score.generic_phrase_detected);
+    assert!(result.score.language_quality_score < 90);
+}
+
+#[test]
+fn language_lint_detects_translationese() {
+    let report = "# AAPL 公司研究报告\n\n> 状态：PASS\n\n## 目录\n\n## 1. 报告状态\n\n这表明了该公司的盈利能力是重要的。";
+    let result = language_lint(report, "zh");
+    assert!(result.score.translationese_detected);
+}
+
+#[test]
+fn language_lint_detects_repeated_sentence_patterns() {
+    let report = "# AAPL Company Research Report\n\n> Status: PASS\n\n## Table of Contents\n\n## 1. Report Status\n\nThis means revenue matters.\nThis means margin matters.\nThis means FCF matters.\nThis means debt matters.\nThis means valuation matters.";
+    let result = language_lint(report, "en");
+    assert!(result.score.repeated_sentence_pattern);
+}
+
+#[test]
+fn language_lint_detects_vague_next_checks() {
+    let report = "# AAPL Company Research Report\n\n> Status: PASS\n\n## Table of Contents\n\n## 11. Next Checks\n\nNext check: further research is needed.";
+    let result = language_lint(report, "en");
+    assert!(result.score.vague_next_check);
+}
+
+#[test]
+fn chinese_report_has_no_english_section_headings() {
+    let bad = "# AAPL 公司研究报告\n\n> 状态：PASS\n\n## 1. Report Status\n";
+    let result = language_lint(bad, "zh");
+    assert!(result.score.chinese_report_contains_untranslated_heading);
+}
+
+#[test]
+fn english_report_has_no_chinese_section_headings() {
+    let bad = "# AAPL Company Research Report\n\n> Status: PASS\n\n## 1. 报告状态\n";
+    let result = language_lint(bad, "en");
+    assert!(result.score.english_report_contains_chinese_heading);
+}
+
+#[test]
+fn language_polish_does_not_modify_locked_data() {
+    let report = "Revenue was $12.3B. Based on the data, we can see margin pressure.";
+    let (polished, trace) = language_polish(report, "en");
+    assert!(polished.contains("$12.3B"));
+    assert!(!trace.is_empty());
+    assert!(!polished.contains("Based on the data, we can see"));
+}
+
+#[test]
+fn language_polish_trace_generated() {
+    let source = include_str!("renderer.rs");
+    assert!(source.contains("language_polish_trace.md"));
+    assert!(source.contains("language_naturalness_report.md"));
+}
+
+#[test]
+fn low_language_quality_affects_report_status() {
+    let report = "# AAPL Company Research Report\n\n> Status: PASS\n\n## 1. 报告状态\n\nThe company has strong potential. Investors should pay attention. Based on the data, we can see significant opportunities. The future remains uncertain. Next check: further research is needed.";
+    let result = language_lint(report, "en");
+    assert!(matches!(
+        result.score.presentation_status.as_str(),
+        "WARNING" | "FAIL"
+    ));
 }

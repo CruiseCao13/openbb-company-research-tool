@@ -23,6 +23,7 @@ The final audit found that the Rust v5 pipeline, external AI provenance gate, sa
 - `evidence_numeric_claim_audit.md`
 - `ai_rewrite_audit.md`
 - `content_quality_audit.md`
+- `language_quality_audit.md`
 - `batch_reliability_audit.md`
 - `cache_correctness_audit.md`
 - `cli_journey_audit.md`

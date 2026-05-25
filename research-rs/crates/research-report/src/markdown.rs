@@ -30,16 +30,16 @@ Source: provider_payload.json
 Status: {status}
 
 What to look at:
-This figure is evidence for the section's main question, not decoration.
+Use this figure to connect the section's claim to the locked data path.
 
 What it means:
-Read it together with the locked data and the research frame.
+It can support a question about price path, cash generation, reinvestment, or valuation fit depending on the figure.
 
 What not to overread:
 The chart does not predict short-term price movement and does not create a buy/sell signal.
 
 Next check:
-Verify the same signal in the latest filing or provider source if it drives the thesis.
+If this signal drives the thesis, verify the underlying metric in the latest filing or provider source.
 
 "#
     )
