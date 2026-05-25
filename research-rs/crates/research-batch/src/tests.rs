@@ -1,6 +1,7 @@
-use crate::eval_set::load_eval_set;
+use crate::eval_set::{is_valid_ticker_symbol, load_eval_set};
 use crate::quality::{grade, score_report, QualityScores};
 use crate::training::TrainingRunOptions;
+use crate::training_case::{correction_case_path, TrainingCase};
 use std::path::Path;
 
 #[test]
@@ -36,9 +37,32 @@ fn regression_hard_cases_eval_set_loads() {
     assert!(eval.tickers.contains(&"LUNR".to_string()));
     assert_eq!(
         eval.expected_family.get("LUNR").unwrap(),
-        "Speculative Aerospace / Space Systems"
+        "Space / Lunar Infrastructure or Data-Limited Aerospace"
     );
     assert!(eval.tickers.contains(&"600519.SH".to_string()));
+}
+
+#[test]
+fn training_case_rejects_non_ticker_strings() {
+    for value in [
+        "SPACE / LUNAR INFRASTRUCTURE",
+        "AEROSPACE SERVICES",
+        "SPECULATIVE AEROSPACE / SPACE SYSTEMS",
+        "TELECOM / INFRASTRUCTURE CASH FLOW",
+        "WIRELESS SERVICE REVENUE",
+        "BROADBAND / NETWORK REVENUE",
+        "SUBSCRIBER CHURN",
+        "FINANCIALS",
+        "SEMICONDUCTOR SELLER",
+        "INSURANCE-LIKE SCREENING",
+        "BIOTECH DRUG PIPELINE",
+        "GENERIC UNKNOWN",
+    ] {
+        assert!(!is_valid_ticker_symbol(value), "{value} must be rejected");
+    }
+    for value in ["AAPL", "RKLB", "BRK-B", "600519.SH", "000001.SZ"] {
+        assert!(is_valid_ticker_symbol(value), "{value} should be valid");
+    }
 }
 
 #[test]
@@ -69,6 +93,94 @@ fn training_loop_outputs_required_artifact_names() {
             "training output missing {artifact}"
         );
     }
+}
+
+#[test]
+fn local_mock_cases_not_positive() {
+    let case = TrainingCase {
+        ticker: "RKLB".into(),
+        initial_profile: "Speculative Aerospace / Space Systems".into(),
+        final_profile: "Speculative Aerospace / Space Systems".into(),
+        expected_family: "Space Launch / Space Systems / Speculative Aerospace".into(),
+        issue_type: "local_mock_case".into(),
+        training_case_type: "local_mock_case".into(),
+        ai_source: "local_mock".into(),
+        wrong_output: "".into(),
+        expected_output_features: vec![],
+        must_contain: vec![],
+        must_not_contain: vec![],
+        data_refs_used: vec![],
+        fixed_by: "test".into(),
+        regression_status: "new".into(),
+    };
+    let path = correction_case_path(Path::new("training_cases"), &case).unwrap();
+    assert!(path.ends_with("corrections/v5_local_mock_cases.jsonl"));
+    assert!(!path.ends_with("corrections/v5_external_correction_cases.jsonl"));
+}
+
+#[test]
+fn correction_cases_are_split_by_source_and_issue() {
+    let source = include_str!("runner.rs");
+    assert!(source.contains("correction_case_path"));
+    let case_source = include_str!("training_case.rs");
+    assert!(case_source.contains("v5_external_correction_cases.jsonl"));
+    assert!(case_source.contains("v5_local_mock_cases.jsonl"));
+    assert!(case_source.contains("v5_negative_regression_cases.jsonl"));
+    assert!(!source.contains("v5_correction_cases.jsonl"));
+}
+
+#[test]
+fn polluted_training_cases_are_filtered() {
+    let eval = load_eval_set(Path::new("../eval_sets/regression_hard_cases.yaml"))
+        .or_else(|_| load_eval_set(Path::new("../../eval_sets/regression_hard_cases.yaml")))
+        .or_else(|_| load_eval_set(Path::new("../../../eval_sets/regression_hard_cases.yaml")))
+        .expect("regression hard cases should load");
+    for polluted in [
+        "SPACE / LUNAR INFRASTRUCTURE",
+        "WIRELESS SERVICE REVENUE",
+        "BROADBAND / NETWORK REVENUE",
+        "SUBSCRIBER CHURN",
+        "FINANCIALS",
+        "BIOTECH DRUG PIPELINE",
+    ] {
+        assert!(!eval.tickers.contains(&polluted.to_string()));
+    }
+}
+
+#[test]
+fn isrg_not_biotech_pipeline() {
+    let eval = load_eval_set(Path::new("../eval_sets/regression_hard_cases.yaml"))
+        .or_else(|_| load_eval_set(Path::new("../../eval_sets/regression_hard_cases.yaml")))
+        .or_else(|_| load_eval_set(Path::new("../../../eval_sets/regression_hard_cases.yaml")))
+        .expect("regression hard cases should load");
+    assert_eq!(
+        eval.expected_family.get("ISRG").unwrap(),
+        "Medical Devices / Surgical Robotics"
+    );
+}
+
+#[test]
+fn aapl_not_platform_ads_cloud() {
+    let eval = load_eval_set(Path::new("../eval_sets/broad_500_us_cn.yaml"))
+        .or_else(|_| load_eval_set(Path::new("../../eval_sets/broad_500_us_cn.yaml")))
+        .or_else(|_| load_eval_set(Path::new("../../../eval_sets/broad_500_us_cn.yaml")))
+        .expect("broad_500 should load");
+    assert_ne!(
+        eval.expected_family.get("AAPL").unwrap(),
+        "Platform Internet / Digital Ads / Cloud"
+    );
+}
+
+#[test]
+fn lly_not_early_biotech_cash_runway() {
+    let eval = load_eval_set(Path::new("../eval_sets/regression_hard_cases.yaml"))
+        .or_else(|_| load_eval_set(Path::new("../../eval_sets/regression_hard_cases.yaml")))
+        .or_else(|_| load_eval_set(Path::new("../../../eval_sets/regression_hard_cases.yaml")))
+        .expect("regression hard cases should load");
+    assert_eq!(
+        eval.expected_family.get("LLY").unwrap(),
+        "Large Pharma / Drug Portfolio / Regulatory and Patent Risk"
+    );
 }
 
 #[test]

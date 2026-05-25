@@ -3,6 +3,7 @@ description: v5 hard regression cases for framework, provenance, money-flow, and
 groups:
   us_space_aerospace_smallcap:
     - LUNR
+    - RKLB
     - ASTS
   us_mega_cap_tech:
     - AAPL
@@ -29,12 +30,28 @@ groups:
     - 600519.SH
   cn_banks:
     - 000001.SZ
+  cn_new_energy:
+    - 300750.SZ
 rules:
   LUNR:
     allowed_frames:
       - Space / Lunar Infrastructure
       - Aerospace Services
       - NASA-linked Project Execution
+      - Speculative Aerospace / Space Systems
+      - Project-Based Aerospace Services
+      - Unknown / Data-Limited Screening with Aerospace extension
+    must_not_contain:
+      - Telecom / Infrastructure Cash Flow
+      - wireless service revenue
+      - broadband / network revenue
+      - subscriber churn
+      - regulated telecom
+  RKLB:
+    allowed_frames:
+      - Space / Launch Services
+      - Aerospace Services
+      - Space Systems
       - Speculative Aerospace / Space Systems
       - Project-Based Aerospace Services
       - Unknown / Data-Limited Screening with Aerospace extension
@@ -75,3 +92,10 @@ rules:
   JPM:
     must_be:
       - Financials / Bank-like Screening
+  300750.SZ:
+    must_not_be:
+      - US SEC filing-driven company
+      - bank-like screening
+    must_contain:
+      - A-share
+      - RMB

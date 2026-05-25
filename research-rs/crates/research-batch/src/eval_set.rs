@@ -62,6 +62,38 @@ fn group_family(group: &str) -> String {
     .to_string()
 }
 
+fn ticker_family_override(ticker: &str) -> Option<&'static str> {
+    match ticker {
+        "AAPL" => Some("Mature Consumer Technology Compounder / Hardware + Services Ecosystem"),
+        "ISRG" => Some("Medical Devices / Surgical Robotics"),
+        "LLY" => Some("Large Pharma / Drug Portfolio / Regulatory and Patent Risk"),
+        "RKLB" => Some("Space Launch / Space Systems / Speculative Aerospace"),
+        "LUNR" => Some("Space / Lunar Infrastructure or Data-Limited Aerospace"),
+        "JPM" => Some("Financials / Bank-like Screening"),
+        "CAT" => Some("Cyclical / Industrial Machinery"),
+        "ZIM" => Some("Shipping / Transport Cycle"),
+        _ => None,
+    }
+}
+
+pub fn is_valid_ticker_symbol(raw: &str) -> bool {
+    let ticker = raw.trim();
+    if ticker.len() == 9
+        && ticker[..6].chars().all(|c| c.is_ascii_digit())
+        && matches!(&ticker[6..], ".SH" | ".SZ")
+    {
+        return true;
+    }
+
+    if ticker.is_empty() || ticker.len() > 6 {
+        return false;
+    }
+    ticker
+        .chars()
+        .all(|c| c.is_ascii_uppercase() || c == '-' || c == '.')
+        && ticker.chars().any(|c| c.is_ascii_uppercase())
+}
+
 pub fn load_eval_set(path: &Path) -> Result<EvalSet> {
     let raw = fs::read_to_string(path)?;
     let mut name = path.file_stem().unwrap().to_string_lossy().to_string();
@@ -90,11 +122,17 @@ pub fn load_eval_set(path: &Path) -> Result<EvalSet> {
             };
         } else if in_groups && stripped.starts_with("- ") {
             let ticker = stripped.trim_start_matches("- ").trim().to_uppercase();
+            if !is_valid_ticker_symbol(&ticker) {
+                continue;
+            }
             if !tickers.contains(&ticker) {
                 tickers.push(ticker.clone());
             }
             if let Some(group) = &current_group {
-                expected_family.insert(ticker, group_family(group));
+                let family = ticker_family_override(&ticker)
+                    .map(ToString::to_string)
+                    .unwrap_or_else(|| group_family(group));
+                expected_family.insert(ticker, family);
             }
         }
     }
