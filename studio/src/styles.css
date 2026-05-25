@@ -120,6 +120,7 @@ textarea {
 .panel,
 .detail-card,
 .app-info-card,
+.selected-run-summary,
 .bottom-bar,
 .top-status-strip {
   border: 1px solid var(--border);
@@ -129,6 +130,7 @@ textarea {
 
 .panel {
   min-height: 244px;
+  overflow: hidden;
 }
 
 .panel-header,
@@ -167,6 +169,59 @@ textarea {
   color: var(--text-main);
   font-size: 12px;
   text-transform: uppercase;
+}
+
+.run-list {
+  display: grid;
+  max-height: calc(100vh - 190px);
+  gap: 8px;
+  overflow: auto;
+  padding: 10px;
+}
+
+.run-list-item {
+  display: grid;
+  width: 100%;
+  gap: 7px;
+  border: 1px solid rgba(30, 41, 59, 0.78);
+  background: rgba(2, 6, 23, 0.34);
+  color: var(--text-main);
+  cursor: pointer;
+  padding: 11px;
+  text-align: left;
+}
+
+.run-list-item:hover,
+.run-list-item--selected {
+  border-color: rgba(143, 211, 255, 0.42);
+  background: rgba(15, 23, 42, 0.72);
+}
+
+.run-list-item__topline,
+.run-list-item__badges {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.run-list-item__topline strong,
+.run-list-item__run-id,
+.run-list-item__meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.run-list-item__topline strong,
+.run-list-item__run-id {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+.run-list-item__run-id,
+.run-list-item__meta {
+  color: var(--text-muted);
+  font-size: 11px;
 }
 
 .workspace {
@@ -223,13 +278,15 @@ textarea {
 }
 
 .app-info-card,
+.selected-run-summary,
 .detail-card {
   display: flex;
   flex-direction: column;
   padding: 16px;
 }
 
-.app-info-card {
+.app-info-card,
+.selected-run-summary {
   min-height: 170px;
   grid-column: 1 / -1;
   gap: 16px;
@@ -266,18 +323,21 @@ textarea {
   margin: 0;
 }
 
-.app-info-list div {
+.app-info-list div,
+.selected-run-grid div {
   min-width: 0;
 }
 
-.app-info-list dt {
+.app-info-list dt,
+.selected-run-grid dt {
   color: var(--text-muted);
   font-family: "JetBrains Mono", ui-monospace, monospace;
   font-size: 10px;
   text-transform: uppercase;
 }
 
-.app-info-list dd {
+.app-info-list dd,
+.selected-run-grid dd {
   margin: 5px 0 0;
   overflow: hidden;
   color: var(--text-main);
@@ -285,6 +345,13 @@ textarea {
   font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.selected-run-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px 18px;
+  margin: 0;
 }
 
 .app-info-empty {
