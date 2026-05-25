@@ -35,11 +35,11 @@ export function AppInfoCard({ appInfo, error, status }: AppInfoCardProps): JSX.E
           </div>
           <div>
             <dt>Repo root</dt>
-            <dd>{appInfo.repo_root}</dd>
+            <dd>Available</dd>
           </div>
           <div>
             <dt>Reports root</dt>
-            <dd>{appInfo.reports_root}</dd>
+            <dd>Available</dd>
           </div>
           <div>
             <dt>Platform</dt>
@@ -53,6 +53,11 @@ export function AppInfoCard({ appInfo, error, status }: AppInfoCardProps): JSX.E
             <dt>IPC status</dt>
             <dd>Connected through Tauri command</dd>
           </div>
+          <details className="advanced-path-details">
+            <summary>Advanced paths</summary>
+            <code>{appInfo.repo_root}</code>
+            <code>{appInfo.reports_root}</code>
+          </details>
         </dl>
       ) : (
         <div className="app-info-empty">

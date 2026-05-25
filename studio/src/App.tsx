@@ -2,10 +2,11 @@ import { type CSSProperties, type PointerEvent, type ReactNode, useEffect, useMe
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { AppInfoCard } from "./components/AppInfoCard";
-import { RunDetailPanel, type RunDetailTab } from "./components/RunDetailPanel";
+import { MoneyFlowSankey, RunDetailPanel, type RunDetailTab } from "./components/RunDetailPanel";
 import i18n, { type StudioLanguage } from "./i18n";
 import {
   getAppInfo,
+  artifactImageSrc,
   listRuns,
   listTrainingRuns,
   loadQualityMatrix,
@@ -42,7 +43,7 @@ type BadgeVariant =
   | "CACHE"
   | "UNKNOWN";
 
-type StudioMode = "landing" | "runs" | "matrix";
+type StudioMode = "landing" | "research" | "matrix" | "settings";
 type StudioDensity = "compact" | "comfortable";
 type StudioMotion = "on" | "off";
 type StudioGlass = "low" | "medium" | "high";
@@ -51,7 +52,7 @@ type TrainingRunsStatus = "idle" | "loading" | "ready" | "empty" | "failed" | "b
 type MatrixStatus = "idle" | "loading" | "ready" | "empty" | "failed" | "browser-preview";
 
 const detailTabs: Array<{ id: RunDetailTab; labelKey: string }> = [
-  { id: "summary", labelKey: "summary" },
+  { id: "summary", labelKey: "overview" },
   { id: "charts", labelKey: "charts" },
   { id: "audit", labelKey: "auditTrail" },
   { id: "gaps", labelKey: "dataGaps" },
@@ -220,7 +221,7 @@ function StudioTopBar({
     <header className="studio-topbar" aria-label="Studio controls">
       <div className="topbar-mode">
         <span>{t("currentMode")}</span>
-        <strong>{mode === "landing" ? "Landing" : mode === "matrix" ? t("matrix") : t("runs")}</strong>
+        <strong>{mode === "landing" ? "Landing" : mode === "matrix" ? t("matrix") : mode === "settings" ? t("settings") : t("research")}</strong>
       </div>
       <label className="quick-search">
         <span>{t("quickSearch")}</span>
@@ -292,7 +293,7 @@ function LandingHero({
             {t("openLatestRun")}
           </button>
           <button className="hero-cta" onClick={onOpenMatrix} type="button">
-            View Quality Matrix
+            {t("viewQualityMatrix")}
           </button>
         </div>
       </div>
@@ -492,7 +493,8 @@ function Sidebar({
   runs,
   runsStatus,
   search,
-  selectedRunKey
+  selectedRunKey,
+  totalRuns
 }: {
   error: string | null;
   mode: StudioMode;
@@ -504,6 +506,7 @@ function Sidebar({
   runsStatus: RunsStatus;
   search: string;
   selectedRunKey: string | null;
+  totalRuns: number;
 }): JSX.Element {
   const { t } = useTranslation();
   return (
@@ -516,11 +519,11 @@ function Sidebar({
 
       <div className="mode-switch" role="tablist" aria-label="Workspace mode">
         <button
-          className={mode === "runs" ? "mode-switch__button mode-switch__button--active" : "mode-switch__button"}
-          onClick={() => onChangeMode("runs")}
+          className={mode === "research" ? "mode-switch__button mode-switch__button--active" : "mode-switch__button"}
+          onClick={() => onChangeMode("research")}
           type="button"
         >
-          {t("runs")}
+          {t("research")}
         </button>
         <button
           className={mode === "matrix" ? "mode-switch__button mode-switch__button--active" : "mode-switch__button"}
@@ -535,13 +538,21 @@ function Sidebar({
       </div>
 
       <label className="run-search">
-        <span>{t("filterRuns")}</span>
-        <input
-          onChange={(event) => onSearch(event.target.value)}
-          placeholder="Ticker or run id"
-          type="search"
-          value={search}
-        />
+        <span>{t("searchRuns")}</span>
+        <div className="search-row">
+          <input
+            onChange={(event) => onSearch(event.target.value)}
+            placeholder="Ticker or run id"
+            type="search"
+            value={search}
+          />
+          {search ? (
+            <button className="search-clear" onClick={() => onSearch("")} type="button">
+              {t("clear")}
+            </button>
+          ) : null}
+        </div>
+        <small className="search-count">{runs.length} / {totalRuns} {t("runs")}</small>
       </label>
 
       <section className="run-list-panel" aria-label="Runs">
@@ -555,7 +566,7 @@ function Sidebar({
           selectedRunKey={selectedRunKey}
           status={runsStatus}
           onSelectRun={(run) => {
-            onChangeMode("runs");
+            onChangeMode("research");
             onSelectRun(run);
           }}
         />
@@ -623,23 +634,29 @@ function RunList({
   );
 }
 
-function PrimaryActionBar({ detail }: { detail: RunDetail | null }): JSX.Element {
+function PrimaryActionBar({ detail, onOpenCharts }: { detail: RunDetail | null; onOpenCharts: () => void }): JSX.Element {
   const { t } = useTranslation();
   const [message, setMessage] = useState<string>(t("chooseArtifact"));
   const [busyLabel, setBusyLabel] = useState<string | null>(null);
 
   const actions = [
-    { label: t("openReport"), path: detail?.artifacts.markdown_report_path ?? null, action: "open" as const },
-    { label: t("openDashboard"), path: detail?.artifacts.dashboard_path ?? null, action: "open" as const },
-    { label: t("openPdf"), path: detail?.artifacts.pdf_report_path ?? null, action: "open" as const },
-    { label: t("revealFolder"), path: detail?.run_folder ?? null, action: "reveal" as const },
-    { label: t("openAiUsage"), path: detail?.artifacts.ai_usage_path ?? null, action: "open" as const },
-    { label: t("openValidator"), path: detail?.artifacts.validator_report_path ?? null, action: "open" as const },
-    { label: t("openProvider"), path: detail?.artifacts.provider_payload_path ?? null, action: "open" as const }
+    { icon: "RP", label: t("openReport"), path: detail?.artifacts.markdown_report_path ?? null, action: "open" as const },
+    { icon: "DB", label: t("openDashboard"), path: detail?.artifacts.dashboard_path ?? null, action: "open" as const },
+    { icon: "PDF", label: t("openPdf"), path: detail?.artifacts.pdf_report_path ?? null, action: "open" as const },
+    { icon: "CH", label: t("openCharts"), path: detail ? "charts-tab" : null, action: "tab" as const },
+    { icon: "AU", label: t("openAudit"), path: detail?.artifacts.validator_report_path ?? null, action: "open" as const },
+    { icon: "AI", label: t("openAiUsage"), path: detail?.artifacts.ai_usage_path ?? null, action: "open" as const },
+    { icon: "PV", label: t("openProvider"), path: detail?.artifacts.provider_payload_path ?? null, action: "open" as const },
+    { icon: "FD", label: t("revealFolder"), path: detail?.run_folder ?? null, action: "reveal" as const }
   ];
 
-  async function handleAction(label: string, path: string | null, action: "open" | "reveal"): Promise<void> {
+  async function handleAction(label: string, path: string | null, action: "open" | "reveal" | "tab"): Promise<void> {
     if (!path) {
+      return;
+    }
+    if (action === "tab") {
+      onOpenCharts();
+      setMessage(`${label} selected.`);
       return;
     }
     setBusyLabel(label);
@@ -667,6 +684,7 @@ function PrimaryActionBar({ detail }: { detail: RunDetail | null }): JSX.Element
             title={action.path ? `${action.label} is available` : `${action.label} unavailable for this run`}
             type="button"
           >
+            <b>{action.icon}</b>
             <span>{action.label}</span>
             <small>{action.path ? action.action : "missing"}</small>
           </button>
@@ -723,6 +741,52 @@ function RunWorkspaceHeader({
         <span className="ipc-readout">{ipcMessage}</span>
       </div>
     </header>
+  );
+}
+
+function ChartPreviewStrip({
+  detail,
+  onOpenCharts
+}: {
+  detail: RunDetail | null;
+  onOpenCharts: () => void;
+}): JSX.Element {
+  const { t } = useTranslation();
+  const previewCharts = detail?.charts.slice(0, 4) ?? [];
+
+  return (
+    <section className="chart-preview-strip" aria-label="Chart preview strip">
+      <div className="chart-preview-strip__header">
+        <div>
+          <span className="subsection-title">{t("chartGallery")}</span>
+          <strong>{detail ? `${detail.charts.length} ${t("charts")}` : t("noRunSelected")}</strong>
+        </div>
+        <button className="glass-button chart-strip-action" disabled={!detail} onClick={onOpenCharts} type="button">
+          {t("openCharts")}
+        </button>
+      </div>
+      {detail === null ? (
+        <div className="chart-strip-empty">{t("selectRun")}</div>
+      ) : previewCharts.length === 0 ? (
+        <div className="chart-strip-empty">No chart manifest found for this run.</div>
+      ) : (
+        <div className="chart-preview-strip__grid">
+          {previewCharts.map((chart) => (
+            <article className="chart-strip-card" key={`${chart.title}-${chart.image_path ?? "missing"}`}>
+              {chart.image_exists && chart.image_path ? (
+                <img alt={`${chart.title} preview`} src={artifactImageSrc(chart.image_path)} />
+              ) : (
+                <div className="chart-strip-card__missing">Missing image</div>
+              )}
+              <div>
+                <strong>{chart.title}</strong>
+                <span>{chart.source ?? "source unknown"}</span>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -1135,12 +1199,14 @@ function AppShell({
   density,
   fontScale,
   glass,
+  mode,
   motion
 }: {
   children: ReactNode;
   density: StudioDensity;
   fontScale: number;
   glass: StudioGlass;
+  mode: StudioMode;
   motion: StudioMotion;
 }): JSX.Element {
   function handlePointerMove(event: PointerEvent<HTMLElement>): void {
@@ -1153,7 +1219,7 @@ function AppShell({
 
   return (
     <main
-      className="studio-shell"
+      className={`studio-shell studio-shell--${mode}`}
       data-density={density}
       data-glass={glass}
       data-motion={motion}
@@ -1263,13 +1329,13 @@ export function App(): JSX.Element {
     if (latest) {
       setSelectedRunKey(runKey(latest));
     }
-    setMode("runs");
-    setDetailTab("charts");
+    setMode("research");
+    setDetailTab("summary");
   }
 
   function enterStudio(): void {
-    setMode("runs");
-    setDetailTab("charts");
+    setMode("research");
+    setDetailTab("summary");
   }
 
   useEffect(() => {
@@ -1318,10 +1384,10 @@ export function App(): JSX.Element {
           if (openMatrixByDefault) {
             setMode("matrix");
           } else if (startOnLatest && loadedRuns[0]) {
-            setMode("runs");
-            setDetailTab("charts");
+            setMode("research");
+            setDetailTab("summary");
           } else if (!defaultLanding) {
-            setMode("runs");
+            setMode("research");
           }
         }
       })
@@ -1350,7 +1416,7 @@ export function App(): JSX.Element {
     let mounted = true;
     setRunDetailStatus("loading");
     setRunDetailError(null);
-    setDetailTab("charts");
+    setDetailTab("summary");
 
     loadRunDetail(selectedRun.ticker, selectedRun.run_id)
       .then((detail) => {
@@ -1440,7 +1506,7 @@ export function App(): JSX.Element {
   const dataGapCount = countDataGaps(activeRunDetail);
 
   return (
-    <AppShell density={density} fontScale={fontScale} glass={glass} motion={motion}>
+    <AppShell density={density} fontScale={fontScale} glass={glass} mode={mode} motion={motion}>
       <Sidebar
         error={runsError}
         mode={mode}
@@ -1448,6 +1514,7 @@ export function App(): JSX.Element {
         runsStatus={runsStatus}
         search={runSearch}
         selectedRunKey={selectedRunKey}
+        totalRuns={runs.length}
         onChangeMode={setMode}
         onOpenSettings={() => setSettingsOpen(true)}
         onSearch={setRunSearch}
@@ -1456,7 +1523,7 @@ export function App(): JSX.Element {
 
       <section
         className={mode === "landing" ? "workspace workspace--landing" : "workspace"}
-        aria-label={mode === "runs" ? "Report Workspace" : mode === "matrix" ? "Regression Matrix Workspace" : "Studio Landing"}
+        aria-label={mode === "research" ? "Research Workspace" : mode === "matrix" ? "Regression Matrix Workspace" : "Studio Landing"}
       >
         <StudioTopBar
           density={density}
@@ -1468,7 +1535,7 @@ export function App(): JSX.Element {
           onQuickSearch={(value) => {
             setRunSearch(value);
             if (mode === "landing") {
-              setMode("runs");
+              setMode("research");
             }
           }}
           onSetDensity={setDensity}
@@ -1477,7 +1544,7 @@ export function App(): JSX.Element {
 
         {mode === "landing" ? (
           <LandingHero onEnter={enterStudio} onOpenLatest={openLatestRun} onOpenMatrix={() => setMode("matrix")} />
-        ) : mode === "runs" ? (
+        ) : mode === "research" ? (
           <>
             <RunWorkspaceHeader
               detail={activeRunDetail}
@@ -1485,7 +1552,19 @@ export function App(): JSX.Element {
               ipcMessage={ipcMessage}
               selectedRun={selectedRun}
             />
-            <PrimaryActionBar detail={activeRunDetail} />
+            <PrimaryActionBar detail={activeRunDetail} onOpenCharts={() => setDetailTab("charts")} />
+            <section className="hero-graph-stage" aria-label="Primary money flow visual">
+              {runDetailStatus === "ready" && activeRunDetail ? (
+                <MoneyFlowSankey detail={activeRunDetail} />
+              ) : (
+                <div className="graph-loading-panel">
+                  <span className="subsection-title">{t("moneyFlow")}</span>
+                  <strong>{runDetailStatus === "loading" ? "Loading cash-flow map" : "Select a run to view cash flow"}</strong>
+                  <p>{runDetailStatus === "error" ? runDetailError ?? "Run detail failed." : "The studio renders existing structured metadata only. No fake flow data is generated."}</p>
+                </div>
+              )}
+            </section>
+            <ChartPreviewStrip detail={activeRunDetail} onOpenCharts={() => setDetailTab("charts")} />
             <DetailTabs
               activeTab={detailTab}
               chartCount={activeRunDetail?.charts.length ?? 0}
@@ -1524,11 +1603,13 @@ export function App(): JSX.Element {
         ) : null}
       </section>
 
-      <InsightRail detail={activeRunDetail} warningsFirst={warningsFirst} />
+      {mode === "research" ? <InsightRail detail={activeRunDetail} warningsFirst={warningsFirst} /> : null}
 
-      <aside className="studio-system-card" aria-label="App information">
-        <AppInfoCard appInfo={appInfo} error={appInfoError} status={appInfoStatus} />
-      </aside>
+      {mode === "research" ? (
+        <aside className="studio-system-card" aria-label="App information">
+          <AppInfoCard appInfo={appInfo} error={appInfoError} status={appInfoStatus} />
+        </aside>
+      ) : null}
 
       <SettingsCenter
         defaultLanding={defaultLanding}
